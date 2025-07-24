@@ -18,8 +18,8 @@ class LlmifyNode extends Node
             ->addDebugInfo($this)
             ->write("ob_start();\n")
             ->subcompile($this->getNode('body'))
-            ->write("$llmifyBody = ob_get_clean();\n")
-            ->write("\samuelreichor\llmify\Llmify::getInstance()->llmifyService->process(\$llmifyBody);\n")
-            ->write("echo $llmifyBody;\n");
+            ->write("\$llmifyBody = ob_get_clean();\n")
+            ->write("\\samuelreichor\\llmify\\Llmify::getInstance()->llmifyService->process(\$llmifyBody);\n")
+            ->write("echo \$llmifyBody;\n");
     }
 }

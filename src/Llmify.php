@@ -5,27 +5,36 @@ namespace samuelreichor\llmify;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\elements\Entry;
+use craft\events\ElementEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\services\Elements;
 use craft\web\UrlManager;
+use samuelreichor\llmify\models\Settings;
+use samuelreichor\llmify\services\LlmsFullService;
+use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\twig\LlmifyExtension;
-use samuelreichor\llmify\models\Settings;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use yii\base\Event;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
+use yii\log\FileTarget;
 
 /**
  * llmify plugin
  *
  * @method static Llmify getInstance()
  * @method Settings getSettings()
- * @property-read MarkdownService $markdown
  * @author Samuel Reichör <samuelreichor@gmail.com>
  * @copyright Samuel Reichör
  * @license https://craftcms.github.io/license/ Craft License
+ *
+ * @property-read MarkdownService $markdown
+ * @property-read LlmsService $llms
+ * @property-read LlmsFullService $llmsFull
  */
 class Llmify extends Plugin
 {
@@ -37,6 +46,8 @@ class Llmify extends Plugin
         return [
             'components' => [
                 'markdown' => MarkdownService::class,
+                'llms' => LlmsService::class,
+                'llmsFull' => LlmsFullService::class,
             ],
         ];
     }
@@ -45,9 +56,8 @@ class Llmify extends Plugin
     {
         parent::init();
 
-        // Add in our Twig extension
-        Craft::$app->view->registerTwigExtension(new LlmifyExtension());
-
+        $this->_initLogger();
+        $this->registerTwigExtension();
         $this->attachEventHandlers();
 
         // Any code that creates an element query or loads Twig should be deferred until
@@ -88,5 +98,37 @@ class Llmify extends Plugin
                 $event->rules['llmify/cache/clear'] = 'llmify/cache/clear';
             }
         );
+
+        // Listen for entries being saved
+        Event::on(
+            Elements::class,
+            Elements::EVENT_AFTER_SAVE_ELEMENT,
+            function (ElementEvent $event) {
+                if (
+                    $event->element instanceof Entry &&
+                    !$event->isNew &&
+                    !$event->element->isProvisionalDraft &&
+                    !$event->element->isRevision
+                ) {
+                    $this->markdown->generateForEntry($event->element);
+                }
+            }
+        );
+    }
+
+    private function registerTwigExtension(): void
+    {
+        Craft::$app->view->registerTwigExtension(new LlmifyExtension());
+    }
+
+    private function _initLogger(): void
+    {
+        $logFileTarget = new FileTarget([
+            'logFile' => '@storage/logs/llmify.log',
+            'maxLogFiles' => 10,
+            'categories' => ['llmify'],
+            'logVars' => [],
+        ]);
+        Craft::getLogger()->dispatcher->targets[] = $logFileTarget;
     }
 }

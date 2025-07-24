@@ -5,13 +5,19 @@ namespace samuelreichor\llmify;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\events\RegisterUrlRulesEvent;
+use craft\web\UrlManager;
+use samuelreichor\llmify\services\LlmifyService;
+use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\models\Settings;
+use yii\base\Event;
 
 /**
  * llmify plugin
  *
  * @method static Llmify getInstance()
  * @method Settings getSettings()
+ * @property-read LlmifyService $llmifyService
  * @author Samuel Reichör <samuelreichor@gmail.com>
  * @copyright Samuel Reichör
  * @license https://craftcms.github.io/license/ Craft License
@@ -25,7 +31,7 @@ class Llmify extends Plugin
     {
         return [
             'components' => [
-                // Define component configs here...
+                'llmifyService' => LlmifyService::class,
             ],
         ];
     }
@@ -33,6 +39,9 @@ class Llmify extends Plugin
     public function init(): void
     {
         parent::init();
+
+        // Add in our Twig extension
+        Craft::$app->view->registerTwigExtension(new LlmifyExtension());
 
         $this->attachEventHandlers();
 
@@ -58,7 +67,12 @@ class Llmify extends Plugin
 
     private function attachEventHandlers(): void
     {
-        // Register event handlers here ...
-        // (see https://craftcms.com/docs/5.x/extend/events.html to get started)
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
+            function (RegisterUrlRulesEvent $event) {
+                $event->rules['llmify/cache/clear'] = 'llmify/cache/clear';
+            }
+        );
     }
 }

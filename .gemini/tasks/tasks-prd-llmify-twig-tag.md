@@ -27,10 +27,10 @@
   - [x] 3.3 Inside `process()`, generate a cache key from the current request URI.
   - [x] 3.4 Store the HTML content in the Craft cache using the generated key and the configured TTL.
   - [x] 3.5 Log the captured HTML to a dedicated `llmify.log` file.
-- [ ] 4.0 Implement Cache Invalidation
+- [x] 4.0 Implement Cache Invalidation
   - [x] 4.1 Add a new controller action that clears all cache entries with the `llmify` prefix.
-  - [ ] 4.2 Add a button to the `_settings.twig` template that posts to this new controller action.
+  - [x] 4.2 Add a button to the `_settings.twig` template that posts to this new controller action.
 - [ ] 5.0 Register the Twig Extension and Controller
-  - [ ] 5.1 In the main `Llmify.php` plugin file, register the new `LlmifyTokenParser` as a Twig extension.
-  - [ ] 5.2 Ensure the service is registered and accessible.
+  - [x] 5.1 In the main `Llmify.php` plugin file, register the new `LlmifyTokenParser` as a Twig extension.
+  - [x] 5.2 Ensure the service is registered and accessible.
   - [ ] 5.3 Register the controller for the cache invalidation action.

@@ -10,7 +10,12 @@ use craft\web\UrlManager;
 use samuelreichor\llmify\services\LlmifyService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\models\Settings;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use yii\base\Event;
+use yii\base\Exception;
+use yii\base\InvalidConfigException;
 
 /**
  * llmify plugin
@@ -52,11 +57,20 @@ class Llmify extends Plugin
         });
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     protected function createSettingsModel(): ?Model
     {
         return Craft::createObject(Settings::class);
     }
 
+    /**
+     * @throws SyntaxError
+     * @throws Exception
+     * @throws RuntimeError
+     * @throws LoaderError
+     */
     protected function settingsHtml(): ?string
     {
         return Craft::$app->view->renderTemplate('llmify/_settings.twig', [

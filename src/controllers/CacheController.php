@@ -3,9 +3,9 @@
 namespace samuelreichor\llmify\controllers;
 
 use Craft;
-use craft\caching\TagDependency;
 use craft\web\Controller;
 use samuelreichor\llmify\services\LlmifyService;
+use yii\caching\TagDependency;
 use yii\web\Response;
 
 class CacheController extends Controller

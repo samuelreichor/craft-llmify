@@ -5,7 +5,7 @@ namespace samuelreichor\llmify\services;
 use Craft;
 use craft\base\Component;
 
-use craft\caching\TagDependency;
+use yii\caching\TagDependency;
 use samuelreichor\llmify\Llmify;
 
 class LlmifyService extends Component

@@ -30,7 +30,7 @@
 - [x] 4.0 Implement Cache Invalidation
   - [x] 4.1 Add a new controller action that clears all cache entries with the `llmify` prefix.
   - [x] 4.2 Add a button to the `_settings.twig` template that posts to this new controller action.
-- [ ] 5.0 Register the Twig Extension and Controller
+- [x] 5.0 Register the Twig Extension and Controller
   - [x] 5.1 In the main `Llmify.php` plugin file, register the new `LlmifyTokenParser` as a Twig extension.
   - [x] 5.2 Ensure the service is registered and accessible.
-  - [ ] 5.3 Register the controller for the cache invalidation action.
+  - [x] 5.3 Register the controller for the cache invalidation action.

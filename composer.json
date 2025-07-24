@@ -1,0 +1,48 @@
+{
+  "name": "samuelreichor/craft-llmify",
+  "description": "Optimize your site for llms",
+  "type": "craft-plugin",
+  "license": "proprietary",
+  "support": {
+    "email": "samuelreichor@gmail.com",
+    "issues": "https://github.com/samuelreichor/craft-llmify/issues?state=open",
+    "source": "https://github.com/samuelreichor/craft-llmify",
+    "docs": "https://github.com/samuelreichor/craft-llmify",
+    "rss": "https://github.com/samuelreichor/craft-llmify/releases.atom"
+  },
+  "require": {
+    "php": ">=8.2",
+    "craftcms/cms": "^5.0.0"
+  },
+  "require-dev": {
+    "craftcms/ecs": "dev-main",
+    "craftcms/phpstan": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "samuelreichor\\llmify\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "llmify",
+    "name": "llmify",
+    "developer": "Samuel Reichör",
+    "documentationUrl": "https://github.com/samuelreichor/craft-llmify",
+    "class": "samuelreichor\\llmify\\Llmify"
+  },
+  "scripts": {
+    "check-cs": "ecs check --ansi",
+    "fix-cs": "ecs check --ansi --fix",
+    "phpstan": "phpstan --memory-limit=1G"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true
+    }
+  }
+}

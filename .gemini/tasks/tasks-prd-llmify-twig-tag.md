@@ -16,16 +16,16 @@
 - [x] 1.0 Set up Plugin Configuration
   - [x] 1.1 Add a `cacheTtl` public property to the `src/models/Settings.php` model, with a default value of `3600`.
   - [x] 1.2 Add a `TextField` to `src/templates/_settings.twig` for the `cacheTtl` setting, allowing administrators to change its value.
-- [ ] 2.0 Implement the Core `llmify` Twig Tag Logic
+- [x] 2.0 Implement the Core `llmify` Twig Tag Logic
   - [x] 2.1 Create the `src/twig/LlmifyTokenParser.php` file.
   - [x] 2.2 Implement the `parse()` method to handle the `{% llmify %}` and `{% endllmify %}` tags.
   - [x] 2.3 Create the `src/twig/LlmifyNode.php` file.
-  - [ ] 2.4 Implement the `compile()` method in the `Node` class to render the body content and call the processing service.
+  - [x] 2.4 Implement the `compile()` method in the `Node` class to render the body content and call the processing service.
 - [ ] 3.0 Develop the Content Capture and Processing Service
-  - [ ] 3.1 Create the `src/services/LlmifyService.php` file.
-  - [ ] 3.2 Implement a `process()` method that takes the rendered HTML as an argument.
-  - [ ] 3.3 Inside `process()`, generate a cache key from the current request URI.
-  - [ ] 3.4 Store the HTML content in the Craft cache using the generated key and the configured TTL.
+  - [x] 3.1 Create the `src/services/LlmifyService.php` file.
+  - [x] 3.2 Implement a `process()` method that takes the rendered HTML as an argument.
+  - [x] 3.3 Inside `process()`, generate a cache key from the current request URI.
+  - [x] 3.4 Store the HTML content in the Craft cache using the generated key and the configured TTL.
   - [ ] 3.5 Log the captured HTML to a dedicated `llmify.log` file.
 - [ ] 4.0 Implement Cache Invalidation
   - [ ] 4.1 Add a new controller action that clears all cache entries with the `llmify` prefix.

@@ -13,13 +13,13 @@
 
 ## Tasks
 
-- [ ] 1.0 Set up Plugin Configuration
+- [x] 1.0 Set up Plugin Configuration
   - [x] 1.1 Add a `cacheTtl` public property to the `src/models/Settings.php` model, with a default value of `3600`.
-  - [ ] 1.2 Add a `TextField` to `src/templates/_settings.twig` for the `cacheTtl` setting, allowing administrators to change its value.
+  - [x] 1.2 Add a `TextField` to `src/templates/_settings.twig` for the `cacheTtl` setting, allowing administrators to change its value.
 - [ ] 2.0 Implement the Core `llmify` Twig Tag Logic
-  - [ ] 2.1 Create the `src/twig/LlmifyTokenParser.php` file.
-  - [ ] 2.2 Implement the `parse()` method to handle the `{% llmify %}` and `{% endllmify %}` tags.
-  - [ ] 2.3 Create the `src/twig/LlmifyNode.php` file.
+  - [x] 2.1 Create the `src/twig/LlmifyTokenParser.php` file.
+  - [x] 2.2 Implement the `parse()` method to handle the `{% llmify %}` and `{% endllmify %}` tags.
+  - [x] 2.3 Create the `src/twig/LlmifyNode.php` file.
   - [ ] 2.4 Implement the `compile()` method in the `Node` class to render the body content and call the processing service.
 - [ ] 3.0 Develop the Content Capture and Processing Service
   - [ ] 3.1 Create the `src/services/LlmifyService.php` file.

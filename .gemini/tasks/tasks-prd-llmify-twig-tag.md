@@ -21,14 +21,14 @@
   - [x] 2.2 Implement the `parse()` method to handle the `{% llmify %}` and `{% endllmify %}` tags.
   - [x] 2.3 Create the `src/twig/LlmifyNode.php` file.
   - [x] 2.4 Implement the `compile()` method in the `Node` class to render the body content and call the processing service.
-- [ ] 3.0 Develop the Content Capture and Processing Service
+- [x] 3.0 Develop the Content Capture and Processing Service
   - [x] 3.1 Create the `src/services/LlmifyService.php` file.
   - [x] 3.2 Implement a `process()` method that takes the rendered HTML as an argument.
   - [x] 3.3 Inside `process()`, generate a cache key from the current request URI.
   - [x] 3.4 Store the HTML content in the Craft cache using the generated key and the configured TTL.
-  - [ ] 3.5 Log the captured HTML to a dedicated `llmify.log` file.
+  - [x] 3.5 Log the captured HTML to a dedicated `llmify.log` file.
 - [ ] 4.0 Implement Cache Invalidation
-  - [ ] 4.1 Add a new controller action that clears all cache entries with the `llmify` prefix.
+  - [x] 4.1 Add a new controller action that clears all cache entries with the `llmify` prefix.
   - [ ] 4.2 Add a button to the `_settings.twig` template that posts to this new controller action.
 - [ ] 5.0 Register the Twig Extension and Controller
   - [ ] 5.1 In the main `Llmify.php` plugin file, register the new `LlmifyTokenParser` as a Twig extension.

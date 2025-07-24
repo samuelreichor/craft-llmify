@@ -7,7 +7,7 @@ use craft\base\Model;
 use craft\base\Plugin;
 use craft\events\RegisterUrlRulesEvent;
 use craft\web\UrlManager;
-use samuelreichor\llmify\services\LlmifyService;
+use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\models\Settings;
 use Twig\Error\LoaderError;
@@ -22,7 +22,7 @@ use yii\base\InvalidConfigException;
  *
  * @method static Llmify getInstance()
  * @method Settings getSettings()
- * @property-read LlmifyService $llmifyService
+ * @property-read MarkdownService $markdown
  * @author Samuel Reichör <samuelreichor@gmail.com>
  * @copyright Samuel Reichör
  * @license https://craftcms.github.io/license/ Craft License
@@ -36,7 +36,7 @@ class Llmify extends Plugin
     {
         return [
             'components' => [
-                'llmifyService' => LlmifyService::class,
+                'markdown' => MarkdownService::class,
             ],
         ];
     }

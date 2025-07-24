@@ -1,6 +1,6 @@
 {
   "name": "samuelreichor/craft-llmify",
-  "description": "Optimize your site for llms",
+  "description": "Optimize your site for LLMs",
   "type": "craft-plugin",
   "license": "proprietary",
   "support": {
@@ -24,8 +24,8 @@
     }
   },
   "extra": {
-    "handle": "llmify",
-    "name": "llmify",
+    "handle": "LLMify",
+    "name": "LLMify",
     "developer": "Samuel Reichör",
     "documentationUrl": "https://github.com/samuelreichor/craft-llmify",
     "class": "samuelreichor\\llmify\\Llmify"

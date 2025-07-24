@@ -3,4 +3,11 @@
 
 {% import '_includes/forms.twig' as forms %}
 
-{# ... #}
+{{ forms.textField({
+    label: 'Cache TTL',
+    instructions: 'How long to cache the llmify tag output, in seconds.',
+    id: 'cacheTtl',
+    name: 'cacheTtl',
+    value: settings.cacheTtl,
+    errors: settings.getErrors('cacheTtl')
+}) }}

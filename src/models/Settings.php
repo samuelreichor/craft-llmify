@@ -10,4 +10,5 @@ use craft\base\Model;
  */
 class Settings extends Model
 {
+    public int $cacheTtl = 3600;
 }

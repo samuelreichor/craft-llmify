@@ -15,6 +15,7 @@
 
         {{ forms.selectField({
             label: 'Entry Default Title Source',
+            instructions: 'Define a default field source for the LLM title for all entries in this section.',
             id: 'llmTitleSource',
             name: 'llmTitleSource',
             options: textFieldOptions,
@@ -30,6 +31,7 @@
 
         {{ forms.selectField({
             label: 'Entry Default Description Source',
+            instructions: 'Define a default field source for the LLM description for all entries in this section.',
             id: 'llmDescriptionSource',
             name: 'llmDescriptionSource',
             options: textFieldOptions,

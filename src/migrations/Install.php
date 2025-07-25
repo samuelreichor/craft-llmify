@@ -52,27 +52,28 @@ class Install extends Migration
     {
         $tablesCreated = false;
 
-        $tableSchema = Craft::$app->db->schema->getTableSchema(Constants::TABLE_PAGES);
-        if ($tableSchema === null) {
+        $tablePages = Craft::$app->db->schema->getTableSchema(Constants::TABLE_PAGES);
+        if ($tablePages === null) {
             $tablesCreated = true;
             $this->createTable(
                 Constants::TABLE_PAGES,
                 [
-                    'id' => $this->primaryKey(),
-                    'url' => $this->string(),
+                    'entryId' => $this->integer()->notNull(),
                     'siteId' => $this->integer(),
-                    'content' => $this->json(),
-                    'title' => $this->string(),
+                    'sectionId' => $this->integer(),
                     'metadataId' => $this->integer(),
+                    'title' => $this->string(),
                     'description' => $this->string(),
+                    'content' => $this->json(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
+                    'PRIMARY KEY([[entryId]])',
                 ]
             );
         }
 
-        $tableSchema = Craft::$app->db->schema->getTableSchema(Constants::TABLE_META);
-        if ($tableSchema === null) {
+        $tableMeta = Craft::$app->db->schema->getTableSchema(Constants::TABLE_META);
+        if ($tableMeta === null) {
             $tablesCreated = true;
             $this->createTable(
             Constants::TABLE_META,
@@ -100,5 +101,34 @@ class Install extends Migration
 
     protected function addForeignKeys(): void
     {
+        $this->addForeignKey(
+            $this->db->getForeignKeyName(),
+            Constants::TABLE_PAGES,
+            'entryId',
+            '{{%elements}}',
+            'id',
+            'CASCADE',
+            null
+        );
+
+        $this->addForeignKey(
+            $this->db->getForeignKeyName(),
+            Constants::TABLE_PAGES,
+            'sectionId',
+            '{{%sections}}',
+            'id',
+            'CASCADE',
+            null
+        );
+
+        $this->addForeignKey(
+            $this->db->getForeignKeyName(),
+            Constants::TABLE_PAGES,
+            'metadataId',
+            Constants::TABLE_META,
+            'id',
+            'CASCADE',
+            null
+        );
     }
 }

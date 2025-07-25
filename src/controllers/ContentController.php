@@ -93,7 +93,12 @@ class ContentController extends Controller
     public function getFieldsForSection(Section $section): array
     {
         $entryTypes = $section->getEntryTypes();
-        $commonTextFields = [];
+        $commonTextFields = [
+            [
+                'label' => 'Title',
+                'value' => 'title',
+            ]
+        ];
 
         if (!empty($entryTypes)) {
             $allFields = [];

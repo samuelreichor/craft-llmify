@@ -4,7 +4,6 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
-use InvalidArgumentException;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\records\ContentSettingRecord;

@@ -3,7 +3,6 @@
 namespace samuelreichor\llmify;
 
 use Craft;
-use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
 use craft\events\ElementEvent;
@@ -13,25 +12,19 @@ use craft\web\UrlManager;
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Fields;
 use samuelreichor\llmify\fields\LlmifySettingsField;
-use samuelreichor\llmify\models\Settings;
 use samuelreichor\llmify\services\LlmsFullService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
+use samuelreichor\llmify\services\MetadataService;
 use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
 use yii\base\Event;
-use yii\base\Exception;
-use yii\base\InvalidConfigException;
 use yii\log\FileTarget;
 
 /**
  * llmify plugin
  *
  * @method static Llmify getInstance()
- * @method Settings getSettings()
  * @author Samuel Reichör <samuelreichor@gmail.com>
  * @copyright Samuel Reichör
  * @license https://craftcms.github.io/license/ Craft License
@@ -40,6 +33,7 @@ use yii\log\FileTarget;
  * @property-read LlmsService $llms
  * @property-read LlmsFullService $llmsFull
  * @property-read SettingsService $settings
+ * * @property-read MetadataService $metadata
  */
 class Llmify extends Plugin
 {
@@ -55,6 +49,7 @@ class Llmify extends Plugin
                 'llms' => LlmsService::class,
                 'llmsFull' => LlmsFullService::class,
                 'settings' => SettingsService::class,
+                'metadata' => MetadataService::class,
             ],
         ];
     }
@@ -72,14 +67,6 @@ class Llmify extends Plugin
         Craft::$app->onInit(function() {
             // ...
         });
-    }
-
-    /**
-     * @throws InvalidConfigException
-     */
-    protected function createSettingsModel(): ?Model
-    {
-        return Craft::createObject(Settings::class);
     }
 
     public function getCpNavItem(): ?array

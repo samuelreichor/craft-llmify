@@ -19,15 +19,15 @@
 
 ## Tasks
 
-- [ ] 1.0 Set Up Core Infrastructure for New Settings
+- [x] 1.0 Set Up Core Infrastructure for New Settings
   - [x] 1.1 Update `Settings.php` model to include new properties for Globals (`cacheTtl`, `llmTitle`, `llmDescription`) and Content (`contentSettings`).
   - [x] 1.2 Modify `Llmify.php` to register the new "Globals" and "Content" settings pages as sub-navigation items.
   - [x] 1.3 Create new controller files: `GlobalsController.php` and `ContentController.php` in the `src/controllers` directory.
 - [ ] 2.0 Implement the "Globals" Settings Page
-  - [ ] 2.1 In `GlobalsController.php`, create an `actionIndex()` that renders a template.
-  - [ ] 2.2 Create the `src/templates/settings/globals/index.twig` template.
-  - [ ] 2.3 Add the "Cache TTL", "LLM Title", and "LLM Description" fields to the Globals template, linking them to the `Settings.php` model.
-  - [ ] 2.4 Implement the save logic in `Llmify.php` or a dedicated controller action to persist the global settings.
+  - [x] 2.1 In `GlobalsController.php`, create an `actionIndex()` that renders a template.
+  - [x] 2.2 Create the `src/templates/settings/globals/index.twig` template.
+  - [x] 2.3 Add the "Cache TTL", "LLM Title", and "LLM Description" fields to the Globals template, linking them to the `Settings.php` model.
+  - [x] 2.4 Implement the save logic in `Llmify.php` or a dedicated controller action to persist the global settings.
 - [ ] 3.0 Implement the "Content" Settings Page
   - [ ] 3.1 In `ContentController.php`, create an `actionIndex()` that fetches all sections with a URL and passes them to a template.
   - [ ] 3.2 Create the `src/templates/settings/content/index.twig` template to display the list of sections.

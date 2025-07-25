@@ -1,0 +1,44 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Global Settings" %}
+{% set selectedSubnavItem = 'globals' %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="llmify/globals/save-settings">
+        <input type="hidden" name="redirect" value="llmify/globals">
+
+        {{ forms.textField({
+            label: 'Cache TTL',
+            instructions: 'The time in seconds that the cache should be stored.',
+            id: 'cacheTtl',
+            name: 'settings[cacheTtl]',
+            value: settings.cacheTtl,
+            errors: settings.getErrors('cacheTtl'),
+            type: 'number'
+        }) }}
+
+        {{ forms.textField({
+            label: 'LLM Title',
+            instructions: 'The title to be used in the llms.txt and full-llms.txt files.',
+            id: 'llmTitle',
+            name: 'settings[llmTitle]',
+            value: settings.llmTitle,
+            errors: settings.getErrors('llmTitle')
+        }) }}
+
+        {{ forms.textField({
+            label: 'LLM Description',
+            instructions: 'The description to be used in the llms.txt and full-llms.txt files.',
+            id: 'llmDescription',
+            name: 'settings[llmDescription]',
+            value: settings.llmDescription,
+            errors: settings.getErrors('llmDescription')
+        }) }}
+
+        <div class="flex-grow"></div>
+        <button type="submit" class="btn submit">Save settings</button>
+    </form>
+{% endblock %}

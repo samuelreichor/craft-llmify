@@ -98,6 +98,7 @@ class Llmify extends Plugin
             function (RegisterUrlRulesEvent $event) {
                 $event->rules['llmify/cache/clear'] = 'llmify/cache/clear';
                 $event->rules['llmify/globals'] = 'llmify/globals/index';
+                $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
                 $event->rules['llmify/content'] = 'llmify/content/index';
             }
         );

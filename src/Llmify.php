@@ -8,6 +8,7 @@ use craft\elements\Entry;
 use craft\events\ElementEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\services\Elements;
+use craft\web\Application;
 use craft\web\UrlManager;
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Fields;
@@ -104,6 +105,16 @@ class Llmify extends Plugin
                 $event->rules['llmify/content'] = 'llmify/content/index';
                 $event->rules['llmify/content/edit-section/<sectionId:\d+>'] = 'llmify/content/edit-section';
                 $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
+            }
+        );
+
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            function (RegisterUrlRulesEvent $event) {
+                $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
+                $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
+                $event->rules['raw/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
             }
         );
 

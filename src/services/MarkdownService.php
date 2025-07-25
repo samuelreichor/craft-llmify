@@ -19,6 +19,7 @@ class MarkdownService extends Component
 {
     /**
      * @throws InvalidConfigException
+     * @throws Exception
      */
     public function process(string $html, int $entryId = null, int $siteId = null): void
     {
@@ -81,16 +82,17 @@ class MarkdownService extends Component
         }
 
 
-        $pageEntry = $this->getPageForEntryId($entryId);
+        $pageEntry = PageRecord::findOne(['entryId' => $entryId]);
+        $metaDataService = new MetadataService($entry);
+
         if (!$pageEntry) {
             $pageEntry = new PageRecord();
+            $pageEntry->entryId = $entry->id;
+            $pageEntry->sectionId = $entry->section->id;
+            $pageEntry->metadataId = $metaDataService->getMetaContentId();
+            $pageEntry->siteId = $entry->getSite()->id;
         }
 
-        $metaDataService = new MetadataService($entry);
-        $pageEntry->entryId = $entryId;
-        $pageEntry->sectionId = $entry->section->id;
-        $pageEntry->metadataId = $metaDataService->getMetaContentId();
-        $pageEntry->siteId = $entry->getSite()->id;
         $pageEntry->title = $metaDataService->getLlmTitleByEntry();
         $pageEntry->description = $metaDataService->getLlmDescriptionByEntry();
         $pageEntry->content = $markdown;
@@ -113,6 +115,11 @@ class MarkdownService extends Component
             ->select([
                 'entryId',
                 'sectionId',
+                'metadataId',
+                'siteId',
+                'title',
+                'description',
+                'content',
             ])
             ->from([Constants::TABLE_PAGES]);
     }

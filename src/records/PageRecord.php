@@ -8,10 +8,9 @@ use samuelreichor\llmify\Constants;
 /**
  * Page Record
  *
- * @property int $id
+ * @property int $entryId
  * @property int $siteId
  * @property int $sectionId
- * @property int $entryId
  * @property int $metadataId
  * @property string $content
  * @property string $title
@@ -19,7 +18,7 @@ use samuelreichor\llmify\Constants;
  */
 class PageRecord extends ActiveRecord
 {
-    public static function tableName()
+    public static function tableName(): string
     {
         return Constants::TABLE_PAGES;
     }

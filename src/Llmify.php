@@ -100,6 +100,8 @@ class Llmify extends Plugin
                 $event->rules['llmify/globals'] = 'llmify/globals/index';
                 $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
                 $event->rules['llmify/content'] = 'llmify/content/index';
+                $event->rules['llmify/content/edit-section/<sectionId:\d+>'] = 'llmify/content/edit-section';
+                $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
             }
         );
 

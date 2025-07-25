@@ -1,0 +1,46 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Edit Section: " ~ section.name %}
+{% set selectedSubnavItem = 'content' %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        <input type="hidden" name="action" value="llmify/content/save-section-settings">
+        <input type="hidden" name="sectionId" value="{{ section.id }}">
+        <input type="hidden" name="redirect" value="llmify/content">
+
+        {{ forms.selectField({
+            label: 'Entry Default Title Source',
+            id: 'titleSource',
+            name: 'settings[titleSource]',
+            options: [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields),
+            value: settings.titleSource ?? 'custom'
+        }) }}
+
+        {{ forms.textField({
+            label: 'Entry Default Title',
+            id: 'title',
+            name: 'settings[title]',
+            value: settings.title ?? ''
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Entry Default Description Source',
+            id: 'descriptionSource',
+            name: 'settings[descriptionSource]',
+            options: [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields),
+            value: settings.descriptionSource ?? 'custom'
+        }) }}
+
+        {{ forms.textField({
+            label: 'Entry Default Description',
+            id: 'description',
+            name: 'settings[description]',
+            value: settings.description ?? ''
+        }) }}
+
+        <div class="flex-grow"></div>
+        <button type="submit" class="btn submit">Save settings</button>
+    </form>
+{% endblock %}

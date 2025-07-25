@@ -23,19 +23,19 @@
   - [x] 1.1 Update `Settings.php` model to include new properties for Globals (`cacheTtl`, `llmTitle`, `llmDescription`) and Content (`contentSettings`).
   - [x] 1.2 Modify `Llmify.php` to register the new "Globals" and "Content" settings pages as sub-navigation items.
   - [x] 1.3 Create new controller files: `GlobalsController.php` and `ContentController.php` in the `src/controllers` directory.
-- [ ] 2.0 Implement the "Globals" Settings Page
+- [x] 2.0 Implement the "Globals" Settings Page
   - [x] 2.1 In `GlobalsController.php`, create an `actionIndex()` that renders a template.
   - [x] 2.2 Create the `src/templates/settings/globals/index.twig` template.
   - [x] 2.3 Add the "Cache TTL", "LLM Title", and "LLM Description" fields to the Globals template, linking them to the `Settings.php` model.
   - [x] 2.4 Implement the save logic in `Llmify.php` or a dedicated controller action to persist the global settings.
 - [ ] 3.0 Implement the "Content" Settings Page
-  - [ ] 3.1 In `ContentController.php`, create an `actionIndex()` that fetches all sections with a URL and passes them to a template.
-  - [ ] 3.2 Create the `src/templates/settings/content/index.twig` template to display the list of sections.
-  - [ ] 3.3 In `ContentController.php`, create an `actionEditSection(int $sectionId)` to handle the detail view.
-  - [ ] 3.4 Create the `src/templates/settings/content/edit.twig` template for the section detail view.
-  - [ ] 3.5 Implement the UI in `edit.twig` for "Entry Default Title" and "Description" with the "Custom Text" / "Use Field Value" dropdown.
-  - [ ] 3.6 In `actionEditSection`, fetch all plain text fields that are common to all entry types of that section and pass them to the template.
-  - [ ] 3.7 Implement the save logic for the content settings.
+  - [x] 3.1 In `ContentController.php`, create an `actionIndex()` that fetches all sections with a URL and passes them to a template.
+  - [x] 3.2 Create the `src/templates/settings/content/index.twig` template to display the list of sections.
+  - [x] 3.3 In `ContentController.php`, create an `actionEditSection(int $sectionId)` to handle the detail view.
+  - [x] 3.4 Create the `src/templates/settings/content/edit.twig` template for the section detail view.
+  - [x] 3.5 Implement the UI in `edit.twig` for "Entry Default Title" and "Description" with the "Custom Text" / "Use Field Value" dropdown.
+  - [x] 3.6 In `actionEditSection`, fetch all plain text fields that are common to all entry types of that section and pass them to the template.
+  - [x] 3.7 Implement the save logic for the content settings.
 - [ ] 4.0 Create the "LLMify Settings" Custom Field
   - [ ] 4.1 Create a new file `src/fields/LlmifySettingsField.php`.
   - [ ] 4.2 Implement the `LlmifySettingsField` class, extending `craft\base\Field`.

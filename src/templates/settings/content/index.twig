@@ -1,0 +1,22 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Content Settings" %}
+{% set selectedSubnavItem = 'content' %}
+
+{% block content %}
+    <p>Select a section to configure its default LLMify settings.</p>
+
+    {% if sections|length %}
+        <ul class="listing">
+            {% for section in sections %}
+                <li>
+                    <a href="{{ cpUrl('llmify/content/edit-section/' ~ section.id) }}">
+                        <strong>{{ section.name }}</strong>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No sections with a URL format found.</p>
+    {% endif %}
+{% endblock %}

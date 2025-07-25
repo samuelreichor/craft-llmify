@@ -3,41 +3,44 @@
 
 {% set title = "Edit Section: " ~ section.name %}
 {% set selectedSubnavItem = 'content' %}
-
+{% set textFieldOptions = [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields) %}
 {% block content %}
     <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
         <input type="hidden" name="action" value="llmify/content/save-section-settings">
         <input type="hidden" name="sectionId" value="{{ section.id }}">
-        <input type="hidden" name="redirect" value="llmify/content">
+        {{ actionInput('llmify/content/save-section-settings') }}
+        {{ redirectInput('llmify/content') }}
+        {% if settings.id %}{{ hiddenInput('contentId', settings.id) }}{% endif %}
 
         {{ forms.selectField({
             label: 'Entry Default Title Source',
-            id: 'titleSource',
-            name: 'settings[titleSource]',
-            options: [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields),
-            value: settings.titleSource ?? 'custom'
+            id: 'llmTitleSource',
+            name: 'llmTitleSource',
+            options: textFieldOptions,
+            value: settings.llmTitleSource ?? 'custom'
         }) }}
 
         {{ forms.textField({
             label: 'Entry Default Title',
-            id: 'title',
-            name: 'settings[title]',
-            value: settings.title ?? ''
+            id: 'llmTitle',
+            name: 'llmTitle',
+            value: settings.llmTitle ?? ''
         }) }}
 
         {{ forms.selectField({
             label: 'Entry Default Description Source',
-            id: 'descriptionSource',
-            name: 'settings[descriptionSource]',
-            options: [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields),
-            value: settings.descriptionSource ?? 'custom'
+            id: 'llmDescriptionSource',
+            name: 'llmDescriptionSource',
+            options: textFieldOptions,
+            value: settings.llmDescriptionSource ?? 'custom'
         }) }}
 
         {{ forms.textField({
             label: 'Entry Default Description',
-            id: 'description',
-            name: 'settings[description]',
-            value: settings.description ?? ''
+            id: 'llmDescription',
+            name: 'llmDescription',
+            value: settings.llmDescription ?? ''
         }) }}
 
         <div class="flex-grow"></div>

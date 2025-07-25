@@ -36,13 +36,13 @@
   - [x] 3.5 Implement the UI in `edit.twig` for "Entry Default Title" and "Description" with the "Custom Text" / "Use Field Value" dropdown.
   - [x] 3.6 In `actionEditSection`, fetch all plain text fields that are common to all entry types of that section and pass them to the template.
   - [x] 3.7 Implement the save logic for the content settings.
-- [ ] 4.0 Create the "LLMify Settings" Custom Field
+- [x] 4.0 Create the "LLMify Settings" Custom Field
   - [x] 4.1 Create a new file `src/fields/LlmifySettingsField.php`.
   - [x] 4.2 Implement the `LlmifySettingsField` class, extending `craft\base\Field`.
   - [x] 4.3 Define the field's `getInputHtml()` method to render two text inputs for "Title" and "Description".
   - [x] 4.4 Register the new field type in `Llmify.php` so it appears in the field layout editor.
 - [ ] 5.0 Implement the Settings Fallback Logic
-  - [ ] 5.1 Create a new service, e.g., `MetadataService.php`, to encapsulate the fallback logic.
+  - [x] 5.1 Create a new service, e.g., `MetadataService.php`, to encapsulate the fallback logic.
   - [ ] 5.2 In the `MetadataService`, create a method `getEntryTitle(Entry $entry)` that implements the logic from FR6.
   - [ ] 5.3 Create a similar method `getEntryDescription(Entry $entry)`.
   - [ ] 5.4 Update the Twig extension (`LlmifyExtension.php`) to use this new service when retrieving title and description.

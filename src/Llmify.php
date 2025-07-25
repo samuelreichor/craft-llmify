@@ -17,6 +17,7 @@ use samuelreichor\llmify\models\Settings;
 use samuelreichor\llmify\services\LlmsFullService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
+use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -38,11 +39,13 @@ use yii\log\FileTarget;
  * @property-read MarkdownService $markdown
  * @property-read LlmsService $llms
  * @property-read LlmsFullService $llmsFull
+ * @property-read SettingsService $settings
  */
 class Llmify extends Plugin
 {
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = true;
+    public bool $hasCpSection = true;
 
     public static function config(): array
     {
@@ -51,6 +54,7 @@ class Llmify extends Plugin
                 'markdown' => MarkdownService::class,
                 'llms' => LlmsService::class,
                 'llmsFull' => LlmsFullService::class,
+                'settings' => SettingsService::class,
             ],
         ];
     }

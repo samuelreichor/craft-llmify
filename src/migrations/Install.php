@@ -63,7 +63,26 @@ class Install extends Migration
                     'siteId' => $this->integer(),
                     'content' => $this->json(),
                     'title' => $this->string(),
+                    'metadataId' => $this->integer(),
                     'description' => $this->string(),
+                    'dateCreated' => $this->dateTime()->notNull(),
+                    'dateUpdated' => $this->dateTime()->notNull(),
+                ]
+            );
+        }
+
+        $tableSchema = Craft::$app->db->schema->getTableSchema(Constants::TABLE_META);
+        if ($tableSchema === null) {
+            $tablesCreated = true;
+            $this->createTable(
+            Constants::TABLE_META,
+                [
+                    'id' => $this->primaryKey(),
+                    'sectionId' => $this->integer(),
+                    'llmTitleSource' => $this->string(),
+                    'llmTitle' => $this->string(),
+                    'llmDescriptionSource' => $this->string(),
+                    'llmDescription' => $this->string(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                 ]
@@ -76,6 +95,7 @@ class Install extends Migration
     protected function removeTables(): void
     {
         $this->dropTableIfExists(Constants::TABLE_PAGES);
+        $this->dropTableIfExists(Constants::TABLE_META);
     }
 
     protected function addForeignKeys(): void

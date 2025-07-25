@@ -75,18 +75,19 @@ class Llmify extends Plugin
         return Craft::createObject(Settings::class);
     }
 
-    /**
-     * @throws SyntaxError
-     * @throws Exception
-     * @throws RuntimeError
-     * @throws LoaderError
-     */
+    public function getCpNavItem(): ?array
+    {
+        $navItem = parent::getCpNavItem();
+        $navItem['subnav'] = [
+            'globals' => ['label' => 'Globals', 'url' => 'llmify/globals'],
+            'content' => ['label' => 'Content', 'url' => 'llmify/content'],
+        ];
+        return $navItem;
+    }
+
     protected function settingsHtml(): ?string
     {
-        return Craft::$app->view->renderTemplate('llmify/_settings.twig', [
-            'plugin' => $this,
-            'settings' => $this->getSettings(),
-        ]);
+        return null;
     }
 
     private function attachEventHandlers(): void
@@ -96,6 +97,8 @@ class Llmify extends Plugin
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
                 $event->rules['llmify/cache/clear'] = 'llmify/cache/clear';
+                $event->rules['llmify/globals'] = 'llmify/globals/index';
+                $event->rules['llmify/content'] = 'llmify/content/index';
             }
         );
 

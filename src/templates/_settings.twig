@@ -5,17 +5,9 @@
 
 {{ forms.textField({
     label: 'Cache TTL',
-    instructions: 'How long to cache the llmify tag output, in seconds.',
+    instructions: 'How long to cache all llmify data.',
     id: 'cacheTtl',
     name: 'cacheTtl',
     value: settings.cacheTtl,
     errors: settings.getErrors('cacheTtl')
 }) }}
-
-<hr>
-
-<form method="post" accept-charset="UTF-8">
-    {{ csrfInput() }}
-    {{ actionInput('llmify/cache/clear') }}
-    <input type="submit" class="btn submit" value="Clear Llmify Cache">
-</form>

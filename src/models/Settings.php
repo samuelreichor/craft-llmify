@@ -11,4 +11,7 @@ use craft\base\Model;
 class Settings extends Model
 {
     public int $cacheTtl = 3600;
+    public string $llmTitle = '';
+    public string $llmDescription = '';
+    public array $contentSettings = [];
 }

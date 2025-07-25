@@ -10,6 +10,9 @@ use craft\events\ElementEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\services\Elements;
 use craft\web\UrlManager;
+use craft\events\RegisterComponentTypesEvent;
+use craft\services\Fields;
+use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\Settings;
 use samuelreichor\llmify\services\LlmsFullService;
 use samuelreichor\llmify\services\LlmsService;
@@ -92,6 +95,14 @@ class Llmify extends Plugin
 
     private function attachEventHandlers(): void
     {
+        Event::on(
+            Fields::class,
+            Fields::EVENT_REGISTER_FIELD_TYPES,
+            function (RegisterComponentTypesEvent $event) {
+                $event->types[] = LlmifySettingsField::class;
+            }
+        );
+
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,

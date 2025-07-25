@@ -28,7 +28,7 @@
   - [x] 2.2 Create the `src/templates/settings/globals/index.twig` template.
   - [x] 2.3 Add the "Cache TTL", "LLM Title", and "LLM Description" fields to the Globals template, linking them to the `Settings.php` model.
   - [x] 2.4 Implement the save logic in `Llmify.php` or a dedicated controller action to persist the global settings.
-- [ ] 3.0 Implement the "Content" Settings Page
+- [x] 3.0 Implement the "Content" Settings Page
   - [x] 3.1 In `ContentController.php`, create an `actionIndex()` that fetches all sections with a URL and passes them to a template.
   - [x] 3.2 Create the `src/templates/settings/content/index.twig` template to display the list of sections.
   - [x] 3.3 In `ContentController.php`, create an `actionEditSection(int $sectionId)` to handle the detail view.
@@ -37,10 +37,10 @@
   - [x] 3.6 In `actionEditSection`, fetch all plain text fields that are common to all entry types of that section and pass them to the template.
   - [x] 3.7 Implement the save logic for the content settings.
 - [ ] 4.0 Create the "LLMify Settings" Custom Field
-  - [ ] 4.1 Create a new file `src/fields/LlmifySettingsField.php`.
-  - [ ] 4.2 Implement the `LlmifySettingsField` class, extending `craft\base\Field`.
-  - [ ] 4.3 Define the field's `getInputHtml()` method to render two text inputs for "Title" and "Description".
-  - [ ] 4.4 Register the new field type in `Llmify.php` so it appears in the field layout editor.
+  - [x] 4.1 Create a new file `src/fields/LlmifySettingsField.php`.
+  - [x] 4.2 Implement the `LlmifySettingsField` class, extending `craft\base\Field`.
+  - [x] 4.3 Define the field's `getInputHtml()` method to render two text inputs for "Title" and "Description".
+  - [x] 4.4 Register the new field type in `Llmify.php` so it appears in the field layout editor.
 - [ ] 5.0 Implement the Settings Fallback Logic
   - [ ] 5.1 Create a new service, e.g., `MetadataService.php`, to encapsulate the fallback logic.
   - [ ] 5.2 In the `MetadataService`, create a method `getEntryTitle(Entry $entry)` that implements the logic from FR6.

@@ -1,0 +1,15 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.textField({
+    label: 'Title',
+    id: name ~ '-title',
+    name: name ~ '[title]',
+    value: value.title ?? ''
+}) }}
+
+{{ forms.textField({
+    label: 'Description',
+    id: name ~ '-description',
+    name: name ~ '[description]',
+    value: value.description ?? ''
+}) }}

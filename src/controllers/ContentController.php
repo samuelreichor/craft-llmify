@@ -23,7 +23,7 @@ class ContentController extends Controller
     public function actionIndex(): Response
     {
         $sections = Craft::$app->entries->getAllSections();
-        $currentSiteId = Craft::$app->getSites()->getCurrentSite()->id;
+        $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $sectionsWithUrls = array_filter($sections, function ($section) use ($currentSiteId) {
             return $section->getSiteSettings()[$currentSiteId]->uriFormat !== null;
         });
@@ -33,12 +33,16 @@ class ContentController extends Controller
         ]);
     }
 
+    /**
+     * @throws SiteNotFoundException
+     */
     public function actionEditSection(int $sectionId): Response
     {
         $section = Craft::$app->entries->getSectionById($sectionId);
+        $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $contentSettings = Llmify::getInstance()->settings;
 
-        $sectionSettings = $contentSettings->getContentSettingBySectionId($sectionId);
+        $sectionSettings = $contentSettings->getContentSettingBySectionIdSiteId($sectionId, $currentSiteId);
         if (!$sectionSettings) {
             $sectionSettings = new ContentSettings();
         }
@@ -49,6 +53,7 @@ class ContentController extends Controller
             'section' => $section,
             'textFields' => $commonTextFields,
             'settings' => $sectionSettings,
+            'siteId' => $currentSiteId,
         ]);
     }
 
@@ -64,15 +69,17 @@ class ContentController extends Controller
         $settingService = Llmify::getInstance()->settings;
         $contentId =  $this->request->getBodyParam('contentId');
         $sectionId =  $this->request->getBodyParam('sectionId');
+        $siteId =  $this->request->getBodyParam('siteId');
 
         if ($contentId) {
-            $content = $settingService->getContentSettingBySectionId($sectionId);
+            $content = $settingService->getContentSettingBySectionIdSiteId($sectionId, $siteId);
 
             if (!$content) {
                 throw new NotFoundHttpException('Content not found');
             }
         } else {
             $content = new ContentSettings();
+            $content->siteId = $siteId;
         }
 
         $content->llmTitleSource = $this->request->getBodyParam('llmTitleSource');
@@ -87,7 +94,7 @@ class ContentController extends Controller
         }
 
         $this->setSuccessFlash(Craft::t('app', 'Content Setting saved.'));
-        return $this->redirectToPostedUrl($content);
+        return $this->redirectToPostedUrl();
     }
 
     public function getFieldsForSection(Section $section): array

@@ -9,18 +9,15 @@ use samuelreichor\llmify\models\ContentSettings;
 
 /**
  * Content Setting Record
- * @property int $id
- * @property string $llmTitleSource
- * @property string $llmTitle
- * @property string $llmDescriptionSource
- * @property string $llmDescription
- * @property int $sectionId
  * @property int $siteId
+ * @property bool $enabled
+ * @property string $llmTitle
+ * @property string $llmDescription
  */
-class ContentSettingRecord extends ActiveRecord
+class GlobalSettingRecord extends ActiveRecord
 {
     public static function tableName(): string
     {
-        return Constants::TABLE_META;
+        return Constants::TABLE_GLOBALS;
     }
 }

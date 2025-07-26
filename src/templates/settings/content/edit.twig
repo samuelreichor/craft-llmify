@@ -1,51 +1,82 @@
 {% extends "_layouts/cp" %}
 {% import "_includes/forms" as forms %}
 
-{% set title = "Edit Section: " ~ section.name %}
+{% set title = "Edit LLM Settings for Section: " ~ section.name %}
 {% set selectedSubnavItem = 'content' %}
+{% set fullPageForm = true %}
+
+{% set crumbs = [
+    { label: "LLMify Content"|t('app'), url: url('llmify/content') }
+] %}
+
+{% if selectableSites is not defined %}
+    {% if siteIds is defined %}
+        {% set selectableSites = craft.app.sites.getEditableSites()|filter(s => s.id in siteIds) %}
+    {% else %}
+        {% set selectableSites = craft.app.sites.getEditableSites() %}
+    {% endif %}
+{% endif %}
+
+{% if selectedSite is not defined %}
+    {% if selectedSiteId is defined %}
+        {% set selectedSite = craft.app.sites.getSiteById(selectedSiteId) %}
+    {% elseif requestedSite and requestedSite in selectableSites %}
+        {% set selectedSite = requestedSite %}
+    {% else %}
+        {% set selectedSite = selectableSites|length ? selectableSites|first : craft.app.sites.getPrimarySite() %}
+    {% endif %}
+{% endif %}
+
+{% set crumbs = (crumbs ?? [])|unshift({
+    id: 'site-crumb',
+    icon: 'world',
+    iconAltText: 'Site'|t('app'),
+    label: selectedSite.name|t('site'),
+    menu: {
+        items: siteMenuItems(selectableSites, selectedSite),
+        label: 'Select site'|t('app')
+    }
+}) %}
+
 {% set textFieldOptions = [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields) %}
+
 {% block content %}
-    <form method="post" accept-charset="UTF-8">
-        {{ csrfInput() }}
-        <input type="hidden" name="action" value="llmify/content/save-section-settings">
-        <input type="hidden" name="sectionId" value="{{ section.id }}">
-        {{ actionInput('llmify/content/save-section-settings') }}
-        {{ redirectInput('llmify/content') }}
-        {% if settings.id %}{{ hiddenInput('contentId', settings.id) }}{% endif %}
+    {{ actionInput('llmify/content/save-section-settings') }}
+    {{ redirectInput('llmify/content/') }}
 
-        {{ forms.selectField({
-            label: 'Entry Default Title Source',
-            instructions: 'Define a default field source for the LLM title for all entries in this section.',
-            id: 'llmTitleSource',
-            name: 'llmTitleSource',
-            options: textFieldOptions,
-            value: settings.llmTitleSource ?? 'custom'
-        }) }}
+    {% if settings.id %}{{ hiddenInput('contentId', settings.id) }}{% endif %}
+    {{ hiddenInput('sectionId', section.id) }}
+    {{ hiddenInput('siteId', siteId) }}
 
-        {{ forms.textField({
-            label: 'Entry Default Title',
-            id: 'llmTitle',
-            name: 'llmTitle',
-            value: settings.llmTitle ?? ''
-        }) }}
+    {{ forms.selectField({
+        label: 'Entry Default Title Source',
+        instructions: 'Define a default field source for the LLM title for all entries in this section.',
+        id: 'llmTitleSource',
+        name: 'llmTitleSource',
+        options: textFieldOptions,
+        value: settings.llmTitleSource ?? 'custom'
+    }) }}
 
-        {{ forms.selectField({
-            label: 'Entry Default Description Source',
-            instructions: 'Define a default field source for the LLM description for all entries in this section.',
-            id: 'llmDescriptionSource',
-            name: 'llmDescriptionSource',
-            options: textFieldOptions,
-            value: settings.llmDescriptionSource ?? 'custom'
-        }) }}
+    {{ forms.textField({
+        label: 'Entry Default Title',
+        id: 'llmTitle',
+        name: 'llmTitle',
+        value: settings.llmTitle ?? ''
+    }) }}
 
-        {{ forms.textField({
-            label: 'Entry Default Description',
-            id: 'llmDescription',
-            name: 'llmDescription',
-            value: settings.llmDescription ?? ''
-        }) }}
+    {{ forms.selectField({
+        label: 'Entry Default Description Source',
+        instructions: 'Define a default field source for the LLM description for all entries in this section.',
+        id: 'llmDescriptionSource',
+        name: 'llmDescriptionSource',
+        options: textFieldOptions,
+        value: settings.llmDescriptionSource ?? 'custom'
+    }) }}
 
-        <div class="flex-grow"></div>
-        <button type="submit" class="btn submit">Save settings</button>
-    </form>
+    {{ forms.textField({
+        label: 'Entry Default Description',
+        id: 'llmDescription',
+        name: 'llmDescription',
+        value: settings.llmDescription ?? ''
+    }) }}
 {% endblock %}

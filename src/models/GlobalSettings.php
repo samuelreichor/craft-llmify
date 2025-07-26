@@ -10,7 +10,8 @@ use craft\base\Model;
  */
 class GlobalSettings extends Model
 {
-    public int $cacheTtl = 3600;
+    public int $siteId;
+    public bool $enabled = true;
     public string $llmTitle = '';
     public string $llmDescription = '';
 
@@ -21,7 +22,8 @@ class GlobalSettings extends Model
                 [
                     'llmTitle',
                     'llmDescription',
-                ], 'string'
+                ],
+                'string'
             ],
         ];
     }

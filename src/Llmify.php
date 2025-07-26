@@ -3,16 +3,19 @@
 namespace samuelreichor\llmify;
 
 use Craft;
+use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
 use craft\events\ElementEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\helpers\UrlHelper;
 use craft\services\Elements;
-use craft\web\Application;
 use craft\web\UrlManager;
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Fields;
 use samuelreichor\llmify\fields\LlmifySettingsField;
+use samuelreichor\llmify\models\GlobalSettings;
+use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsFullService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
@@ -34,7 +37,8 @@ use yii\log\FileTarget;
  * @property-read LlmsService $llms
  * @property-read LlmsFullService $llmsFull
  * @property-read SettingsService $settings
- * * @property-read MetadataService $metadata
+ * @property-read MetadataService $metadata
+ * @property-read HelperService $helper
  */
 class Llmify extends Plugin
 {
@@ -51,6 +55,7 @@ class Llmify extends Plugin
                 'llmsFull' => LlmsFullService::class,
                 'settings' => SettingsService::class,
                 'metadata' => MetadataService::class,
+                'helper' => HelperService::class,
             ],
         ];
     }
@@ -80,9 +85,22 @@ class Llmify extends Plugin
         return $navItem;
     }
 
-    protected function settingsHtml(): ?string
+    protected function createSettingsModel(): ?Model
     {
-        return null;
+        return new GlobalSettings();
+    }
+
+    protected function settingsHtml(): string
+    {
+        return Craft::$app->view->renderTemplate('llmify/settings/globals/index', [
+            'settings' => $this->getSettings(),
+        ]);
+    }
+
+    public function getSettingsResponse(): mixed
+    {
+        // Just redirect to the plugin settings page
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/globals'));
     }
 
     private function attachEventHandlers(): void
@@ -100,10 +118,11 @@ class Llmify extends Plugin
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
                 $event->rules['llmify/cache/clear'] = 'llmify/cache/clear';
+                $event->rules['llmify'] = 'llmify/globals/redirect';
                 $event->rules['llmify/globals'] = 'llmify/globals/index';
                 $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
                 $event->rules['llmify/content'] = 'llmify/content/index';
-                $event->rules['llmify/content/edit-section/<sectionId:\d+>'] = 'llmify/content/edit-section';
+                $event->rules['llmify/content/<sectionId:\d+>'] = 'llmify/content/edit-section';
                 $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
             }
         );

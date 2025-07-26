@@ -34,6 +34,10 @@ class ContentSettings extends Model
      * @var int Section ID of the content setting
      */
     public int $sectionId;
+    /**
+     * @var int Site ID of the content setting
+     */
+    public int $siteId;
 
 
     public function defineRules(): array

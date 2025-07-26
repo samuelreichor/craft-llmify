@@ -67,7 +67,6 @@ class Install extends Migration
                     'content' => $this->json(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
-                    'PRIMARY KEY([[entryId]])',
                 ]
             );
         }
@@ -79,6 +78,7 @@ class Install extends Migration
             Constants::TABLE_META,
                 [
                     'id' => $this->primaryKey(),
+                    'siteId' => $this->integer(),
                     'sectionId' => $this->integer(),
                     'llmTitleSource' => $this->string(),
                     'llmTitle' => $this->string(),
@@ -90,6 +90,23 @@ class Install extends Migration
             );
         }
 
+        $tableMeta = Craft::$app->db->schema->getTableSchema(Constants::TABLE_GLOBALS);
+        if ($tableMeta === null) {
+            $tablesCreated = true;
+            $this->createTable(
+                Constants::TABLE_GLOBALS,
+                [
+                    'siteId' => $this->integer()->notNull(),
+                    'enabled' => $this->boolean()->notNull(),
+                    'llmTitle' => $this->string(),
+                    'llmDescription' => $this->string(),
+                    'dateCreated' => $this->dateTime()->notNull(),
+                    'dateUpdated' => $this->dateTime()->notNull(),
+                    'PRIMARY KEY([[siteId]])',
+                ]
+            );
+        }
+
         return $tablesCreated;
     }
 
@@ -97,6 +114,7 @@ class Install extends Migration
     {
         $this->dropTableIfExists(Constants::TABLE_PAGES);
         $this->dropTableIfExists(Constants::TABLE_META);
+        $this->dropTableIfExists(Constants::TABLE_GLOBALS);
     }
 
     protected function addForeignKeys(): void
@@ -126,6 +144,16 @@ class Install extends Migration
             Constants::TABLE_PAGES,
             'metadataId',
             Constants::TABLE_META,
+            'id',
+            'CASCADE',
+            null
+        );
+
+        $this->addForeignKey(
+            $this->db->getForeignKeyName(),
+            Constants::TABLE_GLOBALS,
+            'siteId',
+            '{{%sites}}',
             'id',
             'CASCADE',
             null

@@ -4,7 +4,11 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
+use craft\fields\PlainText;
+use craft\models\EntryType;
+use craft\models\Section;
 
 class HelperService extends Component
 {
@@ -27,5 +31,87 @@ class HelperService extends Component
         }
 
         return $site->id;
+    }
+
+    public function getTextFieldsForSection(Section $section): array
+    {
+        $textFields = $this->getCommonTextFieldsForEntryTypes($section->getEntryTypes());
+        return array_merge(
+            [
+                [
+                    'label' => 'Custom Text',
+                    'value' => 'custom',
+                ],
+                [
+                    'label' => '--- Fields ---',
+                    'disabled' => true
+                ],
+                [
+                    'label' => 'Title',
+                    'value' => 'title',
+                ]
+            ],
+            $textFields
+        );
+    }
+
+    public function getTextFieldsForEntry(Entry $entry): array
+    {
+        $textFields = $this->getCommonTextFieldsForEntryTypes([$entry->type]);
+
+        return array_merge(
+            [
+                [
+                    'label' => 'Custom Text',
+                    'value' => 'custom',
+                ],
+                [
+                    'label' => '--- Fields ---',
+                    'disabled' => true
+                ],
+                [
+                    'label' => 'Title',
+                    'value' => 'title',
+                ]
+            ],
+            $textFields
+        );
+    }
+
+    /**
+     * @param EntryType[] $entryTypes
+     * @return array
+     */
+    private function getCommonTextFieldsForEntryTypes(array $entryTypes): array
+    {
+        if (empty($entryTypes)) {
+            return [];
+        }
+
+        $allFieldHandles = [];
+        foreach ($entryTypes as $entryType) {
+            $fields = $entryType->getCustomFields();
+            $textFields = array_filter($fields, function ($field) {
+                return $field instanceof PlainText;
+            });
+            $allFieldHandles[] = array_map(function ($field) {
+                return $field->handle;
+            }, $textFields);
+        }
+
+        $commonFieldHandles = array_intersect(...$allFieldHandles);
+        $commonTextFields = [];
+
+        foreach ($commonFieldHandles as $handle) {
+            $field = Craft::$app->fields->getFieldByHandle($handle);
+            if ($field) {
+                $commonTextFields[] = [
+                    'label' => $field->name,
+                    'value' => $field->handle,
+                ];
+            }
+        }
+
+        return $commonTextFields;
     }
 }

@@ -5,7 +5,9 @@ namespace samuelreichor\llmify\fields;
 use Craft;
 use craft\base\ElementInterface;
 use craft\base\Field;
+use craft\elements\Entry;
 use craft\helpers\Json;
+use samuelreichor\llmify\Llmify;
 use yii\db\Schema;
 
 class LlmifySettingsField extends Field
@@ -36,13 +38,16 @@ class LlmifySettingsField extends Field
     public function getInputHtml(mixed $value, ?ElementInterface $element = null): string
     {
         $view = Craft::$app->getView();
-        $id = $view->formatInputId($this->handle);
-        $namespacedId = $view->namespaceInputId($id);
+        $textFieldOptions = [];
+
+        if (get_class($element) === Entry::class) {
+            $textFieldOptions = Llmify::getInstance()->helper->getTextFieldsForEntry($element);
+        }
 
         return $view->renderTemplate('llmify/fields/llmify-settings-field/input', [
-            'id' => $id,
             'name' => $this->handle,
             'value' => $value,
+            'textFieldOptions' => $textFieldOptions,
             'field' => $this,
         ]);
     }

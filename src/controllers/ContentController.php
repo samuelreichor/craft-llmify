@@ -39,19 +39,20 @@ class ContentController extends Controller
     public function actionEditSection(int $sectionId): Response
     {
         $section = Craft::$app->entries->getSectionById($sectionId);
-        $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $contentSettings = Llmify::getInstance()->settings;
+        $helperService = Llmify::getInstance()->helper;
+        $currentSiteId = $helperService->getCurrentCpSiteId();
 
         $sectionSettings = $contentSettings->getContentSettingBySectionIdSiteId($sectionId, $currentSiteId);
         if (!$sectionSettings) {
             $sectionSettings = new ContentSettings();
         }
 
-        $commonTextFields = $this->getFieldsForSection($section);
+        $textFieldOptions = $helperService->getTextFieldsForSection($section);
 
         return $this->renderTemplate('llmify/settings/content/edit', [
             'section' => $section,
-            'textFields' => $commonTextFields,
+            'textFieldOptions' => $textFieldOptions,
             'settings' => $sectionSettings,
             'siteId' => $currentSiteId,
         ]);
@@ -95,43 +96,5 @@ class ContentController extends Controller
 
         $this->setSuccessFlash(Craft::t('app', 'Content Setting saved.'));
         return $this->redirectToPostedUrl();
-    }
-
-    public function getFieldsForSection(Section $section): array
-    {
-        $entryTypes = $section->getEntryTypes();
-        $commonTextFields = [
-            [
-                'label' => 'Title',
-                'value' => 'title',
-            ]
-        ];
-
-        if (!empty($entryTypes)) {
-            $allFields = [];
-            foreach ($entryTypes as $entryType) {
-                $fields = $entryType->getCustomFields();
-                $textFields = array_filter($fields, function ($field) {
-                    return $field instanceof PlainText;
-                });
-                $allFields[] = array_map(function ($field) {
-                    return $field->handle;
-                }, $textFields);
-            }
-
-            if (!empty($allFields)) {
-                $commonFieldHandles = array_intersect(...$allFields);
-                foreach ($commonFieldHandles as $handle) {
-                    $field = Craft::$app->fields->getFieldByHandle($handle);
-                    if ($field) {
-                        $commonTextFields[] = [
-                            'label' => $field->name,
-                            'value' => $field->handle,
-                        ];
-                    }
-                }
-            }
-        }
-        return $commonTextFields;
     }
 }

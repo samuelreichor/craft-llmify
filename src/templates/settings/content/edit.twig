@@ -38,8 +38,6 @@
     }
 }) %}
 
-{% set textFieldOptions = [{label: 'Custom Text', value: 'custom'}, {label: '--- Fields ---', disabled: true}]|merge(textFields) %}
-
 {% block content %}
     {{ actionInput('llmify/content/save-section-settings') }}
     {{ redirectInput('llmify/content/') }}

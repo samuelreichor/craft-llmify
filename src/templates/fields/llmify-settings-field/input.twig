@@ -1,15 +1,33 @@
 {% import "_includes/forms" as forms %}
 
-{{ forms.textField({
-    label: 'Title',
-    id: name ~ '-title',
-    name: name ~ '[title]',
-    value: value.title ?? ''
+{{ forms.selectField({
+    label: 'Entry Default Title Source',
+    instructions: 'Define a default field source for the LLM title for all entries in this section.',
+    id: name ~ 'llmTitleSource',
+    name: name ~  '[llmTitleSource]',
+    options: textFieldOptions,
+    value: value.llmTitleSource ?? 'custom'
 }) }}
 
 {{ forms.textField({
-    label: 'Description',
-    id: name ~ '-description',
-    name: name ~ '[description]',
-    value: value.description ?? ''
+    label: 'Entry Default Title',
+    id: name ~ 'llmTitle',
+    name: name ~  '[llmTitle]',
+    value: value.llmTitle ?? ''
+}) }}
+
+{{ forms.selectField({
+    label: 'Entry Default Description Source',
+    instructions: 'Define a default field source for the LLM description for all entries in this section.',
+    id: name ~ 'llmDescriptionSource',
+    name: name ~  '[llmDescriptionSource]',
+    options: textFieldOptions,
+    value: value.llmDescriptionSource ?? 'custom'
+}) }}
+
+{{ forms.textField({
+    label: 'Entry Default Description',
+    id: name ~ 'llmDescription',
+    name: name ~  '[llmDescription]',
+    value: value.llmDescription ?? ''
 }) }}

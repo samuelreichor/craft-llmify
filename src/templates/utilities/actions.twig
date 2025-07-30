@@ -1,0 +1,19 @@
+{% import "_includes/forms" as forms %}
+
+<h2>LLMify Actions</h2>
+
+<form class="utility" method="post" accept-charset="UTF-8">
+  {{ actionInput('llmify/markdown/generate') }}
+  {{ redirectInput('utilities/llmify') }}
+  {{ csrfInput() }}
+  <p>Generate Markdown for all Pages</p>
+  <button type="submit" class="btn submit">Generate</button>
+</form>
+
+<form class="utility" method="post" accept-charset="UTF-8">
+  {{ actionInput('llmify/markdown/clear') }}
+  {{ redirectInput('utilities/llmify') }}
+  {{ csrfInput() }}
+  <p>Clear Markdown for all Pages</p>
+  <button type="submit" class="btn submit">Clear Markdown</button>
+</form>

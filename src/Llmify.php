@@ -7,12 +7,13 @@ use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
 use craft\events\ElementEvent;
+use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
-use craft\web\UrlManager;
-use craft\events\RegisterComponentTypesEvent;
 use craft\services\Fields;
+use craft\services\Utilities;
+use craft\web\UrlManager;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\services\HelperService;
@@ -21,8 +22,15 @@ use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\services\MetadataService;
 use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
+use samuelreichor\llmify\utilities\Utils;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use yii\base\Event;
+use yii\base\Exception;
+use yii\base\InvalidRouteException;
 use yii\log\FileTarget;
+use yii\web\Response;
 
 /**
  * llmify plugin
@@ -87,6 +95,12 @@ class Llmify extends Plugin
         return new GlobalSettings();
     }
 
+    /**
+     * @throws SyntaxError
+     * @throws RuntimeError
+     * @throws Exception
+     * @throws LoaderError
+     */
     protected function settingsHtml(): string
     {
         return Craft::$app->view->renderTemplate('llmify/settings/globals/index', [
@@ -94,7 +108,10 @@ class Llmify extends Plugin
         ]);
     }
 
-    public function getSettingsResponse(): mixed
+    /**
+     * @throws InvalidRouteException
+     */
+    public function getSettingsResponse(): Response
     {
         // Just redirect to the plugin settings page
         return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/globals'));
@@ -149,6 +166,9 @@ class Llmify extends Plugin
                 }
             }
         );
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = Utils::class;
+        });
     }
 
     private function registerTwigExtension(): void

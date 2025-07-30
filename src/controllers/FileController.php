@@ -10,9 +10,6 @@ use yii\web\Response;
 
 class FileController extends Controller
 {
-    /**
-     * @throws SiteNotFoundException
-     */
     public function actionGenerateLlmsTxt(): Response
     {
         $fileContent = Llmify::getInstance()->llms->getMarkdown();
@@ -30,6 +27,9 @@ class FileController extends Controller
         return $this->asRaw($fileContent);
     }
 
+    /**
+     * @throws SiteNotFoundException
+     */
     public function actionGeneratePageMd(string $slug): Response
     {
         $uri = preg_replace('/\.md$/', '', $slug);

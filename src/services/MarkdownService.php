@@ -8,11 +8,10 @@ use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use Exception;
 use samuelreichor\llmify\Constants;
-use samuelreichor\llmify\models\Page;
+use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\records\PageRecord;
 use yii\base\InvalidConfigException;
 use craft\db\Query as DbQuery;
-use samuelreichor\llmify\Llmify;
 use League\HTMLToMarkdown\HtmlConverter;
 
 class MarkdownService extends Component
@@ -32,6 +31,7 @@ class MarkdownService extends Component
             $url = $request->getAbsoluteUrl();
         }*/
 
+        Craft::debug('SiteId =' . $siteId, 'llmify');
         $markdown = $this->htmlToMarkdown($html);
         $this->saveMarkdown($markdown, $entryId, $siteId);
     }
@@ -44,7 +44,7 @@ class MarkdownService extends Component
      */
     public function generateForEntry(Entry $entry): void
     {
-        $currentSiteId = Craft::$app->getSites()->getCurrentSite()->id;
+        $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $templatePath = $entry->section->getSiteSettings()[$currentSiteId]->template;
 
         try {
@@ -64,9 +64,10 @@ class MarkdownService extends Component
 
     public function htmlToMarkdown(string $html): string
     {
-        $converter = new HtmlConverter();
-        $converter->getConfig()->setOption('strip_tags', true);
-        $converter->getConfig()->setOption('header_style', 'atx');
+        $converter = new HtmlConverter([
+            'strip_tags' => true,
+            'header_style' => 'atx',
+        ]);
         return $converter->convert($html);
     }
 
@@ -75,14 +76,14 @@ class MarkdownService extends Component
      */
     public function saveMarkdown(string $markdown, int $entryId, int $siteId): void
     {
+
         $entry = Entry::find()->id($entryId)->siteId($siteId)->one();
 
         if (!$entry) {
             throw new Exception('Entry not found, unable to save markdown for page ' . $entryId);
         }
 
-
-        $pageEntry = PageRecord::findOne(['entryId' => $entryId]);
+        $pageEntry = PageRecord::findOne(['entryId' => $entryId, 'siteId' => $siteId]);
         $metaDataService = new MetadataService($entry);
 
         if (!$pageEntry) {
@@ -93,10 +94,13 @@ class MarkdownService extends Component
             $pageEntry->siteId = $entry->getSite()->id;
         }
 
-        $pageEntry->title = $metaDataService->getLlmTitleByEntry();
-        $pageEntry->description = $metaDataService->getLlmDescriptionByEntry();
+        $pageEntry->title = $metaDataService->getLlmTitle();
+        $pageEntry->description = $metaDataService->getLlmDescription();
         $pageEntry->content = $markdown;
-
+        $pageEntry->entryMeta = [
+            "fullUrl" => $entry->getUrl(),
+            "uri" => $entry->uri,
+        ];
         $pageEntry->save();
     }
 

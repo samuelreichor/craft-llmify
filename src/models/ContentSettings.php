@@ -17,7 +17,7 @@ class ContentSettings extends Model
     /**
      * @var string The field handle where the LLM title should come from
      */
-    public string $llmTitleSource = '';
+    public string $llmTitleSource = 'title';
     /**
      * @var string Custom title if anyone wants to overwrite llmTitleSource
      */
@@ -25,7 +25,7 @@ class ContentSettings extends Model
     /**
      * @var string The field handle where the LLM description should come from
      */
-    public string $llmDescriptionSource = '';
+    public string $llmDescriptionSource = 'custom';
     /**
      * @var string Custom description if anyone wants to overwrite llmDescriptionSource
      */

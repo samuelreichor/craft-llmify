@@ -4,10 +4,12 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\base\FieldInterface;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use craft\fields\PlainText;
 use craft\models\EntryType;
+use craft\models\FieldLayout;
 use craft\models\Section;
 
 class HelperService extends Component
@@ -113,5 +115,23 @@ class HelperService extends Component
         }
 
         return $commonTextFields;
+    }
+
+    public function getFieldOfTypeFromEntry(Entry $entry, string $fieldClass): ?FieldInterface
+    {
+        $layout = $entry->getFieldLayout();
+
+        if (!$layout) {
+            return null;
+        }
+
+        $fields = $layout->getCustomFields();
+        foreach ($fields as $field) {
+            if ($field instanceof $fieldClass) {
+                return $field;
+            }
+        }
+
+        return null;
     }
 }

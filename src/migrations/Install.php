@@ -58,9 +58,11 @@ class Install extends Migration
             $this->createTable(
                 Constants::TABLE_PAGES,
                 [
+                    'id' => $this->primaryKey(),
                     'entryId' => $this->integer()->notNull(),
                     'siteId' => $this->integer(),
                     'sectionId' => $this->integer(),
+                    'entryMeta' => $this->json(),
                     'metadataId' => $this->integer(),
                     'title' => $this->string(),
                     'description' => $this->string(),

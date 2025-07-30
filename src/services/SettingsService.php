@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\elements\Entry;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
@@ -14,6 +15,8 @@ use craft\db\Query as DbQuery;
 
 class SettingsService extends Component
 {
+    private array $contentSettings = [];
+    private array $globalSettings = [];
     /**
      * @throws Exception
      */
@@ -29,7 +32,10 @@ class SettingsService extends Component
         if ($isNewsSetting) {
             $contentRecord = new ContentSettingRecord();
         } else {
-            $contentRecord = ContentSettingRecord::findOne($contentSettings->id) ?: new ContentSettingRecord();
+            $contentRecord = ContentSettingRecord::findOne($contentSettings->id);
+            if (!$contentRecord) {
+                $contentRecord = new ContentSettingRecord();
+            }
         }
 
         $contentRecord->siteId = $contentSettings->siteId;
@@ -40,6 +46,10 @@ class SettingsService extends Component
         $contentRecord->sectionId = $contentSettings->sectionId;
 
         $contentRecord->save();
+
+        if ($isNewsSetting) {
+            $contentSettings->id = $contentRecord->id;
+        }
         return true;
     }
 
@@ -50,6 +60,32 @@ class SettingsService extends Component
             ->one();
 
         return $result ? new ContentSettings($result) : null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getAndSetContentSettings(Entry $entry): ContentSettings
+    {
+        $sectionId = $entry->section->id;
+        $siteId = $entry->site->id;
+        $cacheKey = $sectionId . '-' . $siteId;
+
+        if (isset($this->contentSettings[$cacheKey])) {
+            return $this->contentSettings[$cacheKey];
+        }
+
+        $settings = $this->getContentSettingBySectionIdSiteId($sectionId, $siteId);
+
+        if (!$settings) {
+            $settings = new ContentSettings();
+            $settings->sectionId = $sectionId;
+            $settings->siteId = $siteId;
+            $this->saveContentSettings($settings);
+        }
+
+        $this->contentSettings[$cacheKey] = $settings;
+        return $settings;
     }
 
     /**
@@ -84,6 +120,27 @@ class SettingsService extends Component
             ->one();
 
         return $result ? new GlobalSettings($result) : null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getAndSetGlobalSettings(int $siteId): GlobalSettings
+    {
+        if (isset($this->globalSettings[$siteId])) {
+            return $this->globalSettings[$siteId];
+        }
+
+        $settings = $this->getGlobalSettingsBySiteId($siteId);
+
+        if (!$settings) {
+            $settings = new GlobalSettings();
+            $settings->siteId = $siteId;
+            $this->saveGlobalSettings($settings);
+        }
+
+        $this->globalSettings[$siteId] = $settings;
+        return $settings;
     }
 
     private function _createContentMetaQuery(): DbQuery

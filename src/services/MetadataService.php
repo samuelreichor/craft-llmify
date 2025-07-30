@@ -2,38 +2,120 @@
 
 namespace samuelreichor\llmify\services;
 
+use Craft;
 use craft\base\Component;
+use craft\base\FieldInterface;
 use craft\elements\Entry;
+use craft\errors\InvalidFieldException;
+use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
+use yii\db\Exception;
 
 class MetadataService extends Component
 {
-    public ContentSettings $metaContent;
-    public function __construct($entry)
+    public ?ContentSettings $metaContent;
+    public Entry $entry;
+    public ?FieldInterface $entrySettingsField;
+
+    /**
+     * @throws Exception
+     */
+    public function __construct(Entry $entry)
     {
         parent::__construct();
+        $this->entry = $entry;
+        $this->metaContent = Llmify::getInstance()->settings->getAndSetContentSettings($entry);
 
-        $sectionId = $entry->section->id;
-        $this->metaContent = Llmify::getInstance()->settings->getContentSettingBySectionId($sectionId);
+        $helper = Llmify::getInstance()->helper;
+        $this->entrySettingsField = $helper->getFieldOfTypeFromEntry($this->entry, LlmifySettingsField::class);
     }
 
-    public function getLlmTitleByEntry(): string
+    public function getContentTitle(): string
     {
-        // get the llm settings of the entry
-        // return llm settings title ?? section title
         return $this->metaContent->llmTitle;
     }
 
-    public function getLlmDescriptionByEntry(): string
+    public function getContentTitleSource(): string
     {
-        // get the llm settings of the entry
-        // return llm settings description ?? section description
+        return $this->metaContent->llmTitleSource;
+    }
+
+    public function getContentDescription(): string
+    {
         return $this->metaContent->llmDescription;
     }
 
-    public function getMetaContentId(): string
+    public function getContentDescriptionSource(): string
+    {
+        Craft::debug($this->metaContent->llmDescriptionSource . ' entryId: ' . $this->entry->id . ', siteId: ' . $this->entry->site->id . ', metadataId: ' . $this->metaContent->id, 'llmify');
+        return $this->metaContent->llmDescriptionSource;
+    }
+
+    public function getMetaContentId(): int
     {
         return $this->metaContent->id;
+    }
+
+    /**
+     * @throws InvalidFieldException
+     */
+    public function getLlmTitle(): string
+    {
+        $sourceHandle = null;
+        $customValue = null;
+
+        if ($this->entrySettingsField) {
+            $fieldData = $this->entry->getFieldValue($this->entrySettingsField->handle);
+            $sourceHandle = $fieldData['llmTitleSource'] ?? null;
+            $customValue = $fieldData['llmTitle'] ?? null;
+        }
+
+        if ($sourceHandle === null) {
+            $sourceHandle = $this->getContentTitleSource();
+            $customValue = $this->getContentTitle();
+        }
+
+        if ($sourceHandle === 'custom') {
+            return $customValue ?? '';
+        }
+
+        if ($sourceHandle) {
+            $value = $this->entry[$sourceHandle];
+            return (string) $value;
+        }
+
+        return $this->entry->title ?? '';
+    }
+
+    /**
+     * @throws InvalidFieldException
+     */
+    public function getLlmDescription(): string
+    {
+        $sourceHandle = null;
+        $customValue = null;
+
+        if ($this->entrySettingsField) {
+            $fieldData = $this->entry->getFieldValue($this->entrySettingsField->handle);
+            $sourceHandle = $fieldData['llmDescriptionSource'] ?? null;
+            $customValue = $fieldData['llmDescription'] ?? null;
+        }
+
+        if ($sourceHandle === null) {
+            $sourceHandle = $this->getContentDescriptionSource();
+            $customValue = $this->getContentDescription();
+        }
+
+        if ($sourceHandle === 'custom') {
+            return $customValue ?? '';
+        }
+
+        if ($sourceHandle) {
+            $value = $this->entry[$sourceHandle];
+            return (string) $value;
+        }
+
+        return '';
     }
 }

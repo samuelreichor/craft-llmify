@@ -15,6 +15,7 @@ use samuelreichor\llmify\Constants;
  * @property string $content
  * @property string $title
  * @property string $description
+ * @property array $entryMeta
  */
 class PageRecord extends ActiveRecord
 {

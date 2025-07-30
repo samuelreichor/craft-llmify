@@ -6,14 +6,14 @@
     id: name ~ 'llmTitleSource',
     name: name ~  '[llmTitleSource]',
     options: textFieldOptions,
-    value: value.llmTitleSource ?? 'custom'
+    value: value.llmTitleSource ?? defaultValues.llmTitleSource
 }) }}
 
 {{ forms.textField({
     label: 'Entry Default Title',
     id: name ~ 'llmTitle',
     name: name ~  '[llmTitle]',
-    value: value.llmTitle ?? ''
+    value: value.llmTitle ?? '',
 }) }}
 
 {{ forms.selectField({
@@ -22,12 +22,12 @@
     id: name ~ 'llmDescriptionSource',
     name: name ~  '[llmDescriptionSource]',
     options: textFieldOptions,
-    value: value.llmDescriptionSource ?? 'custom'
+    value: value.llmDescriptionSource ?? defaultValues.llmDescriptionSource
 }) }}
 
 {{ forms.textField({
     label: 'Entry Default Description',
     id: name ~ 'llmDescription',
     name: name ~  '[llmDescription]',
-    value: value.llmDescription ?? ''
+    value: value.llmDescription ?? '',
 }) }}

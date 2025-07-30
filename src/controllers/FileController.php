@@ -6,21 +6,26 @@ use Craft;
 use craft\errors\SiteNotFoundException;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
+use yii\base\Exception;
 use yii\web\Response;
 
 class FileController extends Controller
 {
     public function actionGenerateLlmsTxt(): Response
     {
-        $fileContent = Llmify::getInstance()->llms->getMarkdown();
+        $fileContent = Llmify::getInstance()->llms->getLlmsTxtContent();
 
         Craft::$app->response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
 
         return $this->asRaw($fileContent);
     }
+
+    /**
+     * @throws Exception
+     */
     public function actionGenerateLlmsFullTxt(): Response
     {
-        $fileContent = "Generiert am: " . date('Y-m-d H:i:s');
+        $fileContent = Llmify::getInstance()->llms->getLlmsFullContent();
 
         Craft::$app->response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
 

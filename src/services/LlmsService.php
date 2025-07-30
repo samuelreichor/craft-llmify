@@ -28,7 +28,27 @@ class LlmsService extends Component
         $this->globalSettings = Llmify::getInstance()->settings->getAndSetGlobalSettings($this->currentSiteId);
     }
 
-    public function getMarkdown(): string
+    /**
+     * @throws \yii\base\Exception
+     */
+    public function getLlmsTxtContent(): string
+    {
+        $markdown = $this->getMarkdownIntro();
+        $markdown .= $this->constructAllUrls();
+
+        return $markdown;
+    }
+
+
+    public function getLlmsFullContent(): string
+    {
+        $markdown = $this->getMarkdownIntro();
+        $markdown .= $this->constructAllPages();
+
+        return $markdown;
+    }
+
+    public function getMarkdownIntro(): string
     {
         $markdown = '';
         $llmTitle = $this->globalSettings->llmTitle;
@@ -41,9 +61,6 @@ class LlmsService extends Component
         if ($llmDescription) {
             $markdown .= "{$llmDescription}\n\n";
         }
-
-        $markdown .= $this->constructAllUrls();
-
         return $markdown;
     }
 
@@ -81,6 +98,20 @@ class LlmsService extends Component
             $entryUri = $page->entryMeta['uri'];
             $markdownUrl = "{$currentSiteUrl}raw/{$entryUri}.md";
             $content .= "[{$page->title}]({$markdownUrl}): {$page->description}.\n";
+        }
+
+        return $content;
+    }
+
+    private function constructAllPages(): string
+    {
+        $content = '';
+        $pages = PageRecord::find()->where(['siteId' => $this->currentSiteId])->orderBy('sectionId')->all();
+        foreach ($pages as $page) {
+            /**
+             * @var Page $page
+             */
+            $content .= "{$page->content}\n\n";
         }
 
         return $content;

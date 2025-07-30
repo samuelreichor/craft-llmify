@@ -68,7 +68,9 @@ class MarkdownService extends Component
             'strip_tags' => true,
             'header_style' => 'atx',
         ]);
-        return $converter->convert($html);
+
+        $markdownRaw = $converter->convert($html);
+        return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);
     }
 
     /**
@@ -102,29 +104,5 @@ class MarkdownService extends Component
             "uri" => $entry->uri,
         ];
         $pageEntry->save();
-    }
-
-    public function getPageForEntryId(int $entryId): ?PageRecord
-    {
-        $result = $this->_createPageQuery()
-            ->where(['entryId' => $entryId])
-            ->one();
-
-        return $result ? new PageRecord($result) : null;
-    }
-
-    private function _createPageQuery(): DbQuery
-    {
-        return (new DbQuery())
-            ->select([
-                'entryId',
-                'sectionId',
-                'metadataId',
-                'siteId',
-                'title',
-                'description',
-                'content',
-            ])
-            ->from([Constants::TABLE_PAGES]);
     }
 }

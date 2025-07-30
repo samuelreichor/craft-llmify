@@ -16,7 +16,6 @@ use craft\services\Fields;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\services\HelperService;
-use samuelreichor\llmify\services\LlmsFullService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\services\MetadataService;
@@ -35,7 +34,6 @@ use yii\log\FileTarget;
  *
  * @property-read MarkdownService $markdown
  * @property-read LlmsService $llms
- * @property-read LlmsFullService $llmsFull
  * @property-read SettingsService $settings
  * @property-read MetadataService $metadata
  * @property-read HelperService $helper
@@ -52,7 +50,6 @@ class Llmify extends Plugin
             'components' => [
                 'markdown' => MarkdownService::class,
                 'llms' => LlmsService::class,
-                'llmsFull' => LlmsFullService::class,
                 'settings' => SettingsService::class,
                 'metadata' => MetadataService::class,
                 'helper' => HelperService::class,

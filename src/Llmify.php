@@ -7,6 +7,7 @@ use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
 use craft\events\ElementEvent;
+use craft\events\MultiElementActionEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\helpers\UrlHelper;
@@ -20,6 +21,7 @@ use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\services\MetadataService;
+use samuelreichor\llmify\services\RefreshService;
 use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
@@ -45,6 +47,7 @@ use yii\web\Response;
  * @property-read SettingsService $settings
  * @property-read MetadataService $metadata
  * @property-read HelperService $helper
+ * @property-read RefreshService $refresh
  */
 class Llmify extends Plugin
 {
@@ -61,6 +64,7 @@ class Llmify extends Plugin
                 'settings' => SettingsService::class,
                 'metadata' => MetadataService::class,
                 'helper' => HelperService::class,
+                'refresh' => RefreshService::class,
             ],
         ];
     }
@@ -166,6 +170,23 @@ class Llmify extends Plugin
                 }
             }
         );
+
+        $events = [
+            Elements::EVENT_AFTER_SAVE_ELEMENT,
+            Elements::EVENT_AFTER_RESAVE_ELEMENT,
+            Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI,
+            Elements::EVENT_AFTER_DELETE_ELEMENT,
+            Elements::EVENT_AFTER_RESTORE_ELEMENT,
+        ];
+
+        foreach ($events as $event) {
+            Event::on(Elements::class, $event,
+                function(ElementEvent|MultiElementActionEvent $event) {
+                    $this->refresh->addElement($event->element);
+                }
+            );
+        }
+
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;
         });

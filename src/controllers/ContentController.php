@@ -4,8 +4,6 @@ namespace samuelreichor\llmify\controllers;
 
 use Craft;
 use craft\errors\SiteNotFoundException;
-use craft\fields\PlainText;
-use craft\models\Section;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
@@ -83,6 +81,7 @@ class ContentController extends Controller
             $content->siteId = $siteId;
         }
 
+        $content->enabled = $this->request->getBodyParam('enabled');
         $content->llmTitleSource = $this->request->getBodyParam('llmTitleSource');
         $content->llmTitle = $this->request->getBodyParam('llmTitle');
         $content->llmDescription = $this->request->getBodyParam('llmDescription');

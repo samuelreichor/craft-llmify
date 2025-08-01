@@ -80,8 +80,10 @@ class Install extends Migration
             Constants::TABLE_META,
                 [
                     'id' => $this->primaryKey(),
+                    'enabled' => $this->boolean()->notNull(),
                     'siteId' => $this->integer(),
                     'sectionId' => $this->integer(),
+                    'entryTypeId' => $this->integer(),
                     'llmTitleSource' => $this->string(),
                     'llmTitle' => $this->string(),
                     'llmDescriptionSource' => $this->string(),

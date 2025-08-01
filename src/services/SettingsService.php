@@ -38,6 +38,7 @@ class SettingsService extends Component
             }
         }
 
+        $contentRecord->enabled = $contentSettings->enabled;
         $contentRecord->siteId = $contentSettings->siteId;
         $contentRecord->llmTitleSource = $contentSettings->llmTitleSource;
         $contentRecord->llmTitle = $contentSettings->llmTitle;
@@ -143,11 +144,21 @@ class SettingsService extends Component
         return $settings;
     }
 
+    public function getEnabledSectionsForSiteId(int $siteId): array
+    {
+        return (new DbQuery())
+            ->select(['sectionId'])
+            ->from([Constants::TABLE_META])
+            ->where(['siteId' => $siteId])
+            ->all();
+    }
+
     private function _createContentMetaQuery(): DbQuery
     {
         return (new DbQuery())
             ->select([
                 'id',
+                'enabled',
                 'llmTitleSource',
                 'llmTitle',
                 'llmDescriptionSource',

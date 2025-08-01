@@ -35,10 +35,17 @@ class ContentSettings extends Model
      */
     public int $sectionId;
     /**
+     * @var int Entry type ID of the content setting
+     */
+    public int $entryTypeId;
+    /**
      * @var int Site ID of the content setting
      */
     public int $siteId;
-
+    /**
+     * @var bool If section is enabled
+     */
+    public bool $enabled = true;
 
     public function defineRules(): array
     {

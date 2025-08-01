@@ -46,6 +46,14 @@
     {{ hiddenInput('sectionId', section.id) }}
     {{ hiddenInput('siteId', siteId) }}
 
+    {{ forms.lightswitchField({
+        label: 'Enable for Section',
+        instructions: 'Todo: Add some good instructions',
+        id: 'enabled',
+        name: 'enabled',
+        on: settings.enabled,
+    }) }}
+
     {{ forms.selectField({
         label: 'Entry Default Title Source',
         instructions: 'Define a default field source for the LLM title for all entries in this section.',

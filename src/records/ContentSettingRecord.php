@@ -15,7 +15,9 @@ use samuelreichor\llmify\models\ContentSettings;
  * @property string $llmDescriptionSource
  * @property string $llmDescription
  * @property int $sectionId
+ * @property int $entryTypeId
  * @property int $siteId
+ * @property bool $enabled
  */
 class ContentSettingRecord extends ActiveRecord
 {

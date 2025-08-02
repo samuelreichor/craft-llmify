@@ -11,7 +11,7 @@ use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\helpers\ElementHelper;
 use craft\db\Query as DbQuery;
-use samuelreichor\llmify\Constants;
+use samuelreichor\llmify\jobs\RefreshMarkdown;
 use samuelreichor\llmify\Llmify;
 use yii\db\Exception;
 
@@ -26,11 +26,34 @@ class RefreshService extends Component
             return;
         }
 
-        // check if element has changed
-        // check what else may have changes (other entries)
-        // push those elements to the queue to generate markdowns
+        $entriesToRefresh = [];
 
-        dd('add to queue');
+        if ($element instanceof Entry) {
+            $entriesToRefresh[] = $element->id;
+        }
+
+        $relatedEntryIds = $this->_findRelatedEntries($element);
+        $entriesToRefresh = array_merge($entriesToRefresh, $relatedEntryIds);
+
+        if ($element instanceof GlobalSet) {
+            $allEntries = $this->_findAllRefreshableEntries();
+            $entriesToRefresh = array_merge($entriesToRefresh, $allEntries);
+        }
+
+        $uniqueEntries = [];
+        $processedIds = [];
+        foreach ($entriesToRefresh as $entry) {
+            if (!in_array($entry->id, $processedIds, true)) {
+                $uniqueEntries[] = $entry;
+                $processedIds[] = $entry->id;
+            }
+        }
+
+        foreach ($uniqueEntries as $entry) {
+            Craft::$app->getQueue()->push(new RefreshMarkdown([
+                'entryId' => $entry->id,
+            ]));
+        }
     }
 
     public function refreshAll(): void
@@ -75,14 +98,44 @@ class RefreshService extends Component
     {
         $settingsService = Llmify::getInstance()->settings;
 
-        $globalSettings = $settingsService->getAndSetGlobalSettings($entry->siteId);
+        $globalSettings = $settingsService->getGlobalSetting($entry->siteId);
 
         $result = false;
         if ($globalSettings->enabled) {
-            $contentSettings = $settingsService->getAndSetContentSettings($entry);
+            $contentSettings = $settingsService->getContentSetting($entry->section->id, $entry->site->id);
             $result = $contentSettings->enabled;
         }
 
         return $result;
+    }
+
+    private function _findRelatedEntries(ElementInterface $element): array
+    {
+        if (!$element->id) {
+            return [];
+        }
+
+        return Entry::find()
+            ->relatedTo($element)
+            ->siteId($element->siteId)
+            ->ids();
+    }
+
+    private function _findAllRefreshableEntries(): array
+    {
+        $settingsService = Llmify::getInstance()->settings;
+        $contentSettings = $settingsService->getAndSetAllContentSettings();
+
+        $sectionIds = array_keys(array_filter($contentSettings, function ($setting) {
+            return $setting->enabled;
+        }));
+
+        if (empty($sectionIds)) {
+            return [];
+        }
+
+        return Entry::find()
+            ->sectionId($sectionIds)
+            ->all();
     }
 }

@@ -41,7 +41,7 @@ class ContentController extends Controller
         $helperService = Llmify::getInstance()->helper;
         $currentSiteId = $helperService->getCurrentCpSiteId();
 
-        $sectionSettings = $contentSettings->getContentSettingBySectionIdSiteId($sectionId, $currentSiteId);
+        $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId);
         if (!$sectionSettings) {
             $sectionSettings = new ContentSettings();
         }
@@ -71,7 +71,7 @@ class ContentController extends Controller
         $siteId =  $this->request->getBodyParam('siteId');
 
         if ($contentId) {
-            $content = $settingService->getContentSettingBySectionIdSiteId($sectionId, $siteId);
+            $content = $settingService->getContentSetting($sectionId, $siteId);
 
             if (!$content) {
                 throw new NotFoundHttpException('Content not found');

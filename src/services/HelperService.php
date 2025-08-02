@@ -15,6 +15,20 @@ use craft\models\Section;
 class HelperService extends Component
 {
 
+    private const textFieldOptionBase = [
+        [
+            'label' => 'Custom Text',
+            'value' => 'custom',
+        ],
+        [
+            'label' => '--- Fields ---',
+            'disabled' => true
+        ],
+        [
+            'label' => 'Title',
+            'value' => 'title',
+        ]
+    ];
     /**
      * @throws SiteNotFoundException
      */
@@ -39,20 +53,7 @@ class HelperService extends Component
     {
         $textFields = $this->getCommonTextFieldsForEntryTypes($section->getEntryTypes());
         return array_merge(
-            [
-                [
-                    'label' => 'Custom Text',
-                    'value' => 'custom',
-                ],
-                [
-                    'label' => '--- Fields ---',
-                    'disabled' => true
-                ],
-                [
-                    'label' => 'Title',
-                    'value' => 'title',
-                ]
-            ],
+            self::textFieldOptionBase,
             $textFields
         );
     }
@@ -62,20 +63,7 @@ class HelperService extends Component
         $textFields = $this->getCommonTextFieldsForEntryTypes([$entry->type]);
 
         return array_merge(
-            [
-                [
-                    'label' => 'Custom Text',
-                    'value' => 'custom',
-                ],
-                [
-                    'label' => '--- Fields ---',
-                    'disabled' => true
-                ],
-                [
-                    'label' => 'Title',
-                    'value' => 'title',
-                ]
-            ],
+            self::textFieldOptionBase,
             $textFields
         );
     }

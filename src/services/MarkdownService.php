@@ -22,15 +22,6 @@ class MarkdownService extends Component
      */
     public function process(string $html, int $entryId = null, int $siteId = null): void
     {
-/*        if ($url === null) {
-            $request = Craft::$app->getRequest();
-            if ($request->getIsCpRequest() || $request->getIsConsoleRequest()) {
-                Craft::error('The page didn`t process because no url was provided.' . $request->getUrl(), 'llmify');
-                return;
-            }
-            $url = $request->getAbsoluteUrl();
-        }*/
-
         Craft::debug('SiteId =' . $siteId, 'llmify');
         $markdown = $this->htmlToMarkdown($html);
         $this->saveMarkdown($markdown, $entryId, $siteId);

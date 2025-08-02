@@ -16,6 +16,7 @@ use craft\db\Query as DbQuery;
 class SettingsService extends Component
 {
     private array $contentSettings = [];
+    private array $allContentSettings = [];
     private array $globalSettings = [];
     /**
      * @throws Exception
@@ -54,29 +55,22 @@ class SettingsService extends Component
         return true;
     }
 
-    public function getContentSettingBySectionIdSiteId(int $sectionId, int $siteId): ?ContentSettings
-    {
-        $result = $this->_createContentMetaQuery()
-            ->where(['sectionId' => $sectionId, 'siteId' => $siteId])
-            ->one();
-
-        return $result ? new ContentSettings($result) : null;
-    }
-
     /**
      * @throws Exception
      */
-    public function getAndSetContentSettings(Entry $entry): ContentSettings
+    public function getContentSetting(int $sectionId, int $siteId): ContentSettings
     {
-        $sectionId = $entry->section->id;
-        $siteId = $entry->site->id;
-        $cacheKey = $sectionId . '-' . $siteId;
+        $cacheKey = $this->createContentCacheKey($sectionId, $siteId);
 
         if (isset($this->contentSettings[$cacheKey])) {
             return $this->contentSettings[$cacheKey];
         }
 
-        $settings = $this->getContentSettingBySectionIdSiteId($sectionId, $siteId);
+        $result = $this->_createContentMetaQuery()
+            ->where(['sectionId' => $sectionId, 'siteId' => $siteId])
+            ->one();
+
+        $settings = $result ? new ContentSettings($result) : null;
 
         if (!$settings) {
             $settings = new ContentSettings();
@@ -87,6 +81,60 @@ class SettingsService extends Component
 
         $this->contentSettings[$cacheKey] = $settings;
         return $settings;
+    }
+
+    public function getAllContentSettings(int $siteId): array
+    {
+        if (isset($this->allContentSettings[$siteId])) {
+            return $this->allContentSettings[$siteId];
+        }
+
+        $results = $this->_createContentMetaQuery()
+            ->where(['siteId' => $siteId])
+            ->all();
+
+        foreach ($results as $result) {
+            $settings = new ContentSettings($result);
+            $this->allContentSettings[$siteId][] = $settings;
+
+            $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
+            $this->contentSettings[$cacheKey] = $settings;
+        }
+
+        return $this->allContentSettings[$siteId];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function setContentSetting($sectionId, $siteId): void
+    {
+        $this->getContentSetting($sectionId, $siteId);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function delContentSetting(int $sectionId, int $siteId): void
+    {
+        Craft::$app->db->createCommand()
+            ->delete(Constants::TABLE_META, ['sectionId' => $sectionId, 'siteId' => $siteId])
+            ->execute();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function setAllContentSettings(): void
+    {
+        $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
+        $allSectionIds = Craft::$app->entries->getAllSectionIds();
+
+        foreach ($allSiteIds as $siteId) {
+            foreach ($allSectionIds as $sectionId) {
+                $this->setContentSetting($sectionId, $siteId);
+            }
+        }
     }
 
     /**
@@ -114,25 +162,20 @@ class SettingsService extends Component
         return true;
     }
 
-    public function getGlobalSettingsBySiteId(int $siteId): ?GlobalSettings
-    {
-        $result = $this->_createGlobalSettingsQuery()
-            ->where(['siteId' => $siteId])
-            ->one();
-
-        return $result ? new GlobalSettings($result) : null;
-    }
-
     /**
      * @throws Exception
      */
-    public function getAndSetGlobalSettings(int $siteId): GlobalSettings
+    public function getGlobalSetting(int $siteId): GlobalSettings
     {
         if (isset($this->globalSettings[$siteId])) {
             return $this->globalSettings[$siteId];
         }
 
-        $settings = $this->getGlobalSettingsBySiteId($siteId);
+        $result = $this->_createGlobalSettingsQuery()
+            ->where(['siteId' => $siteId])
+            ->one();
+
+        $settings = $result ? new GlobalSettings($result) : null;
 
         if (!$settings) {
             $settings = new GlobalSettings();
@@ -144,13 +187,33 @@ class SettingsService extends Component
         return $settings;
     }
 
-    public function getEnabledSectionsForSiteId(int $siteId): array
+    /**
+     * @throws Exception
+     */
+    public function setGlobalSetting($siteId): void
     {
-        return (new DbQuery())
-            ->select(['sectionId'])
-            ->from([Constants::TABLE_META])
-            ->where(['siteId' => $siteId])
-            ->all();
+        $this->getGlobalSetting($siteId);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function delGlobalSetting(int $siteId): void
+    {
+        Craft::$app->db->createCommand()
+            ->delete(Constants::TABLE_GLOBALS, ['siteId' => $siteId])
+            ->execute();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function setAllGlobalSettings(): void
+    {
+        $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
+        foreach ($allSiteIds as $siteId) {
+            $this->setGlobalSetting($siteId);
+        }
     }
 
     private function _createContentMetaQuery(): DbQuery
@@ -179,5 +242,10 @@ class SettingsService extends Component
                 'enabled',
             ])
             ->from([Constants::TABLE_GLOBALS]);
+    }
+
+    private function createContentCacheKey(string $sectionId, string $siteId): string
+    {
+        return  $sectionId . '-' . $siteId;
     }
 }

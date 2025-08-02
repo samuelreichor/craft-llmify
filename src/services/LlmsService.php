@@ -25,7 +25,7 @@ class LlmsService extends Component
     {
         parent::__construct();
         $this->currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
-        $this->globalSettings = Llmify::getInstance()->settings->getAndSetGlobalSettings($this->currentSiteId);
+        $this->globalSettings = Llmify::getInstance()->settings->getGlobalSetting($this->currentSiteId);
     }
 
     /**

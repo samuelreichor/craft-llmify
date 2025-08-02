@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\services;
 
-use Craft;
 use craft\base\Component;
 use craft\base\FieldInterface;
 use craft\elements\Entry;
@@ -25,10 +24,8 @@ class MetadataService extends Component
     {
         parent::__construct();
         $this->entry = $entry;
-        $this->metaContent = Llmify::getInstance()->settings->getAndSetContentSettings($entry);
-
-        $helper = Llmify::getInstance()->helper;
-        $this->entrySettingsField = $helper->getFieldOfTypeFromEntry($this->entry, LlmifySettingsField::class);
+        $this->metaContent = Llmify::getInstance()->settings->getContentSetting($entry->sectionId, $entry->siteId);
+        $this->entrySettingsField = Llmify::getInstance()->helper->getFieldOfTypeFromEntry($this->entry, LlmifySettingsField::class);
     }
 
     public function getContentTitle(): string
@@ -48,7 +45,6 @@ class MetadataService extends Component
 
     public function getContentDescriptionSource(): string
     {
-        Craft::debug($this->metaContent->llmDescriptionSource . ' entryId: ' . $this->entry->id . ', siteId: ' . $this->entry->site->id . ', metadataId: ' . $this->metaContent->id, 'llmify');
         return $this->metaContent->llmDescriptionSource;
     }
 

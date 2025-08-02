@@ -10,9 +10,13 @@ use craft\events\ElementEvent;
 use craft\events\MultiElementActionEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\events\SectionEvent;
+use craft\events\SiteEvent;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
+use craft\services\Entries;
 use craft\services\Fields;
+use craft\services\Sites;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use samuelreichor\llmify\fields\LlmifySettingsField;
@@ -155,6 +159,54 @@ class Llmify extends Plugin
             }
         );
 
+        // Create Content Settings for new Sections
+        Event::on(
+            Entries::class,
+            Entries::EVENT_AFTER_SAVE_SECTION,
+            function(SectionEvent $event) {
+                $section = $event->section;
+                $sectionId = $section->id;
+                $siteIds = $section->getSiteIds();
+                foreach ($siteIds as $siteId) {
+                    $this->settings->setContentSetting($sectionId, $siteId);
+                }
+            }
+        );
+
+        // Delete Content Settings if Section gets deleted
+        Event::on(
+            Entries::class,
+            Entries::EVENT_AFTER_DELETE_SECTION,
+            function(SectionEvent $event) {
+                $section = $event->section;
+                $sectionId = $section->id;
+                $siteIds = $section->getSiteIds();
+                foreach ($siteIds as $siteId) {
+                    $this->settings->delContentSetting($sectionId, $siteId);
+                }
+            }
+        );
+
+        // Create Global Settings for new Sites
+        Event::on(
+            Sites::class,
+            Sites::EVENT_AFTER_SAVE_SITE,
+            function(SiteEvent $event) {
+                $siteId = $event->site->id;
+                $this->settings->setGlobalSetting($siteId);
+            }
+        );
+
+        // Delete Global Settings if Site gets deleted
+        Event::on(
+            Sites::class,
+            Sites::EVENT_AFTER_DELETE_SITE,
+            function(SiteEvent $event) {
+                $siteId = $event->site->id;
+                $this->settings->delGlobalSetting($siteId);
+            }
+        );
+
         // Listen for entries being saved
         Event::on(
             Elements::class,
@@ -171,7 +223,7 @@ class Llmify extends Plugin
             }
         );
 
-        $events = [
+/*        $events = [
             Elements::EVENT_AFTER_SAVE_ELEMENT,
             Elements::EVENT_AFTER_RESAVE_ELEMENT,
             Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI,
@@ -185,7 +237,7 @@ class Llmify extends Plugin
                     $this->refresh->addElement($event->element);
                 }
             );
-        }
+        }*/
 
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;

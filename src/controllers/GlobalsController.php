@@ -22,7 +22,7 @@ class GlobalsController extends Controller
     {
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $globalSettings = Llmify::getInstance()->settings;
-        $settings = $globalSettings->getGlobalSettingsBySiteId($currentSiteId);
+        $settings = $globalSettings->getGlobalSetting($currentSiteId);
 
         if (!$settings) {
             $settings = new GlobalSettings();
@@ -45,7 +45,7 @@ class GlobalsController extends Controller
 
         $siteId = $this->request->getBodyParam('siteId');
         $settingService = Llmify::getInstance()->settings;
-        $globalSetting = $settingService->getGlobalSettingsBySiteId($siteId);
+        $globalSetting = $settingService->getGlobalSetting($siteId);
 
         if(!$globalSetting) {
             $globalSetting = new GlobalSettings();

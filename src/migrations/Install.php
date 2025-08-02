@@ -5,7 +5,9 @@ namespace samuelreichor\llmify\migrations;
 use Craft;
 use craft\db\Migration;
 use samuelreichor\llmify\Constants;
+use samuelreichor\llmify\Llmify;
 use yii\base\Exception;
+use yii\db\Exception as DbException;
 
 class Install extends Migration
 {
@@ -28,6 +30,7 @@ class Install extends Migration
             $this->addForeignKeys();
             // Refresh the db schema caches
             Craft::$app->db->schema->refresh();
+            $this->insertDefaultData();
         }
 
         return true;
@@ -162,5 +165,15 @@ class Install extends Migration
             'CASCADE',
             null
         );
+    }
+
+    /**
+     * @throws DbException
+     */
+    protected function insertDefaultData(): void
+    {
+        Llmify::getInstance()->settings->setAllContentSettings();
+        Llmify::getInstance()->settings->setAllGlobalSettings();
+
     }
 }

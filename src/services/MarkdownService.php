@@ -7,28 +7,47 @@ use craft\base\Component;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use Exception;
-use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\records\PageRecord;
 use yii\base\InvalidConfigException;
-use craft\db\Query as DbQuery;
 use League\HTMLToMarkdown\HtmlConverter;
 
 class MarkdownService extends Component
 {
+    public array $contentBlocks = [];
+
     /**
      * @throws InvalidConfigException
      * @throws Exception
      */
     public function process(string $html, int $entryId = null, int $siteId = null): void
     {
-        Craft::debug('SiteId =' . $siteId, 'llmify');
+        // dont process markdown for site requests
+        if(!(Craft::$app->request->getIsCpRequest() || Craft::$app->request->getIsConsoleRequest())) {
+            return;
+        }
         $markdown = $this->htmlToMarkdown($html);
         $this->saveMarkdown($markdown, $entryId, $siteId);
     }
 
+    public function addContentBlock(string $html): void
+    {
+        $this->contentBlocks[] = $html;
+    }
+
+    public function getCombinedHtml(): string
+    {
+        return implode('', $this->contentBlocks);
+    }
+
+    public function clearBlocks(): void
+    {
+        $this->contentBlocks = [];
+    }
+
     /**
      * Generates and processes HTML for a specific entry.
+     *
      *
      * @param Entry $entry
      * @throws SiteNotFoundException

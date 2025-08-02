@@ -8,6 +8,7 @@ use craft\web\Controller;
 use craft\helpers\Queue;
 use craft\queue\jobs\ResaveElements;
 use samuelreichor\llmify\Constants;
+use samuelreichor\llmify\Llmify;
 use yii\console\ExitCode;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;
@@ -19,17 +20,14 @@ class MarkdownController extends Controller
     /**
      * @throws MethodNotAllowedHttpException
      * @throws BadRequestHttpException
+     * @throws Exception
      */
     public function actionGenerate(): Response
     {
         $this->requirePostRequest();
 
-        Queue::push(new ResaveElements([
-            'elementType' => Entry::class,
-            'updateSearchIndex' => false,
-        ]));
-
-        Craft::info(Entry::pluralDisplayName() . ' queued to be resaved.' . PHP_EOL);
+        Llmify::getInstance()->refresh->refreshAll();
+        
         return $this->redirectToPostedUrl();
     }
 

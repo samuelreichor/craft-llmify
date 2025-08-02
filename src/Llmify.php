@@ -3,6 +3,7 @@
 namespace samuelreichor\llmify;
 
 use Craft;
+use craft\base\ElementInterface;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
@@ -12,6 +13,7 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\SectionEvent;
 use craft\events\SiteEvent;
+use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
 use craft\services\Entries;
@@ -19,6 +21,7 @@ use craft\services\Fields;
 use craft\services\Sites;
 use craft\services\Utilities;
 use craft\web\UrlManager;
+use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\services\HelperService;
@@ -81,6 +84,9 @@ class Llmify extends Plugin
         $this->registerTwigExtension();
         $this->attachEventHandlers();
 
+        Craft::$app->onAfterRequest(function() {
+            $this->refresh->refresh();
+        });
         // Any code that creates an element query or loads Twig should be deferred until
         // after Craft is fully initialized, to avoid conflicts with other plugins/modules
         Craft::$app->onInit(function() {
@@ -207,23 +213,28 @@ class Llmify extends Plugin
             }
         );
 
-        // Listen for entries being saved
-        Event::on(
-            Elements::class,
-            Elements::EVENT_AFTER_SAVE_ELEMENT,
-            function (ElementEvent $event) {
-                if (
-                    $event->element instanceof Entry &&
-                    !$event->isNew &&
-                    !$event->element->isProvisionalDraft &&
-                    !$event->element->isRevision
-                ) {
-                    $this->markdown->generateForEntry($event->element);
-                }
-            }
-        );
+        // Set previous status of element so we can compare later
+        $events = [
+            Elements::EVENT_BEFORE_SAVE_ELEMENT,
+            Elements::EVENT_BEFORE_RESAVE_ELEMENT,
+            Elements::EVENT_BEFORE_UPDATE_SLUG_AND_URI,
+            Elements::EVENT_BEFORE_DELETE_ELEMENT,
+            Elements::EVENT_BEFORE_RESTORE_ELEMENT,
+        ];
 
-/*        $events = [
+        foreach ($events as $event) {
+            Event::on(Elements::class, $event,
+                function(ElementEvent|MultiElementActionEvent $event) {
+                    $element = $event->element;
+                    if ($this->refresh->isRefreshableElement($element)) {
+                        $element->attachBehavior(ElementChangedBehavior::BEHAVIOR_NAME, ElementChangedBehavior::class);
+                    }
+                }
+            );
+        }
+
+
+        $events = [
             Elements::EVENT_AFTER_SAVE_ELEMENT,
             Elements::EVENT_AFTER_RESAVE_ELEMENT,
             Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI,
@@ -234,10 +245,13 @@ class Llmify extends Plugin
         foreach ($events as $event) {
             Event::on(Elements::class, $event,
                 function(ElementEvent|MultiElementActionEvent $event) {
-                    $this->refresh->addElement($event->element);
+                    if (ElementHelper::isDraftOrRevision($event->element)) {
+                        return;
+                    }
+                    $this->refresh->addElementWithRelations($event->element);
                 }
             );
-        }*/
+        }
 
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;

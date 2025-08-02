@@ -16,8 +16,9 @@ use craft\db\Query as DbQuery;
 class SettingsService extends Component
 {
     private array $contentSettings = [];
-    private array $allContentSettings = [];
+    private array $allEnabledContentSettings = [];
     private array $globalSettings = [];
+    private array $allEnabledSiteIds = [];
     /**
      * @throws Exception
      */
@@ -83,25 +84,27 @@ class SettingsService extends Component
         return $settings;
     }
 
-    public function getAllContentSettings(int $siteId): array
+    public function getAllActiveContentSettings(): array
     {
-        if (isset($this->allContentSettings[$siteId])) {
-            return $this->allContentSettings[$siteId];
+        if ($this->allEnabledContentSettings) {
+            return $this->allEnabledContentSettings;
         }
 
-        $results = $this->_createContentMetaQuery()
-            ->where(['siteId' => $siteId])
-            ->all();
+        foreach ($this->getAllActiveGlobalSettingsIds() as $siteId) {
+            $results = $this->_createContentMetaQuery()
+                ->where(['siteId' => $siteId, 'enabled' => true])
+                ->all();
 
-        foreach ($results as $result) {
-            $settings = new ContentSettings($result);
-            $this->allContentSettings[$siteId][] = $settings;
+            foreach ($results as $result) {
+                $settings = new ContentSettings($result);
+                $this->allEnabledContentSettings[] = $settings;
 
-            $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
-            $this->contentSettings[$cacheKey] = $settings;
+                $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
+                $this->contentSettings[$cacheKey] = $settings;
+            }
         }
 
-        return $this->allContentSettings[$siteId];
+        return $this->allEnabledContentSettings;
     }
 
     /**
@@ -185,6 +188,25 @@ class SettingsService extends Component
 
         $this->globalSettings[$siteId] = $settings;
         return $settings;
+    }
+
+    public function getAllActiveGlobalSettingsIds(): array
+    {
+        if ($this->allEnabledSiteIds) {
+            return $this->allEnabledSiteIds;
+        }
+
+        $results = $this->_createGlobalSettingsQuery()
+            ->where(['enabled' => true])
+            ->all();
+
+        foreach ($results as $result) {
+            $settings = new GlobalSettings($result);
+            $this->globalSettings[$settings->siteId] = $settings;
+            $this->allEnabledSiteIds[] = $settings->siteId;
+        }
+
+        return $this->allEnabledSiteIds;
     }
 
     /**

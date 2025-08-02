@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\services;
 
-use Craft;
 use craft\base\Component;
 use craft\base\Element;
 use craft\base\ElementInterface;
@@ -10,15 +9,43 @@ use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\helpers\ElementHelper;
-use craft\db\Query as DbQuery;
-use samuelreichor\llmify\jobs\RefreshMarkdown;
+use craft\helpers\Queue;
+use samuelreichor\llmify\behaviors\ElementChangedBehavior;
+use samuelreichor\llmify\jobs\RefreshMarkdownJob;
 use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\models\RefreshData;
 use yii\db\Exception;
 
 class RefreshService extends Component
 {
+    public RefreshData $refreshData;
+
+    public function init(): void
+    {
+        parent::init();
+        $this->reset();
+    }
+
+    public function reset(): void
+    {
+        $this->refreshData = new RefreshData();
+    }
+
+    /**
+     * @throws Exception|\yii\base\Exception
+     */
+    public function addElementWithRelations(ElementInterface $element): void
+    {
+        $this->addElement($element);
+        $relatedEntries = $this->findRelatedEntries($element);
+        foreach ($relatedEntries as $entry) {
+            $this->addElement($entry);
+        }
+    }
+
     /**
      * @throws Exception
+     * @throws \yii\base\Exception
      */
     public function addElement(ElementInterface $element): void
     {
@@ -26,43 +53,50 @@ class RefreshService extends Component
             return;
         }
 
-        $entriesToRefresh = [];
+        // If the element has the element changed behavior
+        /** @var ElementChangedBehavior|null $elementChanged */
+        $elementChanged = $element->getBehavior(ElementChangedBehavior::BEHAVIOR_NAME);
 
-        if ($element instanceof Entry) {
-            $entriesToRefresh[] = $element->id;
-        }
-
-        $relatedEntryIds = $this->_findRelatedEntries($element);
-        $entriesToRefresh = array_merge($entriesToRefresh, $relatedEntryIds);
-
-        if ($element instanceof GlobalSet) {
-            $allEntries = $this->_findAllRefreshableEntries();
-            $entriesToRefresh = array_merge($entriesToRefresh, $allEntries);
-        }
-
-        $uniqueEntries = [];
-        $processedIds = [];
-        foreach ($entriesToRefresh as $entry) {
-            if (!in_array($entry->id, $processedIds, true)) {
-                $uniqueEntries[] = $entry;
-                $processedIds[] = $entry->id;
+        if ($elementChanged !== null) {
+            // Don’t proceed if element has not changed
+            if (!$elementChanged->getHasChanged()) {
+                return;
             }
         }
 
-        foreach ($uniqueEntries as $entry) {
-            Craft::$app->getQueue()->push(new RefreshMarkdown([
-                'entryId' => $entry->id,
-            ]));
-        }
+        $this->refreshData->addSiteId($element->siteId);
+        $this->refreshData->addElementId($element->id, $element::class);
     }
 
-    public function refreshAll(): void
+    public function refresh(): void
     {
-        dd('refreshAll');
+        if ($this->refreshData->isEmpty()) {
+            return;
+        }
+
+        $job = new RefreshMarkdownJob([
+            'data' => $this->refreshData,
+        ]);
+
+        Queue::push($job);
+
+        $this->reset();
     }
 
     /**
-     * @throws Exception
+     * @throws Exception|\yii\base\Exception
+     */
+    public function refreshAll(): void
+    {
+        $allRefreshableEntries = $this->findAllRefreshableEntries();
+
+        foreach ($allRefreshableEntries as $entry) {
+            $this->addElement($entry);
+        }
+    }
+
+    /**
+     * @throws Exception|\yii\base\Exception
      */
     public function isRefreshAbleElement(ElementInterface $element): bool
     {
@@ -102,14 +136,14 @@ class RefreshService extends Component
 
         $result = false;
         if ($globalSettings->enabled) {
-            $contentSettings = $settingsService->getContentSetting($entry->section->id, $entry->site->id);
+            $contentSettings = $settingsService->getContentSetting($entry->sectionId, $entry->siteId);
             $result = $contentSettings->enabled;
         }
 
         return $result;
     }
 
-    private function _findRelatedEntries(ElementInterface $element): array
+    private function findRelatedEntries(ElementInterface $element): array
     {
         if (!$element->id) {
             return [];
@@ -118,24 +152,31 @@ class RefreshService extends Component
         return Entry::find()
             ->relatedTo($element)
             ->siteId($element->siteId)
-            ->ids();
+            ->all();
     }
 
-    private function _findAllRefreshableEntries(): array
+    private function findAllRefreshableEntries(): array
     {
-        $settingsService = Llmify::getInstance()->settings;
-        $contentSettings = $settingsService->getAndSetAllContentSettings();
+        $allSettings = Llmify::getInstance()->settings->getAllActiveContentSettings();
 
-        $sectionIds = array_keys(array_filter($contentSettings, function ($setting) {
-            return $setting->enabled;
-        }));
-
-        if (empty($sectionIds)) {
+        if (empty($allSettings)) {
             return [];
         }
 
+        $sectionIds = [];
+        $siteIds = [];
+
+        foreach ($allSettings as $setting) {
+            $sectionIds[] = $setting->sectionId;
+            $siteIds[] = $setting->siteId;
+        }
+
+        $sectionIds = array_values(array_unique($sectionIds));
+        $siteIds = array_values(array_unique($siteIds));
+
         return Entry::find()
             ->sectionId($sectionIds)
+            ->siteId($siteIds)
             ->all();
     }
 }

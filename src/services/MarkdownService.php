@@ -15,6 +15,8 @@ use League\HTMLToMarkdown\HtmlConverter;
 class MarkdownService extends Component
 {
     public array $contentBlocks = [];
+    public ?int $entryId = null;
+    public ?int $siteId = null;
 
     /**
      * @throws InvalidConfigException
@@ -27,12 +29,16 @@ class MarkdownService extends Component
             return;
         }
         $markdown = $this->htmlToMarkdown($html);
-        $this->saveMarkdown($markdown, $entryId, $siteId);
+        $this->saveMarkdown($markdown, $entryId ?? $this->entryId, $siteId ?? $this->siteId);
     }
 
-    public function addContentBlock(string $html): void
+    public function addContentBlock(string $html, int $entryId, int $siteId): void
     {
         $this->contentBlocks[] = $html;
+        if ($this->entryId === null) {
+            $this->entryId = $entryId;
+            $this->siteId = $siteId;
+        }
     }
 
     public function getCombinedHtml(): string
@@ -43,6 +49,8 @@ class MarkdownService extends Component
     public function clearBlocks(): void
     {
         $this->contentBlocks = [];
+        $this->entryId = null;
+        $this->siteId = null;
     }
 
     /**

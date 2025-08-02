@@ -20,7 +20,10 @@ class LlmifyNode extends Node
             ->subcompile($this->getNode('body'))
             ->write("\$llmifyBody = ob_get_clean();\n")
             ->write("if (isset(\$context['entry'], \$context['entry']->id, \$context['entry']->siteId)) {\n")
-            ->write("    \\samuelreichor\\llmify\\Llmify::getInstance()->markdown->addContentBlock(\$llmifyBody);\n")
-            ->write("}\n");
+            ->write("    \$entryId = \$context['entry']->id;\n")
+            ->write("    \$siteId = \$context['entry']->siteId;\n")
+            ->write("    \\samuelreichor\\llmify\\Llmify::getInstance()->markdown->addContentBlock(\$llmifyBody, \$entryId, \$siteId);\n")
+            ->write("}\n")
+            ->write("echo \$llmifyBody;\n");
     }
 }

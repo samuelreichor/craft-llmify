@@ -13,6 +13,7 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\SectionEvent;
 use craft\events\SiteEvent;
+use craft\events\TemplateEvent;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
@@ -21,6 +22,7 @@ use craft\services\Fields;
 use craft\services\Sites;
 use craft\services\Utilities;
 use craft\web\UrlManager;
+use craft\web\View;
 use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\GlobalSettings;
@@ -38,6 +40,7 @@ use Twig\Error\SyntaxError;
 use yii\base\Event;
 use yii\base\Exception;
 use yii\base\InvalidRouteException;
+use yii\base\ViewEvent;
 use yii\log\FileTarget;
 use yii\web\Response;
 
@@ -256,6 +259,19 @@ class Llmify extends Plugin
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function (RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;
         });
+
+        Event::on(
+            View::class,
+            View::EVENT_AFTER_RENDER_TEMPLATE,
+            function(TemplateEvent $event) {
+                $markdownService = $this->markdown;
+                $html = $markdownService->getCombinedHtml();
+                if (!empty($html)) {
+                    $markdownService->process($html);
+                }
+                $markdownService->clearBlocks();
+            }
+        );
     }
 
     private function registerTwigExtension(): void

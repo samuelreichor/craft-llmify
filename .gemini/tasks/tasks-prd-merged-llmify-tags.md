@@ -15,7 +15,7 @@
   - [x] 1.2 Add a public method `addContentBlock(string $html)` that adds the provided HTML content to the `contentBlocks` array.
   - [x] 1.3 Add a public method `getCombinedHtml()` that concatenates all strings in `contentBlocks` and returns the result.
   - [x] 1.4 Add a public method `clearBlocks()` to reset the `contentBlocks` array, ensuring requests don't share content.
-- [ ] 2.0 Modify the Twig extension to use the new aggregation service.
-  - [ ] 2.1 Modify `LlmifyNode::compile()` to get an instance of the `MarkdownService`.
-  - [ ] 2.2 In `LlmifyNode::compile()`, change the logic to call `Llmify::getInstance()->markdown->addContentBlock($llmifyBody);` instead of `->process(...)`.
-  - [ ] 2.3 Remove the line `echo $llmifyBody;` from `LlmifyNode::compile()` to prevent premature output, as rendering will be handled after all tags are processed.
+- [x] 2.0 Modify the Twig extension to use the new aggregation service.
+  - [x] 2.1 Modify `LlmifyNode::compile()` to get an instance of the `MarkdownService`.
+  - [x] 2.2 In `LlmifyNode::compile()`, change the logic to call `Llmify::getInstance()->markdown->addContentBlock($llmifyBody);` instead of `->process(...)`.
+  - [x] 2.3 Remove the line `echo $llmifyBody;` from `LlmifyNode::compile()` to prevent premature output, as rendering will be handled after all tags are processed.

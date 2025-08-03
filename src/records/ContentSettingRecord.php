@@ -14,6 +14,8 @@ use samuelreichor\llmify\models\ContentSettings;
  * @property string $llmTitle
  * @property string $llmDescriptionSource
  * @property string $llmDescription
+ * @property string $llmSectionTitle
+ * @property string $llmSectionDescription
  * @property int $sectionId
  * @property int $entryTypeId
  * @property int $siteId

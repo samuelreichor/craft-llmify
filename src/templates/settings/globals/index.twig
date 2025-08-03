@@ -62,4 +62,12 @@
         name: 'llmDescription',
         value: settings.llmDescription,
     }) }}
+
+    {{ forms.textField({
+        label: 'LLM Note',
+        instructions: 'The LLM Note is a small note in the bottom of the llms.txt file.',
+        id: 'llmNote',
+        name: 'llmNote',
+        value: settings.llmNote,
+    }) }}
 {% endblock %}

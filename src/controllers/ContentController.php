@@ -33,6 +33,7 @@ class ContentController extends Controller
 
     /**
      * @throws SiteNotFoundException
+     * @throws Exception
      */
     public function actionEditSection(int $sectionId): Response
     {
@@ -42,10 +43,6 @@ class ContentController extends Controller
         $currentSiteId = $helperService->getCurrentCpSiteId();
 
         $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId);
-        if (!$sectionSettings) {
-            $sectionSettings = new ContentSettings();
-        }
-
         $textFieldOptions = $helperService->getTextFieldsForSection($section);
 
         return $this->renderTemplate('llmify/settings/content/edit', [
@@ -59,7 +56,6 @@ class ContentController extends Controller
     /**
      * @throws BadRequestHttpException
      * @throws MethodNotAllowedHttpException
-     * @throws NotFoundHttpException
      * @throws Exception
      */
     public function actionSaveSectionSettings(): ?Response
@@ -72,10 +68,6 @@ class ContentController extends Controller
 
         if ($contentId) {
             $content = $settingService->getContentSetting($sectionId, $siteId);
-
-            if (!$content) {
-                throw new NotFoundHttpException('Content not found');
-            }
         } else {
             $content = new ContentSettings();
             $content->siteId = $siteId;
@@ -86,6 +78,8 @@ class ContentController extends Controller
         $content->llmTitle = $this->request->getBodyParam('llmTitle');
         $content->llmDescription = $this->request->getBodyParam('llmDescription');
         $content->llmDescriptionSource = $this->request->getBodyParam('llmDescriptionSource');
+        $content->llmSectionTitle = $this->request->getBodyParam('llmSectionTitle');
+        $content->llmSectionDescription = $this->request->getBodyParam('llmSectionDescription');
         $content->sectionId = $this->request->getBodyParam('sectionId');
 
         if (!$settingService->saveContentSettings($content)) {

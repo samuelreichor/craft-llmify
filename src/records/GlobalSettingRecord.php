@@ -13,6 +13,7 @@ use samuelreichor\llmify\models\ContentSettings;
  * @property bool $enabled
  * @property string $llmTitle
  * @property string $llmDescription
+ * @property string $llmNote
  */
 class GlobalSettingRecord extends ActiveRecord
 {

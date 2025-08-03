@@ -9,6 +9,7 @@ use craft\helpers\UrlHelper;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\models\Page;
+use samuelreichor\llmify\records\ContentSettingRecord;
 use samuelreichor\llmify\records\PageRecord;
 use yii\db\Exception;
 
@@ -33,8 +34,9 @@ class LlmsService extends Component
      */
     public function getLlmsTxtContent(): string
     {
-        $markdown = $this->getMarkdownIntro();
+        $markdown = $this->constructIntro();
         $markdown .= $this->constructAllUrls();
+        $markdown .= $this->constructFooter();
 
         return $markdown;
     }
@@ -42,13 +44,14 @@ class LlmsService extends Component
 
     public function getLlmsFullContent(): string
     {
-        $markdown = $this->getMarkdownIntro();
+        $markdown = $this->constructIntro();
         $markdown .= $this->constructAllPages();
+        $markdown .= $this->constructFooter();
 
         return $markdown;
     }
 
-    public function getMarkdownIntro(): string
+    public function constructIntro(): string
     {
         $markdown = '';
         $llmTitle = $this->globalSettings->llmTitle;
@@ -59,7 +62,7 @@ class LlmsService extends Component
         }
 
         if ($llmDescription) {
-            $markdown .= "{$llmDescription}\n\n";
+            $markdown .= "\n> {$llmDescription}\n\n";
         }
         return $markdown;
     }
@@ -90,26 +93,56 @@ class LlmsService extends Component
     {
         $content = '';
         $currentSiteUrl = UrlHelper::siteUrl();
-        $pages = PageRecord::find()->where(['siteId' => $this->currentSiteId])->orderBy('sectionId')->all();
         $shouldUseRealUrls = Llmify::getInstance()->getSettings()->isRealUrlLlm;
-        foreach ($pages as $page) {
-            /**
-             * @var PageRecord $page
-             */
-            $content .= ($shouldUseRealUrls ? $this->constructRealUrl($page, $currentSiteUrl) : $this->constructMdUrl($page, $currentSiteUrl));
+        $groupedPages = $this->getGroupedPagesBySite( $this->currentSiteId);
+
+        foreach ($groupedPages as $sectionId => $pages) {
+            $content .= $this->constructSectionHeader($sectionId, $this->currentSiteId);
+            foreach ($pages as $page) {
+                /**
+                 * @var Page $page
+                 */
+                $content .= ($shouldUseRealUrls ? $this->constructRealUrl($page, $currentSiteUrl) : $this->constructMdUrl($page, $currentSiteUrl));
+            }
         }
 
         return $content;
     }
 
-    private function constructMdUrl(PageRecord $page, string $currentSiteUrl): string
+    private function constructSectionHeader(int $sectionId, int $currentSiteId): string
+    {
+        $metaData = ContentSettingRecord::find()
+            ->where(['sectionId' => $sectionId, 'siteId' => $currentSiteId])
+            ->select(['llmSectionTitle', 'llmSectionDescription'])
+            ->one();
+
+        $content = '';
+
+
+        if ($metaData) {
+            /**
+             * @var ContentSettingRecord $metaData
+             */
+            if($metaData->llmSectionTitle) {
+                $content .= "\n## $metaData->llmSectionTitle\n";
+            }
+
+            if($metaData->llmSectionDescription) {
+                $content .= "\n$metaData->llmSectionDescription\n\n";
+            }
+        }
+        return $content;
+
+    }
+
+    private function constructMdUrl(Page $page, string $currentSiteUrl): string
     {
         $entryUri = $page->entryMeta['uri'];
         $markdownUrl = "{$currentSiteUrl}raw/{$entryUri}.md";
-        return "[{$page->title}]({$markdownUrl}): {$page->description}.\n";
+        return "- [{$page->title}]({$markdownUrl}): {$page->description}.\n";
     }
 
-    private function constructRealUrl(PageRecord $page, string $currentSiteUrl): string
+    private function constructRealUrl(Page $page, string $currentSiteUrl): string
     {
         $entryUri = $page->entryMeta['uri'];
 
@@ -117,7 +150,20 @@ class LlmsService extends Component
             $entryUri = '';
         }
         $realUrl = "{$currentSiteUrl}{$entryUri}";
-        return "[{$page->title}]({$realUrl}): {$page->description}.\n";
+        return "- [{$page->title}]({$realUrl}): {$page->description}.\n";
+    }
+
+    private function constructFooter(): string
+    {
+        $llmNote = $this->globalSettings->llmNote;
+
+        $content = '';
+        if ($llmNote) {
+            $content .= "\n## Notes\n";
+            $content .= "\n$llmNote";
+        }
+
+        return $content;
     }
 
     private function constructAllPages(): string
@@ -132,5 +178,34 @@ class LlmsService extends Component
         }
 
         return $content;
+    }
+
+    private function getGroupedPagesBySite(int $siteId): array
+    {
+        $pageRecords = PageRecord::find()
+            ->where(['siteId' => $siteId])
+            ->orderBy('sectionId ASC')
+            ->select([
+                'entryId',
+                'siteId',
+                'sectionId',
+                'metadataId',
+                'content',
+                'title',
+                'description',
+                'entryMeta',
+            ])
+            ->all();
+
+        $groupedPages = [];
+
+        foreach ($pageRecords as $page) {
+            /**
+             * @var PageRecord $page
+             */
+            $groupedPages[$page->sectionId][] = new Page($page->toArray());
+        }
+
+        return $groupedPages;
     }
 }

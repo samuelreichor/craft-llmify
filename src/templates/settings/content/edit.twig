@@ -85,4 +85,18 @@
         name: 'llmDescription',
         value: settings.llmDescription ?? ''
     }) }}
+
+    {{ forms.textField({
+        label: 'Section Title',
+        id: 'llmSectionTitle',
+        name: 'llmSectionTitle',
+        value: settings.llmSectionTitle ?? ''
+    }) }}
+
+    {{ forms.textField({
+        label: 'Section Description',
+        id: 'llmSectionDescription',
+        name: 'llmSectionDescription',
+        value: settings.llmSectionDescription ?? ''
+    }) }}
 {% endblock %}

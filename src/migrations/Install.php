@@ -91,6 +91,8 @@ class Install extends Migration
                     'llmTitle' => $this->string(),
                     'llmDescriptionSource' => $this->string(),
                     'llmDescription' => $this->string(),
+                    'llmSectionTitle' => $this->string(),
+                    'llmSectionDescription' => $this->string(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                 ]
@@ -107,6 +109,7 @@ class Install extends Migration
                     'enabled' => $this->boolean()->notNull(),
                     'llmTitle' => $this->string(),
                     'llmDescription' => $this->string(),
+                    'llmNote' => $this->string(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                     'PRIMARY KEY([[siteId]])',

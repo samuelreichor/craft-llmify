@@ -31,6 +31,14 @@ class ContentSettings extends Model
      */
     public string $llmDescription = '';
     /**
+     * @var string A section title for all entries in the given section for llms.txt
+     */
+    public string $llmSectionTitle = '';
+    /**
+     * @var string A section description for all entries in the given section for llms.txt
+     */
+    public string $llmSectionDescription = '';
+    /**
      * @var int Section ID of the content setting
      */
     public int $sectionId;
@@ -56,6 +64,8 @@ class ContentSettings extends Model
                     'llmTitle',
                     'llmDescriptionSource',
                     'llmDescription',
+                    'llmSectionTitle',
+                    'llmSectionDescription',
                 ], 'string'
             ],
         ];

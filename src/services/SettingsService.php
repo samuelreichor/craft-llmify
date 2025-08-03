@@ -46,6 +46,8 @@ class SettingsService extends Component
         $contentRecord->llmTitle = $contentSettings->llmTitle;
         $contentRecord->llmDescription = $contentSettings->llmDescription;
         $contentRecord->llmDescriptionSource = $contentSettings->llmDescriptionSource;
+        $contentRecord->llmSectionTitle = $contentSettings->llmSectionTitle;
+        $contentRecord->llmSectionDescription = $contentSettings->llmSectionDescription;
         $contentRecord->sectionId = $contentSettings->sectionId;
 
         $contentRecord->save();
@@ -160,6 +162,7 @@ class SettingsService extends Component
         $globalRecord->enabled = $globalSettings->enabled;
         $globalRecord->llmTitle = $globalSettings->llmTitle;
         $globalRecord->llmDescription = $globalSettings->llmDescription;
+        $globalRecord->llmNote = $globalSettings->llmNote;
 
         $globalRecord->save();
         return true;
@@ -248,6 +251,8 @@ class SettingsService extends Component
                 'llmTitle',
                 'llmDescriptionSource',
                 'llmDescription',
+                'llmSectionTitle',
+                'llmSectionDescription',
                 'sectionId',
                 'siteId',
             ])
@@ -261,6 +266,7 @@ class SettingsService extends Component
                 'siteId',
                 'llmTitle',
                 'llmDescription',
+                'llmNote',
                 'enabled',
             ])
             ->from([Constants::TABLE_GLOBALS]);

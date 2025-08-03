@@ -55,6 +55,7 @@ class GlobalsController extends Controller
         $globalSetting->enabled = $this->request->getBodyParam('enabled');
         $globalSetting->llmTitle = $this->request->getBodyParam('llmTitle');
         $globalSetting->llmDescription = $this->request->getBodyParam('llmDescription');
+        $globalSetting->llmNote = $this->request->getBodyParam('llmNote');
 
         if (!$settingService->saveGlobalSettings($globalSetting)) {
             $this->setFailFlash(Craft::t('app', 'Couldn’t save Global Setting.'));

@@ -14,6 +14,7 @@ class GlobalSettings extends Model
     public bool $enabled = true;
     public string $llmTitle = '';
     public string $llmDescription = '';
+    public string $llmNote = '';
 
     public function defineRules(): array
     {
@@ -22,6 +23,7 @@ class GlobalSettings extends Model
                 [
                     'llmTitle',
                     'llmDescription',
+                    'llmNote'
                 ],
                 'string'
             ],

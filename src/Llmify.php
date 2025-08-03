@@ -3,7 +3,6 @@
 namespace samuelreichor\llmify;
 
 use Craft;
-use craft\base\ElementInterface;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
@@ -25,7 +24,7 @@ use craft\web\UrlManager;
 use craft\web\View;
 use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
-use samuelreichor\llmify\models\GlobalSettings;
+use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
@@ -39,6 +38,7 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use yii\base\Event;
 use yii\base\Exception;
+use yii\base\InvalidConfigException;
 use yii\base\InvalidRouteException;
 use yii\base\ViewEvent;
 use yii\log\FileTarget;
@@ -107,9 +107,12 @@ class Llmify extends Plugin
         return $navItem;
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     protected function createSettingsModel(): ?Model
     {
-        return new GlobalSettings();
+        return Craft::createObject(PluginSettings::class);
     }
 
     /**
@@ -120,18 +123,10 @@ class Llmify extends Plugin
      */
     protected function settingsHtml(): string
     {
-        return Craft::$app->view->renderTemplate('llmify/settings/globals/index', [
+        return Craft::$app->view->renderTemplate('llmify/settings/plugin/index', [
+            'plugin' => $this,
             'settings' => $this->getSettings(),
         ]);
-    }
-
-    /**
-     * @throws InvalidRouteException
-     */
-    public function getSettingsResponse(): Response
-    {
-        // Just redirect to the plugin settings page
-        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/globals'));
     }
 
     private function attachEventHandlers(): void

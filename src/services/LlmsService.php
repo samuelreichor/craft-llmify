@@ -91,16 +91,33 @@ class LlmsService extends Component
         $content = '';
         $currentSiteUrl = UrlHelper::siteUrl();
         $pages = PageRecord::find()->where(['siteId' => $this->currentSiteId])->orderBy('sectionId')->all();
+        $shouldUseRealUrls = Llmify::getInstance()->getSettings()->isRealUrlLlm;
         foreach ($pages as $page) {
             /**
-             * @var Page $page
+             * @var PageRecord $page
              */
-            $entryUri = $page->entryMeta['uri'];
-            $markdownUrl = "{$currentSiteUrl}raw/{$entryUri}.md";
-            $content .= "[{$page->title}]({$markdownUrl}): {$page->description}.\n";
+            $content .= ($shouldUseRealUrls ? $this->constructRealUrl($page, $currentSiteUrl) : $this->constructMdUrl($page, $currentSiteUrl));
         }
 
         return $content;
+    }
+
+    private function constructMdUrl(PageRecord $page, string $currentSiteUrl): string
+    {
+        $entryUri = $page->entryMeta['uri'];
+        $markdownUrl = "{$currentSiteUrl}raw/{$entryUri}.md";
+        return "[{$page->title}]({$markdownUrl}): {$page->description}.\n";
+    }
+
+    private function constructRealUrl(PageRecord $page, string $currentSiteUrl): string
+    {
+        $entryUri = $page->entryMeta['uri'];
+
+        if ($entryUri === '__home__') {
+            $entryUri = '';
+        }
+        $realUrl = "{$currentSiteUrl}{$entryUri}";
+        return "[{$page->title}]({$realUrl}): {$page->description}.\n";
     }
 
     private function constructAllPages(): string

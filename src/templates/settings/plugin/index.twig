@@ -1,0 +1,9 @@
+{% import '_includes/forms.twig' as forms %}
+
+  {{ forms.lightswitchField({
+    label: 'Real Urls in llmify.txt',
+    instructions: 'If there should be real urls in the llmify.txt. It defaults to the raw markdown file.',
+    id: 'isRealUrlLlm',
+    name: 'isRealUrlLlm',
+    on: settings.isRealUrlLlm,
+  }) }}

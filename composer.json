@@ -27,7 +27,7 @@
     }
   },
   "extra": {
-    "handle": "LLMify",
+    "handle": "llmify",
     "name": "LLMify",
     "developer": "Samuel Reichör",
     "documentationUrl": "https://github.com/samuelreichor/craft-llmify",

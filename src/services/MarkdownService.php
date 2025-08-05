@@ -46,17 +46,6 @@ class MarkdownService extends Component
         $this->siteId = null;
     }
 
-    public function htmlToMarkdown(string $html): string
-    {
-        $converter = new HtmlConverter([
-            'strip_tags' => true,
-            'header_style' => 'atx',
-        ]);
-
-        $markdownRaw = $converter->convert($html);
-        return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);
-    }
-
     /**
      * @throws Exception
      */
@@ -88,5 +77,17 @@ class MarkdownService extends Component
             "uri" => $entry->uri,
         ];
         $pageEntry->save();
+    }
+
+    private function htmlToMarkdown(string $html): string
+    {
+        $converter = new HtmlConverter([
+            'strip_tags' => true,
+            'header_style' => 'atx',
+            'remove_nodes' => 'img picture style'
+        ]);
+
+        $markdownRaw = $converter->convert($html);
+        return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);
     }
 }

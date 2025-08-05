@@ -13,6 +13,7 @@
   },
   "require": {
     "php": ">=8.2",
+    "amphp/http-client": "^5.3",
     "craftcms/cms": "^5.0.0",
     "league/html-to-markdown": "^5.1"
   },

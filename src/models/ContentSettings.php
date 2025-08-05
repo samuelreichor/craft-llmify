@@ -53,7 +53,7 @@ class ContentSettings extends Model
     /**
      * @var bool If section is enabled
      */
-    public bool $enabled = true;
+    public bool $enabled = false;
 
     public function defineRules(): array
     {

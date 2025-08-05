@@ -3,6 +3,9 @@
 namespace samuelreichor\llmify;
 
 use Craft;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
@@ -30,12 +33,10 @@ use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\services\MetadataService;
 use samuelreichor\llmify\services\RefreshService;
+use samuelreichor\llmify\services\RequestService;
 use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
 use yii\base\Event;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
@@ -58,6 +59,7 @@ use yii\web\Response;
  * @property-read MetadataService $metadata
  * @property-read HelperService $helper
  * @property-read RefreshService $refresh
+ * @property-read RequestService $request
  */
 class Llmify extends Plugin
 {
@@ -75,6 +77,7 @@ class Llmify extends Plugin
                 'metadata' => MetadataService::class,
                 'helper' => HelperService::class,
                 'refresh' => RefreshService::class,
+                'request' => RequestService::class,
             ],
         ];
     }

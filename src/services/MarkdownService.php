@@ -2,12 +2,9 @@
 
 namespace samuelreichor\llmify\services;
 
-use Craft;
 use craft\base\Component;
 use craft\elements\Entry;
-use craft\errors\SiteNotFoundException;
 use Exception;
-use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\records\PageRecord;
 use yii\base\InvalidConfigException;
 use League\HTMLToMarkdown\HtmlConverter;
@@ -24,10 +21,6 @@ class MarkdownService extends Component
      */
     public function process(string $html, int $entryId = null, int $siteId = null): void
     {
-        // dont process markdown for site requests
-        if(!(Craft::$app->request->getIsCpRequest() || Craft::$app->request->getIsConsoleRequest())) {
-            return;
-        }
         $markdown = $this->htmlToMarkdown($html);
         $this->saveMarkdown($markdown, $entryId ?? $this->entryId, $siteId ?? $this->siteId);
     }
@@ -51,33 +44,6 @@ class MarkdownService extends Component
         $this->contentBlocks = [];
         $this->entryId = null;
         $this->siteId = null;
-    }
-
-    /**
-     * Generates and processes HTML for a specific entry.
-     *
-     *
-     * @param Entry $entry
-     * @throws SiteNotFoundException
-     */
-    public function generateForEntry(Entry $entry): void
-    {
-        $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
-        $templatePath = $entry->section->getSiteSettings()[$currentSiteId]->template;
-
-        try {
-            $view = Craft::$app->getView();
-            $originalMode = $view->getTemplateMode();
-            $view->setTemplateMode($view::TEMPLATE_MODE_SITE);
-            $view->renderTemplate($templatePath, [
-                'entry' => $entry,
-                'url' => $entry->getUrl(),
-            ]);
-
-            $view->setTemplateMode($originalMode);
-        } catch (\Throwable $e) {
-            Craft::error('Failed to render template for llmify: ' . $e->getMessage(), 'llmify');
-        }
     }
 
     public function htmlToMarkdown(string $html): string

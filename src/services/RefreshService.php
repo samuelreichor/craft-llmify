@@ -65,6 +65,7 @@ class RefreshService extends Component
         }
 
         $this->refreshData->addSiteId($element->siteId);
+        $this->refreshData->addUrl($element->getUrl());
         $this->refreshData->addElementId($element->id, $element::class);
     }
 
@@ -100,7 +101,7 @@ class RefreshService extends Component
      */
     public function isRefreshAbleElement(ElementInterface $element): bool
     {
-
+        /*Todo: This logic does not work with categories or other elements.*/
         if (!($element instanceof Element) || $element instanceof Asset) {
             return false;
         }

@@ -11,7 +11,7 @@ use craft\base\Model;
 class GlobalSettings extends Model
 {
     public int $siteId;
-    public bool $enabled = true;
+    public bool $enabled = false;
     public string $llmTitle = '';
     public string $llmDescription = '';
     public string $llmNote = '';

@@ -36,6 +36,16 @@ class RefreshData
         return $this->getKeysAsValues(['sites', 'siteIds']);
     }
 
+    public function addUrl(string $url): void
+    {
+        $this->data['urls'][$url] = true;
+    }
+
+    public function getUrls(): array
+    {
+        return $this->getKeysAsValues(['urls']);
+    }
+
     private function getKeysAsValues(array $indexes): array
     {
         $keys = $this->data;

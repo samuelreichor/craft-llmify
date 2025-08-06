@@ -25,7 +25,6 @@ use craft\services\Sites;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use craft\web\View;
-use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\HelperService;
@@ -214,27 +213,6 @@ class Llmify extends Plugin
             }
         );
 
-        // Set previous status of element so we can compare later
-        $events = [
-            Elements::EVENT_BEFORE_SAVE_ELEMENT,
-            Elements::EVENT_BEFORE_RESAVE_ELEMENT,
-            Elements::EVENT_BEFORE_UPDATE_SLUG_AND_URI,
-            Elements::EVENT_BEFORE_DELETE_ELEMENT,
-            Elements::EVENT_BEFORE_RESTORE_ELEMENT,
-        ];
-
-        foreach ($events as $event) {
-            Event::on(Elements::class, $event,
-                function(ElementEvent|MultiElementActionEvent $event) {
-                    $element = $event->element;
-                    if ($this->refresh->isRefreshableElement($element)) {
-                        $element->attachBehavior(ElementChangedBehavior::BEHAVIOR_NAME, ElementChangedBehavior::class);
-                    }
-                }
-            );
-        }
-
-
         $events = [
             Elements::EVENT_AFTER_SAVE_ELEMENT,
             Elements::EVENT_AFTER_RESAVE_ELEMENT,
@@ -246,10 +224,7 @@ class Llmify extends Plugin
         foreach ($events as $event) {
             Event::on(Elements::class, $event,
                 function(ElementEvent|MultiElementActionEvent $event) {
-                    if (ElementHelper::isDraftOrRevision($event->element)) {
-                        return;
-                    }
-                    $this->refresh->addElementWithRelations($event->element);
+                    $this->refresh->addElement($event->element);
                 }
             );
         }

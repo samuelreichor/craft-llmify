@@ -10,7 +10,6 @@ use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\helpers\ElementHelper;
 use craft\helpers\Queue;
-use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\jobs\RefreshMarkdownJob;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\RefreshData;
@@ -32,18 +31,6 @@ class RefreshService extends Component
     }
 
     /**
-     * @throws Exception|\yii\base\Exception
-     */
-    public function addElementWithRelations(ElementInterface $element): void
-    {
-        $this->addElement($element);
-        $relatedEntries = $this->findRelatedEntries($element);
-        foreach ($relatedEntries as $entry) {
-            $this->addElement($entry);
-        }
-    }
-
-    /**
      * @throws Exception
      * @throws \yii\base\Exception
      */
@@ -51,17 +38,6 @@ class RefreshService extends Component
     {
         if (!$this->isRefreshableElement($element)) {
             return;
-        }
-
-        // If the element has the element changed behavior
-        /** @var ElementChangedBehavior|null $elementChanged */
-        $elementChanged = $element->getBehavior(ElementChangedBehavior::BEHAVIOR_NAME);
-
-        if ($elementChanged !== null) {
-            // Don’t proceed if element has not changed
-            if (!$elementChanged->getHasChanged()) {
-                return;
-            }
         }
 
         $this->refreshData->addSiteId($element->siteId);

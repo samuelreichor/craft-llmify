@@ -23,7 +23,13 @@ class ContentController extends Controller
         $sections = Craft::$app->entries->getAllSections();
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $sectionsWithUrls = array_filter($sections, function ($section) use ($currentSiteId) {
-            return $section->getSiteSettings()[$currentSiteId]->uriFormat !== null;
+            $siteSettings = $section->getSiteSettings();
+
+            if (!isset($siteSettings[$currentSiteId])) {
+                return false;
+            }
+
+            return $siteSettings[$currentSiteId]->uriFormat !== null;
         });
 
         return $this->renderTemplate('llmify/settings/content/index', [

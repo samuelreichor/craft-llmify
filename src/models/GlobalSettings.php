@@ -11,7 +11,7 @@ use craft\base\Model;
 class GlobalSettings extends Model
 {
     public int $siteId;
-    public bool $enabled = false;
+    public bool $enabled = true;
     public string $llmTitle = '';
     public string $llmDescription = '';
     public string $llmNote = '';
@@ -28,5 +28,10 @@ class GlobalSettings extends Model
                 'string'
             ],
         ];
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
     }
 }

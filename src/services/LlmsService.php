@@ -34,6 +34,9 @@ class LlmsService extends Component
      */
     public function getLlmsTxtContent(): string
     {
+        if(!$this->globalSettings->isEnabled()) {
+            return '';
+        }
         $markdown = $this->constructIntro();
         $markdown .= $this->constructAllUrls();
         $markdown .= $this->constructFooter();
@@ -44,6 +47,10 @@ class LlmsService extends Component
 
     public function getLlmsFullContent(): string
     {
+        if(!$this->globalSettings->isEnabled()) {
+            return '';
+        }
+
         $markdown = $this->constructIntro();
         $markdown .= $this->constructAllPages();
         $markdown .= $this->constructFooter();
@@ -58,11 +65,11 @@ class LlmsService extends Component
         $llmDescription = $this->globalSettings->llmDescription;
 
         if ($llmTitle) {
-            $markdown .= "# {$llmTitle}\n";
+            $markdown .= "# {$llmTitle}\n\n";
         }
 
         if ($llmDescription) {
-            $markdown .= "\n> {$llmDescription}\n\n";
+            $markdown .= "> {$llmDescription}\n\n";
         }
         return $markdown;
     }
@@ -72,6 +79,10 @@ class LlmsService extends Component
      */
     public function getMarkdownForUri(string $uri): string
     {
+        if(!$this->globalSettings->isEnabled()) {
+            return '';
+        }
+
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
         $page = PageRecord::find()
             ->where(['siteId' => $siteId])
@@ -124,11 +135,11 @@ class LlmsService extends Component
              * @var ContentSettingRecord $metaData
              */
             if($metaData->llmSectionTitle) {
-                $content .= "\n## $metaData->llmSectionTitle\n";
+                $content .= "## $metaData->llmSectionTitle\n\n";
             }
 
             if($metaData->llmSectionDescription) {
-                $content .= "\n$metaData->llmSectionDescription\n\n";
+                $content .= "$metaData->llmSectionDescription\n\n";
             }
         }
         return $content;

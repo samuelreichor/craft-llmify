@@ -3,14 +3,15 @@
 namespace samuelreichor\llmify\controllers;
 
 use Craft;
+use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
+use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\MethodNotAllowedHttpException;
-use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 class ContentController extends Controller
@@ -20,20 +21,27 @@ class ContentController extends Controller
      */
     public function actionIndex(): Response
     {
-        $sections = Craft::$app->entries->getAllSections();
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
-        $sectionsWithUrls = array_filter($sections, function ($section) use ($currentSiteId) {
-            $siteSettings = $section->getSiteSettings();
+        $contentSettings = Llmify::getInstance()->settings->getContentSettingsBySiteId($currentSiteId);
 
-            if (!isset($siteSettings[$currentSiteId])) {
-                return false;
+        $settings = [];
+        foreach ($contentSettings as $setting) {
+            $section = Craft::$app->entries->getSectionById($setting->sectionId);
+            if ($section) {
+                $entryAmount = Entry::find()->sectionId($setting->sectionId)->status('enabled')->count();
+                $settings[] = [
+                    'status' => $setting->enabled,
+                    'url' => UrlHelper::cpUrl("llmify/content/{$setting->sectionId}"),
+                    'title' => $section->name,
+                    'type' => $section->type,
+                    'entries' => $entryAmount,
+                    'llmTitle' => $setting->llmTitleSource !== 'custom' || $setting->llmTitle,
+                    'llmDescription' => $setting->llmDescriptionSource !== 'custom' || $setting->llmDescription,
+                ];
             }
-
-            return $siteSettings[$currentSiteId]->uriFormat !== null;
-        });
-
+        }
         return $this->renderTemplate('llmify/settings/content/index', [
-            'sections' => $sectionsWithUrls,
+            'settings' => $settings,
         ]);
     }
 

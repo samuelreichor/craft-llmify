@@ -1,5 +1,6 @@
 {% extends "_layouts/cp" %}
 
+{% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') -%}
 {% set title = "Content Settings" %}
 {% set selectedSubnavItem = 'content' %}
 
@@ -33,19 +34,42 @@
 }) %}
 
 {% block content %}
-    <p>Select a section to configure its default LLMify settings.</p>
-
-    {% if sections|length %}
-        <ul class="listing">
-            {% for section in sections %}
-                <li>
-                    <a href="{{ cpUrl('llmify/content/' ~ section.id) }}">
-                        <strong>{{ section.name }}</strong>
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No sections with a URL format found.</p>
-    {% endif %}
+    <div id="content-vue-admin-table"></div>
 {% endblock %}
+
+{% js %}
+    const columns = [
+    { name: '__slot:title', title: Craft.t('app', 'Name')},
+    { name: 'entries', title: Craft.t('app', 'Entries') },
+    { name: 'type', title: Craft.t('app', 'Type') },
+    {
+        name: 'llmTitle',
+        title: Craft.t('site', 'LLM Title'),
+        callback: function(value) {
+            if (value) {
+                return '<span data-icon="check" title="'+Craft.t('app', 'Yes')+'"></span>';
+            }
+
+            return '<span data-icon="xmark" title="'+Craft.t('app', 'No')+'"></span>';
+        }
+    },
+    {
+        name: 'llmDescription',
+        title: Craft.t('site', 'LLM Description'),
+        callback: function(value) {
+            if (value) {
+            return '<span data-icon="check" title="'+Craft.t('app', 'Yes')+'"></span>';
+            }
+
+            return '<span data-icon="xmark" title="'+Craft.t('app', 'No')+'"></span>';
+        }
+    }
+    ];
+
+    new Craft.VueAdminTable({
+        columns: columns,
+        container: '#content-vue-admin-table',
+        emptyMessage: 'No content settings exist yet.',
+        tableData: {{ settings|json_encode|raw }}
+    });
+{% endjs %}

@@ -17,6 +17,7 @@ class SettingsService extends Component
 {
     private array $contentSettings = [];
     private array $allEnabledContentSettings = [];
+    private array $contentSettingsBySiteId = [];
     private array $globalSettings = [];
     private array $allEnabledSiteIds = [];
     /**
@@ -107,6 +108,26 @@ class SettingsService extends Component
         }
 
         return $this->allEnabledContentSettings;
+    }
+
+    public function getContentSettingsBySiteId(int $siteId): array
+    {
+        if (isset($this->contentSettingsBySiteId[$siteId])) {
+            return $this->contentSettingsBySiteId[$siteId];
+        }
+
+        $results = $this->_createContentMetaQuery()
+            ->where(['siteId' => $siteId])
+            ->all();
+
+        foreach ($results as $result) {
+            $settings = new ContentSettings($result);
+            $this->contentSettingsBySiteId[$siteId][] = $settings;
+            $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
+            $this->contentSettings[$cacheKey] = $settings;
+        }
+
+        return $this->contentSettingsBySiteId[$siteId];
     }
 
     /**

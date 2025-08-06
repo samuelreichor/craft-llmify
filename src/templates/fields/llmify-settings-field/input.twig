@@ -1,33 +1,74 @@
 {% import "_includes/forms" as forms %}
 
+{% set llmTitleSourceId = name ~ 'llmTitleSource' %}
+{% set llmTitleFieldId = name ~ 'llmTitle' %}
+
+{% set llmDescriptionSourceId = name ~ 'llmDescriptionSource' %}
+{% set llmDescriptionFieldId = name ~ 'llmDescription' %}
+
+<p>
+  You can overwrite the section settings with these fields.
+</p>
+
 {{ forms.selectField({
-    label: 'Entry Default Title Source',
-    instructions: 'Define a default field source for the LLM title for all entries in this section.',
-    id: name ~ 'llmTitleSource',
-    name: name ~  '[llmTitleSource]',
-    options: textFieldOptions,
-    value: value.llmTitleSource ?? defaultValues.llmTitleSource
+  label: 'LLM Title Source',
+  instructions: 'Choose a field to dynamically source the title, or select "Custom" to enter one manually.',
+  id: llmTitleSourceId,
+  name: name ~  '[llmTitleSource]',
+  options: textFieldOptions,
+  value: value.llmTitleSource ?? defaultValues.llmTitleSource
 }) }}
 
 {{ forms.textField({
-    label: 'Entry Default Title',
-    id: name ~ 'llmTitle',
-    name: name ~  '[llmTitle]',
-    value: value.llmTitle ?? '',
+  label: 'LLM Title',
+  instructions: "Enter the static title for this entry. This field is only used if 'Custom' is selected in the source dropdown above.",
+  id: llmTitleFieldId,
+  name: name ~  '[llmTitle]',
+  value: value.llmTitle ?? '',
 }) }}
 
 {{ forms.selectField({
-    label: 'Entry Default Description Source',
-    instructions: 'Define a default field source for the LLM description for all entries in this section.',
-    id: name ~ 'llmDescriptionSource',
-    name: name ~  '[llmDescriptionSource]',
-    options: textFieldOptions,
-    value: value.llmDescriptionSource ?? defaultValues.llmDescriptionSource
+  label: 'LLM Description Source',
+  instructions: 'Choose a field to dynamically source the description, or select "Custom" to enter one manually.',
+  id: llmDescriptionSourceId,
+  name: name ~  '[llmDescriptionSource]',
+  options: textFieldOptions,
+  value: value.llmDescriptionSource ?? defaultValues.llmDescriptionSource
 }) }}
 
+{# Das Textfeld wird von Craft automatisch in ein div mit der ID `{{ llmDescriptionFieldId }}-field` gewrappt #}
 {{ forms.textField({
-    label: 'Entry Default Description',
-    id: name ~ 'llmDescription',
-    name: name ~  '[llmDescription]',
-    value: value.llmDescription ?? '',
+  label: 'LLM Description',
+  instructions: "Enter the static description for this entry. This field is only used if 'Custom' is selected in the source dropdown above.",
+  id: llmDescriptionFieldId,
+  name: name ~  '[llmDescription]',
+  value: value.llmDescription ?? '',
 }) }}
+
+{# JavaScript zur Steuerung der Sichtbarkeit #}
+{% js %}
+    function setupConditionalField(sourceSelector, targetSelector) {
+      const sourceElement = document.querySelector(sourceSelector);
+      const targetElement = document.querySelector(targetSelector);
+
+      if (!sourceElement || !targetElement) {
+        return;
+      }
+
+      const toggleVisibility = () => {
+        if (sourceElement.value === 'custom') {
+          targetElement.style.display = 'block';
+        } else {
+          const input = targetElement.querySelector('input')
+          input.value = ''
+          targetElement.style.display = 'none';
+        }
+      };
+
+      sourceElement.addEventListener('change', toggleVisibility);
+      toggleVisibility();
+    }
+
+    setupConditionalField('#fields-{{ llmTitleSourceId }}', '#fields-{{ llmTitleFieldId }}-field');
+    setupConditionalField('#fields-{{ llmDescriptionSourceId }}', '#fields-{{ llmDescriptionFieldId}}-field');
+{% endjs %}

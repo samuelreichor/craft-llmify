@@ -46,17 +46,39 @@
     {{ hiddenInput('sectionId', section.id) }}
     {{ hiddenInput('siteId', siteId) }}
 
+    <h2 style="margin-top:0">Section Settings</h2>
     {{ forms.lightswitchField({
         label: 'Enable for Section',
-        instructions: 'Todo: Add some good instructions',
+        instructions: 'Activates or deactivates LLM processing for all entries within this section for the current site. If turned off, no content from this section will be processed.',
         id: 'enabled',
         name: 'enabled',
         on: settings.enabled,
+        first: true,
     }) }}
+
+    {{ forms.textField({
+        label: 'Section Title',
+        instructions: "Provide a descriptive title for the entire section. This title helps the LLM understand the general context of the entries contained within it (e.g., 'Company Blog Posts' or 'Product Documentation').",
+        id: 'llmSectionTitle',
+        name: 'llmSectionTitle',
+        value: settings.llmSectionTitle ?? ''
+    }) }}
+
+    {{ forms.textField({
+        label: 'Section Description',
+        instructions: "Write a brief summary of this section's purpose. This gives the LLM a high-level understanding of the content's overall theme (e.g., 'Technical articles about modern web development').",
+        id: 'llmSectionDescription',
+        name: 'llmSectionDescription',
+        value: settings.llmSectionDescription ?? ''
+    }) }}
+
+    <hr>
+
+    <h2>Default Entry Settings</h2>
 
     {{ forms.selectField({
         label: 'Entry Default Title Source',
-        instructions: 'Define a default field source for the LLM title for all entries in this section.',
+        instructions: "Choose the source for each entry's default title. Select an existing field (like the entry's own 'Title') to use its content dynamically, or choose 'Custom' to define a static title in the field below.",
         id: 'llmTitleSource',
         name: 'llmTitleSource',
         options: textFieldOptions,
@@ -65,6 +87,7 @@
 
     {{ forms.textField({
         label: 'Entry Default Title',
+        instructions: "Enter the static default title to be used for entries. This field is only used if 'Custom' is selected as the source above.",
         id: 'llmTitle',
         name: 'llmTitle',
         value: settings.llmTitle ?? ''
@@ -72,7 +95,7 @@
 
     {{ forms.selectField({
         label: 'Entry Default Description Source',
-        instructions: 'Define a default field source for the LLM description for all entries in this section.',
+        instructions: "Choose the source for each entry's default description. You can map this to an existing text field (like a 'Summary' or 'Meta Description') or select 'Custom' to enter a manual default below.",
         id: 'llmDescriptionSource',
         name: 'llmDescriptionSource',
         options: textFieldOptions,
@@ -81,22 +104,36 @@
 
     {{ forms.textField({
         label: 'Entry Default Description',
+        instructions: "Enter the static default description for entries. This field is only used if 'Custom' is selected in the source dropdown above.",
         id: 'llmDescription',
         name: 'llmDescription',
-        value: settings.llmDescription ?? ''
-    }) }}
-
-    {{ forms.textField({
-        label: 'Section Title',
-        id: 'llmSectionTitle',
-        name: 'llmSectionTitle',
-        value: settings.llmSectionTitle ?? ''
-    }) }}
-
-    {{ forms.textField({
-        label: 'Section Description',
-        id: 'llmSectionDescription',
-        name: 'llmSectionDescription',
-        value: settings.llmSectionDescription ?? ''
+        value: settings.llmDescription ?? '',
     }) }}
 {% endblock %}
+
+{% js %}
+    function setupConditionalField(sourceSelector, targetSelector) {
+        const sourceElement = document.querySelector(sourceSelector);
+        const targetElement = document.querySelector(targetSelector);
+
+        if (!sourceElement || !targetElement) {
+            return;
+        }
+
+        const toggleVisibility = () => {
+        if (sourceElement.value === 'custom') {
+            targetElement.style.display = 'block';
+        } else {
+            const input = targetElement.querySelector('input')
+            input.value = ''
+            targetElement.style.display = 'none';
+            }
+        };
+
+        sourceElement.addEventListener('change', toggleVisibility);
+        toggleVisibility();
+    }
+
+    setupConditionalField('#llmTitleSource', '#llmTitle-field');
+    setupConditionalField('#llmDescriptionSource', '#llmDescription-field');
+{% endjs %}

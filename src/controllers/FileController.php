@@ -26,7 +26,7 @@ class FileController extends Controller
             throw new NotFoundHttpException('llms.txt file not found.');
         }
 
-        Craft::$app->response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+        Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
 
         return $this->asRaw($fileContent);
     }
@@ -46,13 +46,14 @@ class FileController extends Controller
             throw new NotFoundHttpException('llms-full.txt file not found.');
         }
 
-        Craft::$app->response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+        Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
 
         return $this->asRaw($fileContent);
     }
 
     /**
      * @throws SiteNotFoundException
+     * @throws \yii\db\Exception
      * @throws NotFoundHttpException
      */
     public function actionGeneratePageMd(string $slug): Response
@@ -64,7 +65,7 @@ class FileController extends Controller
             throw new NotFoundHttpException('Markdown not found for URI: ' . $uri);
         }
 
-        Craft::$app->response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+        Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
 
         return $this->asRaw($fileContent);
     }

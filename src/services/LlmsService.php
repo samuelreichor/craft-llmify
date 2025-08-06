@@ -7,10 +7,9 @@ use craft\base\Component;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
 use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\models\Page;
-use samuelreichor\llmify\records\ContentSettingRecord;
-use samuelreichor\llmify\records\PageRecord;
 use yii\db\Exception;
 
 class LlmsService extends Component
@@ -45,6 +44,9 @@ class LlmsService extends Component
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function getLlmsFullContent(): string
     {
         if(!$this->globalSettings->isEnabled()) {
@@ -76,6 +78,7 @@ class LlmsService extends Component
 
     /**
      * @throws SiteNotFoundException
+     * @throws Exception
      */
     public function getMarkdownForUri(string $uri): string
     {
@@ -84,12 +87,15 @@ class LlmsService extends Component
         }
 
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
-        $page = PageRecord::find()
-            ->where(['siteId' => $siteId])
-            ->andWhere("JSON_UNQUOTE(JSON_EXTRACT(entryMeta, '$.uri')) = :uri", [':uri' => $uri])
-            ->one();
+        $page = Llmify::getInstance()->markdown->getMarkdown($uri, $siteId);
 
         if (!$page) {
+            return '';
+        }
+
+        $contentSetting = Llmify::getInstance()->settings->getContentSetting($page->sectionId, $siteId);
+
+        if (!$contentSetting->isEnabled()) {
             return '';
         }
 
@@ -105,10 +111,15 @@ class LlmsService extends Component
         $content = '';
         $currentSiteUrl = UrlHelper::siteUrl();
         $shouldUseRealUrls = Llmify::getInstance()->getSettings()->isRealUrlLlm;
-        $groupedPages = $this->getGroupedPagesBySite( $this->currentSiteId);
+        $settingsService = Llmify::getInstance()->settings;
+        $groupedPages = Llmify::getInstance()->markdown->getGroupedPagesForSite($this->currentSiteId);
 
         foreach ($groupedPages as $sectionId => $pages) {
-            $content .= $this->constructSectionHeader($sectionId, $this->currentSiteId);
+            $contentSetting = $settingsService->getContentSetting($sectionId, $this->currentSiteId);
+            if (!$contentSetting->isEnabled()) {
+                continue;
+            }
+            $content .= $this->constructSectionHeader($contentSetting);
             foreach ($pages as $page) {
                 /**
                  * @var Page $page
@@ -120,28 +131,17 @@ class LlmsService extends Component
         return $content;
     }
 
-    private function constructSectionHeader(int $sectionId, int $currentSiteId): string
+    private function constructSectionHeader(ContentSettings $metaData): string
     {
-        $metaData = ContentSettingRecord::find()
-            ->where(['sectionId' => $sectionId, 'siteId' => $currentSiteId])
-            ->select(['llmSectionTitle', 'llmSectionDescription'])
-            ->one();
-
         $content = '';
-
-
-        if ($metaData) {
-            /**
-             * @var ContentSettingRecord $metaData
-             */
-            if($metaData->llmSectionTitle) {
-                $content .= "## $metaData->llmSectionTitle\n\n";
-            }
-
-            if($metaData->llmSectionDescription) {
-                $content .= "$metaData->llmSectionDescription\n\n";
-            }
+        if($metaData->llmSectionTitle) {
+            $content .= "\n## $metaData->llmSectionTitle\n\n";
         }
+
+        if($metaData->llmSectionDescription) {
+            $content .= "$metaData->llmSectionDescription\n\n";
+        }
+
         return $content;
 
     }
@@ -170,17 +170,20 @@ class LlmsService extends Component
 
         $content = '';
         if ($llmNote) {
-            $content .= "\n## Notes\n";
-            $content .= "\n$llmNote";
+            $content .= "\n## Notes\n\n";
+            $content .= "$llmNote";
         }
 
         return $content;
     }
 
+    /**
+     * @throws Exception
+     */
     private function constructAllPages(): string
     {
         $content = '';
-        $pages = PageRecord::find()->where(['siteId' => $this->currentSiteId])->orderBy('sectionId')->all();
+        $pages = Llmify::getInstance()->markdown->getActivePagesForSite($this->currentSiteId);
         foreach ($pages as $page) {
             /**
              * @var Page $page
@@ -189,34 +192,5 @@ class LlmsService extends Component
         }
 
         return $content;
-    }
-
-    private function getGroupedPagesBySite(int $siteId): array
-    {
-        $pageRecords = PageRecord::find()
-            ->where(['siteId' => $siteId])
-            ->orderBy('sectionId ASC')
-            ->select([
-                'entryId',
-                'siteId',
-                'sectionId',
-                'metadataId',
-                'content',
-                'title',
-                'description',
-                'entryMeta',
-            ])
-            ->all();
-
-        $groupedPages = [];
-
-        foreach ($pageRecords as $page) {
-            /**
-             * @var PageRecord $page
-             */
-            $groupedPages[$page->sectionId][] = new Page($page->toArray());
-        }
-
-        return $groupedPages;
     }
 }

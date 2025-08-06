@@ -70,4 +70,9 @@ class ContentSettings extends Model
             ],
         ];
     }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
 }

@@ -69,7 +69,7 @@ class Install extends Migration
                     'metadataId' => $this->integer(),
                     'title' => $this->string(),
                     'description' => $this->string(),
-                    'content' => $this->json(),
+                    'content' => $this->longText(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                 ]

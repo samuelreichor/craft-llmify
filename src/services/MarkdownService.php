@@ -5,9 +5,13 @@ namespace samuelreichor\llmify\services;
 use craft\base\Component;
 use craft\elements\Entry;
 use Exception;
+use samuelreichor\llmify\Constants;
+use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\models\Page;
 use samuelreichor\llmify\records\PageRecord;
 use yii\base\InvalidConfigException;
 use League\HTMLToMarkdown\HtmlConverter;
+use craft\db\Query as DbQuery;
 
 class MarkdownService extends Component
 {
@@ -79,6 +83,58 @@ class MarkdownService extends Component
         $pageEntry->save();
     }
 
+    public function getMarkdown(string $uri, int $siteId): ?Page
+    {
+        $result =$this->_createPageQuery()
+            ->where(['siteId' => $siteId])
+            ->andWhere("JSON_UNQUOTE(JSON_EXTRACT(entryMeta, '$.uri')) = :uri", [':uri' => $uri])
+            ->one();
+
+        return $result ? new Page($result) : null;
+    }
+
+    public function getGroupedPagesForSite(int $siteId): array
+    {
+        $pageRecords = $this->_createPageQuery()
+            ->where(['siteId' => $siteId])
+            ->all();
+
+        $groupedPages = [];
+
+        foreach ($pageRecords as $page) {
+            /**
+             * @var PageRecord $page
+             */
+            $groupedPages[$page['sectionId']][] = new Page($page);
+        }
+
+        return $groupedPages;
+    }
+
+    /**
+     * @throws \yii\db\Exception
+     */
+    public function getActivePagesForSite(int $siteId): array
+    {
+        $groupedPages = $this->getGroupedPagesForSite($siteId);
+
+        $activePages = [];
+        $settingsService = Llmify::getInstance()->settings;
+        foreach ($groupedPages as $sectionId => $pages) {
+            $contentSetting = $settingsService->getContentSetting($sectionId, $siteId);
+
+            if (!$contentSetting->isEnabled()) {
+                continue;
+            }
+
+            foreach ($pages as $page) {
+                $activePages[] = $page;
+            }
+        }
+
+        return $activePages;
+    }
+
     private function htmlToMarkdown(string $html): string
     {
         $converter = new HtmlConverter([
@@ -90,4 +146,22 @@ class MarkdownService extends Component
         $markdownRaw = $converter->convert($html);
         return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);
     }
+
+    private function _createPageQuery(): DbQuery
+    {
+        return (new DbQuery())
+            ->orderBy('sectionId ASC')
+            ->select([
+                'siteId',
+                'sectionId',
+                'entryId',
+                'metadataId',
+                'content',
+                'title',
+                'description',
+                'entryMeta',
+            ])
+            ->from([Constants::TABLE_PAGES]);
+    }
+
 }

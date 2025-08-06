@@ -103,7 +103,7 @@ class Llmify extends Plugin
     {
         $navItem = parent::getCpNavItem();
         $navItem['subnav'] = [
-            'globals' => ['label' => 'Globals', 'url' => 'llmify/globals'],
+            'globals' => ['label' => 'Site Settings', 'url' => 'llmify/globals'],
             'content' => ['label' => 'Content', 'url' => 'llmify/content'],
         ];
         return $navItem;

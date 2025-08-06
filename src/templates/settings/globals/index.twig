@@ -1,7 +1,7 @@
 {% extends "_layouts/cp" %}
 {% import "_includes/forms" as forms %}
 
-{% set title = "Global Settings" %}
+{% set title = "Site Settings" %}
 {% set selectedSubnavItem = 'globals' %}
 {% set fullPageForm = true %}
 
@@ -41,15 +41,16 @@
 
     {{ forms.lightswitchField({
         label: 'Enable for Site',
-        instructions: 'Todo: Add some good instructions',
+        instructions: "Activates LLM content generation for this entire site. If disabled, no llms.txt file will be created for this site's content.",
         id: 'enabled',
         name: 'enabled',
         on: settings.enabled,
+        first: true,
     }) }}
 
     {{ forms.textField({
         label: 'LLM Title',
-        instructions: 'The title to be used in the llms.txt and full-llms.txt files.',
+        instructions: "Define the main title for this site. This will be used as the primary heading in the generated llms.txt and full-llms.txt files to identify the content source.",
         id: 'llmTitle',
         name: 'llmTitle',
         value: settings.llmTitle,
@@ -57,7 +58,7 @@
 
     {{ forms.textField({
         label: 'LLM Description',
-        instructions: 'The description to be used in the llms.txt and full-llms.txt files.',
+        instructions: "Provide a high-level summary of this site's purpose. This description will appear below the main title in the generated text files, giving the LLM context about the content.",
         id: 'llmDescription',
         name: 'llmDescription',
         value: settings.llmDescription,
@@ -65,7 +66,7 @@
 
     {{ forms.textField({
         label: 'LLM Note',
-        instructions: 'The LLM Note is a small note in the bottom of the llms.txt file.',
+        instructions: "Add a small note or disclaimer that will be appended to the bottom of the llms.txt file. Useful for versioning or providing brief instructions to the LLM.",
         id: 'llmNote',
         name: 'llmNote',
         value: settings.llmNote,

@@ -119,8 +119,14 @@ class RefreshService extends Component
             return false;
         }
 
-        if ($element instanceof Entry && !$this->canRefreshEntry($element)) {
-            return false;
+        if ($element instanceof Entry) {
+            if ($element->getOwnerId()) {
+                return false;
+            }
+
+            if (!$this->canRefreshEntry($element)) {
+                return false;
+            }
         }
 
         return true;

@@ -5,11 +5,14 @@ namespace samuelreichor\llmify\services;
 use craft\base\Component;
 use craft\base\Element;
 use craft\base\ElementInterface;
+use craft\db\Query;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\helpers\ElementHelper;
 use craft\helpers\Queue;
+use samuelreichor\llmify\behaviors\ElementChangedBehavior;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\jobs\RefreshMarkdownJob;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\RefreshData;
@@ -38,6 +41,27 @@ class RefreshService extends Component
     {
         if (!$this->isRefreshableElement($element)) {
             return;
+        }
+
+        // Get the custom behavior to decide if the Markdown should be refreshed.
+        /** @var ElementChangedBehavior|null $elementChanged */
+        $elementChanged = $element->getBehavior(ElementChangedBehavior::BEHAVIOR_NAME);
+        if ($elementChanged !== null) {
+            // Delete Markdowns if entry gets deleted or deactivated
+            if ($elementChanged->hasBeenDeleted()
+                || ($elementChanged->hasStatusChanged() && !$elementChanged->hasRefreshableStatus())) {
+                $this->deleteElement($elementChanged->originalElement);
+            }
+
+            // Don't refresh Markdown if the element has not changed.
+            if (!$elementChanged->hasChanged()) {
+                return;
+            }
+
+            // Don't refresh Markdown if the element has not a refreshable status (and status has not changed).
+            if (!$elementChanged->hasStatusChanged() && !$elementChanged->hasRefreshableStatus()) {
+                return;
+            }
         }
 
         $this->refreshData->addSiteId($element->siteId);
@@ -86,10 +110,6 @@ class RefreshService extends Component
             return false;
         }
 
-        if ($element->propagating) {
-            return false;
-        }
-
         if ($element instanceof GlobalSet) {
             $this->refreshAll();
             return false;
@@ -126,16 +146,31 @@ class RefreshService extends Component
         return $result;
     }
 
-    private function findRelatedEntries(ElementInterface $element): array
+    /**
+     * @throws Exception
+     */
+    public function deleteElement(ElementInterface $element): void
     {
-        if (!$element->id) {
-            return [];
-        }
+        $entryId = $element->id;
+        $supportedSites = $element->getSupportedSites();
 
-        return Entry::find()
-            ->relatedTo($element)
-            ->siteId($element->siteId)
-            ->all();
+        foreach ($supportedSites as $supportedSite) {
+            $this->deletePageByParams([
+                'siteId' => $supportedSite['siteId'],
+                'entryId' => $entryId,
+            ]);
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function deletePageByParams(array $params): void
+    {
+        (new Query())
+            ->createCommand()
+            ->delete(Constants::TABLE_PAGES, $params)
+            ->execute();
     }
 
     private function findAllRefreshableEntries(): array

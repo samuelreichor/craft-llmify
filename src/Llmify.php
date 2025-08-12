@@ -3,6 +3,8 @@
 namespace samuelreichor\llmify;
 
 use Craft;
+use craft\base\Element;
+use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -212,6 +214,27 @@ class Llmify extends Plugin
                 $this->settings->delGlobalSetting($siteId);
             }
         );
+
+        // Set the previous status of an element so we can compare later
+        $events = [
+            Elements::EVENT_BEFORE_SAVE_ELEMENT,
+            Elements::EVENT_BEFORE_RESAVE_ELEMENT,
+            Elements::EVENT_BEFORE_UPDATE_SLUG_AND_URI,
+            Elements::EVENT_BEFORE_DELETE_ELEMENT,
+            Elements::EVENT_BEFORE_RESTORE_ELEMENT,
+        ];
+
+        foreach ($events as $event) {
+            Event::on(Elements::class, $event,
+                function(ElementEvent|MultiElementActionEvent $event) {
+                    /** @var Element $element */
+                    $element = $event->element;
+                    if ($this->refresh->isRefreshableElement($element)) {
+                        $element->attachBehavior(ElementChangedBehavior::BEHAVIOR_NAME, ElementChangedBehavior::class);
+                    }
+                }
+            );
+        }
 
         $events = [
             Elements::EVENT_AFTER_SAVE_ELEMENT,

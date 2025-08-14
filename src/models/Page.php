@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\models;
 
-use Craft;
 use craft\base\Model;
 
 /**
@@ -18,5 +17,5 @@ class Page extends Model
     public string $content = '';
     public string $title = '';
     public string $description = '';
-    public array $entryMeta = ["uri" => "","fullUrl" => ""];
+    public array $entryMeta = ["uri" => "", "fullUrl" => ""];
 }

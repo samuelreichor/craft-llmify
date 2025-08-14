@@ -177,6 +177,5 @@ class Install extends Migration
     {
         Llmify::getInstance()->settings->setAllContentSettings();
         Llmify::getInstance()->settings->setAllGlobalSettings();
-
     }
 }

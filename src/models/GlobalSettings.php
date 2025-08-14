@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\models;
 
-use Craft;
 use craft\base\Model;
 
 /**
@@ -23,9 +22,9 @@ class GlobalSettings extends Model
                 [
                     'llmTitle',
                     'llmDescription',
-                    'llmNote'
+                    'llmNote',
                 ],
-                'string'
+                'string',
             ],
         ];
     }

@@ -33,7 +33,7 @@ class LlmsService extends Component
      */
     public function getLlmsTxtContent(): string
     {
-        if(!$this->globalSettings->isEnabled()) {
+        if (!$this->globalSettings->isEnabled()) {
             return '';
         }
         $markdown = $this->constructIntro();
@@ -49,7 +49,7 @@ class LlmsService extends Component
      */
     public function getLlmsFullContent(): string
     {
-        if(!$this->globalSettings->isEnabled()) {
+        if (!$this->globalSettings->isEnabled()) {
             return '';
         }
 
@@ -82,7 +82,7 @@ class LlmsService extends Component
      */
     public function getMarkdownForUri(string $uri): string
     {
-        if(!$this->globalSettings->isEnabled()) {
+        if (!$this->globalSettings->isEnabled()) {
             return '';
         }
 
@@ -134,16 +134,15 @@ class LlmsService extends Component
     private function constructSectionHeader(ContentSettings $metaData): string
     {
         $content = '';
-        if($metaData->llmSectionTitle) {
+        if ($metaData->llmSectionTitle) {
             $content .= "\n## $metaData->llmSectionTitle\n\n";
         }
 
-        if($metaData->llmSectionDescription) {
+        if ($metaData->llmSectionDescription) {
             $content .= "$metaData->llmSectionDescription\n\n";
         }
 
         return $content;
-
     }
 
     private function constructMdUrl(Page $page, string $currentSiteUrl): string

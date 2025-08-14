@@ -4,13 +4,13 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\db\Query as DbQuery;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\records\ContentSettingRecord;
 use samuelreichor\llmify\records\GlobalSettingRecord;
 use yii\db\Exception;
-use craft\db\Query as DbQuery;
 
 class SettingsService extends Component
 {
@@ -173,11 +173,6 @@ class SettingsService extends Component
         }
 
         $globalRecord = GlobalSettingRecord::findOne($globalSettings->siteId) ?: new GlobalSettingRecord();
-
-        if (!$globalRecord) {
-            $globalRecord = new GlobalSettingRecord();
-        }
-
         $globalRecord->siteId = $globalSettings->siteId;
         $globalRecord->enabled = $globalSettings->enabled;
         $globalRecord->llmTitle = $globalSettings->llmTitle;

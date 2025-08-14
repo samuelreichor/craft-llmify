@@ -76,9 +76,9 @@ class ContentController extends Controller
     {
         $this->requirePostRequest();
         $settingService = Llmify::getInstance()->settings;
-        $contentId =  $this->request->getBodyParam('contentId');
-        $sectionId =  $this->request->getBodyParam('sectionId');
-        $siteId =  $this->request->getBodyParam('siteId');
+        $contentId = $this->request->getBodyParam('contentId');
+        $sectionId = $this->request->getBodyParam('sectionId');
+        $siteId = $this->request->getBodyParam('siteId');
 
         if ($contentId) {
             $content = $settingService->getContentSetting($sectionId, $siteId);

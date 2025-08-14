@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\models;
 
-use Craft;
 use craft\base\Model;
 
 /**
@@ -66,7 +65,7 @@ class ContentSettings extends Model
                     'llmDescription',
                     'llmSectionTitle',
                     'llmSectionDescription',
-                ], 'string'
+                ], 'string',
             ],
         ];
     }

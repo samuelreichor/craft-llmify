@@ -17,16 +17,13 @@ class GlobalsController extends Controller
 {
     /**
      * @throws SiteNotFoundException
+     * @throws Exception
      */
     public function actionIndex(): Response
     {
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $globalSettings = Llmify::getInstance()->settings;
         $settings = $globalSettings->getGlobalSetting($currentSiteId);
-
-        if (!$settings) {
-            $settings = new GlobalSettings();
-        }
 
         return $this->renderTemplate('llmify/settings/globals/index', [
             'settings' => $settings,
@@ -46,11 +43,6 @@ class GlobalsController extends Controller
         $siteId = $this->request->getBodyParam('siteId');
         $settingService = Llmify::getInstance()->settings;
         $globalSetting = $settingService->getGlobalSetting($siteId);
-
-        if(!$globalSetting) {
-            $globalSetting = new GlobalSettings();
-            $globalSetting->siteId = $siteId;
-        }
 
         $globalSetting->enabled = $this->request->getBodyParam('enabled');
         $globalSetting->llmTitle = $this->request->getBodyParam('llmTitle');

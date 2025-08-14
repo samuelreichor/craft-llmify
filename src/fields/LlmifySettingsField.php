@@ -51,7 +51,7 @@ class LlmifySettingsField extends Field
     {
         $view = Craft::$app->getView();
         $textFieldOptions = [];
-        $defaultValues =  [
+        $defaultValues = [
             'llmTitleSource' => 'custom',
             'llmDescriptionSource' => 'custom',
         ];

@@ -11,10 +11,17 @@ class RefreshData
      *  },
      *  elements: array<string, array{
      *      elementIds: array<int, bool>
-     *  }>
+     *  }>,
+     *  urls: array<string, bool>
      * }
      */
-    public array $data = [];
+    public array $data = [
+        'sites' => [
+            'siteIds' => [],
+        ],
+        'elements' => [],
+        'urls' => [],
+    ];
 
     public function addElementId(int $elId, string $elType): void
     {
@@ -59,6 +66,6 @@ class RefreshData
 
     public function isEmpty(): bool
     {
-        return empty($this->data['elements']);
+        return empty($this->data['elements']) && empty($this->data['sites']['siteIds']) && empty($this->data['urls']);
     }
 }

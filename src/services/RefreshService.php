@@ -7,6 +7,7 @@ use craft\base\Component;
 use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\db\Query;
+use craft\db\Query as DbQuery;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\elements\GlobalSet;
@@ -23,7 +24,6 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use yii\db\Exception;
-use craft\db\Query as DbQuery;
 
 class RefreshService extends Component
 {

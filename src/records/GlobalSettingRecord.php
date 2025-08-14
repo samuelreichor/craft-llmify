@@ -2,10 +2,8 @@
 
 namespace samuelreichor\llmify\records;
 
-use Craft;
 use craft\db\ActiveRecord;
 use samuelreichor\llmify\Constants;
-use samuelreichor\llmify\models\ContentSettings;
 
 /**
  * Content Setting Record

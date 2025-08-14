@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\behaviors;
 
 use Craft;
 use craft\base\Element;
+use craft\elements\Entry;
 use craft\helpers\ElementHelper;
 use samuelreichor\llmify\Llmify;
 use yii\base\Behavior;
@@ -11,10 +12,11 @@ use yii\base\Exception;
 
 /**
  * Element Changed behavior
+ *
+ * @property Entry $owner
  */
 class ElementChangedBehavior extends Behavior
 {
-
     public const BEHAVIOR_NAME = 'elementChanged';
     public ?Element $originalElement = null;
     public array $originalElementSiteStatuses = [];
@@ -146,5 +148,4 @@ class ElementChangedBehavior extends Behavior
         $page = Llmify::getInstance()->markdown->getMarkdown($element->uri, $element->siteId);
         return $page !== null;
     }
-
 }

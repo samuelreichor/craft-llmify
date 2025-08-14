@@ -6,15 +6,11 @@ use Craft;
 use craft\elements\Entry;
 use craft\errors\ElementNotFoundException;
 use craft\web\Controller;
-use craft\helpers\Queue;
-use craft\queue\jobs\ResaveElements;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
-use yii\console\ExitCode;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\MethodNotAllowedHttpException;
-use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 class MarkdownController extends Controller
@@ -73,7 +69,7 @@ class MarkdownController extends Controller
 
         return $this->asJson([
             'success' => true,
-            'message' => 'Markdown successfully updated.'
+            'message' => 'Markdown successfully updated.',
         ]);
     }
 
@@ -100,7 +96,7 @@ class MarkdownController extends Controller
 
         return $this->asJson([
             'success' => true,
-            'message' => 'Markdown successfully cleared.'
+            'message' => 'Markdown successfully cleared.',
         ]);
     }
 }

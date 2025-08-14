@@ -19,7 +19,7 @@ class Utils extends Utility
         return Craft::t('llmify', 'LLMify');
     }
 
-    static function id(): string
+    public static function id(): string
     {
         return 'llmify';
     }
@@ -35,7 +35,7 @@ class Utils extends Utility
      * @throws RuntimeError
      * @throws LoaderError
      */
-    static function contentHtml(): string
+    public static function contentHtml(): string
     {
         return Craft::$app->getView()->renderTemplate('llmify/utilities/actions.twig');
     }

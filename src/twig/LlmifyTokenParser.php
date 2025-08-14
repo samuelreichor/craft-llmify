@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\twig;
 
-use samuelreichor\llmify\twig\LlmifyNode;
 use Twig\Token;
 use Twig\TokenParser\AbstractTokenParser;
 

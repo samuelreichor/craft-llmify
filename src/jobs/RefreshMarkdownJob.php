@@ -11,7 +11,6 @@ use yii\queue\Queue;
 
 class RefreshMarkdownJob extends BaseBatchedJob
 {
-
     public RefreshData $data;
 
     private Queue $queue;

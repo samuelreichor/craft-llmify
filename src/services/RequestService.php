@@ -4,10 +4,10 @@ namespace samuelreichor\llmify\services;
 
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\HttpException;
+use Amp\Http\Client\Request;
 use Amp\Pipeline\Pipeline;
 use Craft;
 use yii\base\Component;
-use Amp\Http\Client\Request;
 
 /**
  * Request Service
@@ -27,11 +27,10 @@ class RequestService extends Component
 
     public function generateUrlsWithProgress(array $urls, callable $setProgressHandler = null): void
     {
-
         $this->generateWithProgress($urls, $setProgressHandler, 0, count($urls));
     }
 
-    public function generateWithProgress(array $urls, callable $setProgressHandler, int $count, int $total ): void
+    public function generateWithProgress(array $urls, callable $setProgressHandler, int $count, int $total): void
     {
         $client = HttpClientBuilder::buildDefault();
 

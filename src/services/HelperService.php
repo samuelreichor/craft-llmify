@@ -9,12 +9,10 @@ use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use craft\fields\PlainText;
 use craft\models\EntryType;
-use craft\models\FieldLayout;
 use craft\models\Section;
 
 class HelperService extends Component
 {
-
     private const textFieldOptionBase = [
         [
             'label' => 'Custom Text',
@@ -22,12 +20,12 @@ class HelperService extends Component
         ],
         [
             'label' => '--- Fields ---',
-            'disabled' => true
+            'disabled' => true,
         ],
         [
             'label' => 'Title',
             'value' => 'title',
-        ]
+        ],
     ];
     /**
      * @throws SiteNotFoundException
@@ -81,10 +79,10 @@ class HelperService extends Component
         $allFieldHandles = [];
         foreach ($entryTypes as $entryType) {
             $fields = $entryType->getCustomFields();
-            $textFields = array_filter($fields, function ($field) {
+            $textFields = array_filter($fields, function($field) {
                 return $field instanceof PlainText;
             });
-            $allFieldHandles[] = array_map(function ($field) {
+            $allFieldHandles[] = array_map(function($field) {
                 return $field->handle;
             }, $textFields);
         }

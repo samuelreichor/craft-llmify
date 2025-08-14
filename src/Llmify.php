@@ -4,14 +4,10 @@ namespace samuelreichor\llmify;
 
 use Craft;
 use craft\base\Element;
-use craft\events\DefineHtmlEvent;
-use samuelreichor\llmify\behaviors\ElementChangedBehavior;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
+use craft\events\DefineHtmlEvent;
 use craft\events\ElementEvent;
 use craft\events\MultiElementActionEvent;
 use craft\events\RegisterComponentTypesEvent;
@@ -19,8 +15,6 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\SectionEvent;
 use craft\events\SiteEvent;
 use craft\events\TemplateEvent;
-use craft\helpers\ElementHelper;
-use craft\helpers\UrlHelper;
 use craft\services\Elements;
 use craft\services\Entries;
 use craft\services\Fields;
@@ -28,6 +22,7 @@ use craft\services\Sites;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use craft\web\View;
+use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\HelperService;
@@ -39,13 +34,13 @@ use samuelreichor\llmify\services\RequestService;
 use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use yii\base\Event;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
-use yii\base\InvalidRouteException;
-use yii\base\ViewEvent;
 use yii\log\FileTarget;
-use yii\web\Response;
 
 /**
  * llmify plugin
@@ -68,6 +63,7 @@ class Llmify extends Plugin
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = true;
     public bool $hasCpSection = true;
+    private bool|null|PluginSettings $_settings;
 
     public static function config(): array
     {
@@ -113,11 +109,20 @@ class Llmify extends Plugin
     }
 
     /**
-     * @throws InvalidConfigException
+     * @inheritdoc
      */
-    protected function createSettingsModel(): ?Model
+    protected function createSettingsModel(): ?PluginSettings
     {
-        return Craft::createObject(PluginSettings::class);
+        return new PluginSettings();
+    }
+
+    public function getSettings(): ?PluginSettings
+    {
+        if (!isset($this->_settings)) {
+            $this->_settings = $this->createSettingsModel() ?: false;
+        }
+
+        return $this->_settings ?: null;
     }
 
     /**
@@ -139,7 +144,7 @@ class Llmify extends Plugin
         Event::on(
             Fields::class,
             Fields::EVENT_REGISTER_FIELD_TYPES,
-            function (RegisterComponentTypesEvent $event) {
+            function(RegisterComponentTypesEvent $event) {
                 $event->types[] = LlmifySettingsField::class;
             }
         );
@@ -147,7 +152,7 @@ class Llmify extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 $event->rules['llmify'] = 'llmify/globals/redirect';
                 $event->rules['llmify/globals'] = 'llmify/globals/index';
                 $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
@@ -160,7 +165,7 @@ class Llmify extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
                 $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
                 $event->rules['raw/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
@@ -252,7 +257,7 @@ class Llmify extends Plugin
             );
         }
 
-        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function (RegisterComponentTypesEvent $event) {
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function(RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;
         });
 

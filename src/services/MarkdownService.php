@@ -3,15 +3,15 @@
 namespace samuelreichor\llmify\services;
 
 use craft\base\Component;
+use craft\db\Query as DbQuery;
 use craft\elements\Entry;
 use Exception;
+use League\HTMLToMarkdown\HtmlConverter;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\Page;
 use samuelreichor\llmify\records\PageRecord;
 use yii\base\InvalidConfigException;
-use League\HTMLToMarkdown\HtmlConverter;
-use craft\db\Query as DbQuery;
 
 class MarkdownService extends Component
 {
@@ -55,7 +55,6 @@ class MarkdownService extends Component
      */
     public function saveMarkdown(string $markdown, int $entryId, int $siteId): void
     {
-
         $entry = Entry::find()->id($entryId)->siteId($siteId)->one();
 
         if (!$entry) {
@@ -85,7 +84,7 @@ class MarkdownService extends Component
 
     public function getMarkdown(string $uri, int $siteId): ?Page
     {
-        $result =$this->_createPageQuery()
+        $result = $this->_createPageQuery()
             ->where(['siteId' => $siteId])
             ->andWhere("JSON_UNQUOTE(JSON_EXTRACT(entryMeta, '$.uri')) = :uri", [':uri' => $uri])
             ->one();
@@ -140,7 +139,7 @@ class MarkdownService extends Component
         $converter = new HtmlConverter([
             'strip_tags' => true,
             'header_style' => 'atx',
-            'remove_nodes' => 'img picture style'
+            'remove_nodes' => 'img picture style',
         ]);
 
         $markdownRaw = $converter->convert($html);
@@ -163,5 +162,4 @@ class MarkdownService extends Component
             ])
             ->from([Constants::TABLE_PAGES]);
     }
-
 }

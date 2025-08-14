@@ -26,27 +26,21 @@ class MarkdownController extends Controller
         $this->requirePostRequest();
 
         Llmify::getInstance()->refresh->refreshAll();
-
-        $this->setSuccessFlash('Markdown generation has been started. This may take a few seconds to complete.');
+        $this->setSuccessFlash('Markdown generation started. Jobs have been added to the queue.');
         return $this->redirectToPostedUrl();
     }
 
     /**
      * @throws MethodNotAllowedHttpException
      * @throws BadRequestHttpException
+     * @throws Exception
      */
     public function actionClear(): Response
     {
         $this->requirePostRequest();
 
-        try {
-            Craft::$app->getDb()->createCommand()->truncateTable(Constants::TABLE_PAGES)->execute();
-            $this->setSuccessFlash('All markdowns successfully removed.');
-        } catch (\Exception $e) {
-            Craft::error('Could not clear markdowns' . $e->getMessage(), 'llmify');
-            $this->setFailFlash('Could not clear the data due to an error.');
-
-        }
+        Llmify::getInstance()->refresh->clearAll();
+        $this->setSuccessFlash('All markdowns successfully removed.');
 
         return $this->redirectToPostedUrl();
     }

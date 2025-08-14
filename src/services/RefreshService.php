@@ -138,6 +138,14 @@ class RefreshService extends Component
     /**
      * @throws Exception
      */
+    public function clearAll(): void
+    {
+        Craft::$app->getDb()->createCommand()->truncateTable(Constants::TABLE_PAGES)->execute();
+    }
+
+    /**
+     * @throws Exception
+     */
     public function canRefreshEntry(Entry $entry): bool
     {
         $settingsService = Llmify::getInstance()->settings;

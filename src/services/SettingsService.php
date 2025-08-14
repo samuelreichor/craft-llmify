@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Component;
 use craft\db\Query as DbQuery;
 use samuelreichor\llmify\Constants;
+use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
 use samuelreichor\llmify\records\ContentSettingRecord;
@@ -19,8 +20,10 @@ class SettingsService extends Component
     private array $contentSettingsBySiteId = [];
     private array $globalSettings = [];
     private array $allEnabledSiteIds = [];
+
     /**
      * @throws Exception
+     * @throws \yii\base\Exception
      */
     public function saveContentSettings(ContentSettings $contentSettings, bool $runValidation = true): bool
     {
@@ -49,6 +52,8 @@ class SettingsService extends Component
         $contentRecord->llmSectionTitle = $contentSettings->llmSectionTitle;
         $contentRecord->llmSectionDescription = $contentSettings->llmSectionDescription;
         $contentRecord->sectionId = $contentSettings->sectionId;
+
+        Llmify::getInstance()->refresh->refreshSection([$contentSettings->sectionId], [$contentSettings->siteId]);
 
         $contentRecord->save();
 

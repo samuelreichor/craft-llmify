@@ -106,6 +106,18 @@ class RefreshService extends Component
     /**
      * @throws Exception|\yii\base\Exception
      */
+    public function refreshSection(array $sectionIds, array $siteIds): void
+    {
+        $allRefreshableEntries = $this->findAllRefreshableEntriesForSection($sectionIds, $siteIds);
+
+        foreach ($allRefreshableEntries as $entry) {
+            $this->addElement($entry);
+        }
+    }
+
+    /**
+     * @throws Exception|\yii\base\Exception
+     */
     public function isRefreshAbleElement(ElementInterface $element): bool
     {
         /*Todo: This logic does not work with categories or other elements.*/
@@ -255,6 +267,14 @@ class RefreshService extends Component
         $sectionIds = array_values(array_unique($sectionIds));
         $siteIds = array_values(array_unique($siteIds));
 
+        return Entry::find()
+            ->sectionId($sectionIds)
+            ->siteId($siteIds)
+            ->all();
+    }
+
+    private function findAllRefreshableEntriesForSection(array $sectionIds, array $siteIds): array
+    {
         return Entry::find()
             ->sectionId($sectionIds)
             ->siteId($siteIds)

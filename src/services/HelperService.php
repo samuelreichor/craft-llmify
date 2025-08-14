@@ -80,7 +80,8 @@ class HelperService extends Component
         foreach ($entryTypes as $entryType) {
             $fields = $entryType->getCustomFields();
             $textFields = array_filter($fields, function($field) {
-                return $field instanceof PlainText;
+                $isCkEditorField = class_exists('\craft\ckeditor\Field') && is_a($field, '\craft\ckeditor\Field');
+                return $field instanceof PlainText || $isCkEditorField;
             });
             $allFieldHandles[] = array_map(function($field) {
                 return $field->handle;

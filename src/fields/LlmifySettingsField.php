@@ -49,19 +49,15 @@ class LlmifySettingsField extends Field
      */
     public function getInputHtml(mixed $value, ?ElementInterface $element = null): string
     {
-        $view = Craft::$app->getView();
-        $textFieldOptions = [];
-        $defaultValues = [
-            'llmTitleSource' => 'custom',
-            'llmDescriptionSource' => 'custom',
-        ];
-
-        if (get_class($element) === Entry::class) {
-            $textFieldOptions = Llmify::getInstance()->helper->getTextFieldsForEntry($element);
-            $metaDataService = new MetaDataService($element);
-            $defaultValues['llmTitleSource'] = $metaDataService->getContentTitleSource();
-            $defaultValues['llmDescriptionSource'] = $metaDataService->getContentDescriptionSource();
+        if ($element::class !== Entry::class) {
+            return 'Only available for Entries.';
         }
+
+        $view = Craft::$app->getView();
+        $textFieldOptions = Llmify::getInstance()->helper->getTextFieldsForEntry($element);
+        $metaDataService = new MetaDataService($element);
+        $defaultValues['llmTitleSource'] = $metaDataService->getContentTitleSource();
+        $defaultValues['llmDescriptionSource'] = $metaDataService->getContentDescriptionSource();
 
         return $view->renderTemplate('llmify/fields/llmify-settings-field/input', [
             'name' => $this->handle,

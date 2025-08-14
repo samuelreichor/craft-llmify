@@ -77,8 +77,7 @@ class MetadataService extends Component
         }
 
         if ($sourceHandle) {
-            $value = $this->entry[$sourceHandle];
-            return (string) $value;
+            return strip_tags($this->entry[$sourceHandle]);
         }
 
         return $this->entry->title ?? '';
@@ -108,8 +107,7 @@ class MetadataService extends Component
         }
 
         if ($sourceHandle) {
-            $value = $this->entry[$sourceHandle];
-            return (string) $value;
+            return strip_tags($this->entry[$sourceHandle]);
         }
 
         return '';

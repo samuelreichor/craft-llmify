@@ -27,6 +27,7 @@ class MarkdownController extends Controller
 
         Llmify::getInstance()->refresh->refreshAll();
 
+        $this->setSuccessFlash('Markdown generation has been started. This may take a few seconds to complete.');
         return $this->redirectToPostedUrl();
     }
 
@@ -40,8 +41,11 @@ class MarkdownController extends Controller
 
         try {
             Craft::$app->getDb()->createCommand()->truncateTable(Constants::TABLE_PAGES)->execute();
+            $this->setSuccessFlash('All markdowns successfully removed.');
         } catch (\Exception $e) {
-            Craft::error('Could not clear markdowns' . $e->getMessage(), __METHOD__);
+            Craft::error('Could not clear markdowns' . $e->getMessage(), 'llmify');
+            $this->setFailFlash('Could not clear the data due to an error.');
+
         }
 
         return $this->redirectToPostedUrl();

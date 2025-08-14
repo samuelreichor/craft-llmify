@@ -1,6 +1,33 @@
 {% import "_includes/forms" as forms %}
+<h2>Generated Markdowns</h2>
+{% set cols = {
+  heading: {
+    type: 'heading',
+    heading: "Site",
+  },
+  pages: {
+    type: 'html',
+    heading: "Markdowns",
+  },
+} %}
 
-<h2>LLMify Actions</h2>
+{% set rows = [] %}
+{% for site in markdownTable %}
+  {% set rows = rows|merge([{
+    heading: site.name,
+    pages: site.pageCount|number,
+  }]) %}
+{% endfor %}
+
+{{ forms.editableTableField({
+  name: 'markdowns',
+  id: 'markdowns',
+  cols: cols,
+  rows: rows,
+  staticRows: true,
+}) }}
+
+<h2>Actions</h2>
 
 <form class="utility" method="post" accept-charset="UTF-8">
   {{ actionInput('llmify/markdown/generate') }}

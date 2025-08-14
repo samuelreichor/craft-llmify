@@ -1,0 +1,97 @@
+{% import '_includes/forms' as forms %}
+
+{% set markdownExists = page != null %}
+<div class="data">
+  <div class="heading">Status</div>
+  <div class="value statusMsg" style="justify-content: space-between">
+    <p>
+      {{ markdownExists ? 'Generated' : 'Not generated' }}
+    </p>
+  </div>
+  {% if markdownExists %}
+    <div class="heading status-update">Last Updated</div>
+    <div class="value status-update">{{ page.dateUpdated|datetime('short') }}</div>
+  {% endif %}
+  <div class="llmify-btn-group">
+    {{ tag('button', {
+      text: 'Update',
+      class: 'btn primary generate',
+      data: {
+        action: generateActionUrl,
+      },
+    }) }}
+
+    {{ tag('button', {
+      text: 'Clear',
+      class: 'btn secondary clear',
+      data: {
+        action: clearActionUrl,
+      },
+    }) }}
+  </div>
+</div>
+
+{% css %}
+  .llmify-sidebar .meta .data {
+  min-height: 0;
+  }
+
+  .llmify-sidebar .meta .data:first-of-type {
+  padding-top: 8px;
+  }
+
+  .llmify-sidebar .meta .data:last-of-type {
+  padding-bottom: 8px;
+  }
+
+  .llmify-sidebar .llmify-btn-group {
+    padding-block: var(--s);
+    padding-inline: var(--m);
+    display: flex;
+    gap: 0.5rem;
+
+    button {
+      min-width: 100px;
+    }
+  }
+{% endcss %}
+
+<script>
+  const sidebarWidget = document.querySelector('.llmify-sidebar')
+  const generateBtn = sidebarWidget.querySelector('.generate')
+  const clearBtn = sidebarWidget.querySelector('.clear')
+  const status = sidebarWidget.querySelector('.statusMsg p')
+  const statusUpdateEls = sidebarWidget.querySelectorAll('.status-update')
+
+  function sendActionRequest(actionUrl, statusUpdateMsg) {
+    Craft.sendActionRequest('POST', actionUrl)
+        .then((response) => {
+          Craft.cp.displaySuccess(response.data.message);
+          status.innerHTML = statusUpdateMsg
+          statusUpdateEls.forEach(el => {
+            el.style.display = 'none'
+          })
+        })
+        .catch(({response}) => {
+          if (response.data.message) {
+            Craft.cp.displayError(response.data.message);
+          }
+          else {
+            Craft.cp.displayError();
+          }
+        })
+  }
+  generateBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    const actionUrl = generateBtn.dataset.action;
+    sendActionRequest(actionUrl, 'Updated')
+  })
+
+  clearBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    const actionUrl = clearBtn.dataset.action;
+    sendActionRequest(actionUrl, 'Cleared')
+  })
+</script>
+
+

@@ -4,6 +4,7 @@ namespace samuelreichor\llmify;
 
 use Craft;
 use craft\base\Element;
+use craft\events\DefineHtmlEvent;
 use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -147,7 +148,6 @@ class Llmify extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
-                $event->rules['llmify/cache/clear'] = 'llmify/cache/clear';
                 $event->rules['llmify'] = 'llmify/globals/redirect';
                 $event->rules['llmify/globals'] = 'llmify/globals/index';
                 $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
@@ -267,6 +267,14 @@ class Llmify extends Plugin
                 }
                 $markdownService->clearBlocks();
             }
+        );
+
+        Event::on(Entry::class, Entry::EVENT_DEFINE_SIDEBAR_HTML,
+            function(DefineHtmlEvent $event) {
+                /** @var Entry $entry */
+                $entry = $event->sender;
+                $event->html .= $this->refresh->getSidebarHtml($entry);
+            },
         );
     }
 

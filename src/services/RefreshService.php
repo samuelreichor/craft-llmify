@@ -2,6 +2,7 @@
 
 namespace samuelreichor\llmify\services;
 
+use Craft;
 use craft\base\Component;
 use craft\base\Element;
 use craft\base\ElementInterface;
@@ -10,13 +11,19 @@ use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\helpers\ElementHelper;
+use craft\helpers\Html;
 use craft\helpers\Queue;
+use craft\helpers\UrlHelper;
 use samuelreichor\llmify\behaviors\ElementChangedBehavior;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\jobs\RefreshMarkdownJob;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\RefreshData;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use yii\db\Exception;
+use craft\db\Query as DbQuery;
 
 class RefreshService extends Component
 {
@@ -160,6 +167,54 @@ class RefreshService extends Component
                 'entryId' => $entryId,
             ]);
         }
+    }
+
+    /**
+     * @throws SyntaxError
+     * @throws RuntimeError
+     * @throws \yii\base\Exception
+     * @throws LoaderError
+     */
+    public function getSidebarHtml(Entry $entry): string
+    {
+        if (!$this->isRefreshableElement($entry)) {
+            return '';
+        }
+
+        $uri = $entry->uri;
+        if ($uri === null) {
+            return '';
+        }
+
+        return Html::beginTag('fieldset', ['class' => 'llmify-sidebar']) .
+            Html::tag('legend', 'Llmify', ['class' => 'h6']) .
+            Html::tag('div', self::sidebarHtml($entry), ['class' => 'meta']) .
+            Html::endTag('fieldset');
+    }
+
+    /**
+     * @throws SyntaxError
+     * @throws RuntimeError
+     * @throws \yii\base\Exception
+     * @throws LoaderError
+     */
+    private static function sidebarHtml(Entry $entry): string
+    {
+        $page = (new DbQuery())
+        ->select([
+            'dateUpdated',
+            'id',
+        ])
+        ->from([Constants::TABLE_PAGES])
+        ->where(['entryId' => $entry->id, 'siteId' => $entry->siteId])
+        ->one();
+
+        return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
+            'isRefreshable' => true,
+            'page' => $page,
+            'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
+            'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
+        ]);
     }
 
     /**

@@ -9,6 +9,8 @@ use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
+use samuelreichor\llmify\services\PermissionService;
+use Throwable;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\MethodNotAllowedHttpException;
@@ -18,9 +20,12 @@ class ContentController extends Controller
 {
     /**
      * @throws SiteNotFoundException
+     * @throws Throwable
      */
     public function actionIndex(): Response
     {
+        PermissionService::requireEditContentSettings();
+
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $contentSettings = Llmify::getInstance()->settings->getContentSettingsBySiteId($currentSiteId);
 
@@ -48,9 +53,12 @@ class ContentController extends Controller
     /**
      * @throws SiteNotFoundException
      * @throws Exception
+     * @throws Throwable
      */
     public function actionEditSection(int $sectionId): Response
     {
+        PermissionService::requireEditContentSettings();
+
         $section = Craft::$app->entries->getSectionById($sectionId);
         $contentSettings = Llmify::getInstance()->settings;
         $helperService = Llmify::getInstance()->helper;
@@ -70,10 +78,13 @@ class ContentController extends Controller
     /**
      * @throws BadRequestHttpException
      * @throws MethodNotAllowedHttpException
-     * @throws Exception
+     * @throws Exception|\yii\base\Exception
+     * @throws Throwable
      */
     public function actionSaveSectionSettings(): ?Response
     {
+        PermissionService::requireEditContentSettings();
+
         $this->requirePostRequest();
         $settingService = Llmify::getInstance()->settings;
         $contentId = $this->request->getBodyParam('contentId');
@@ -103,5 +114,12 @@ class ContentController extends Controller
 
         $this->setSuccessFlash(Craft::t('app', 'Content Setting saved.'));
         return $this->redirectToPostedUrl();
+    }
+
+    public function actionRedirect(): Response
+    {
+        // As there is no dashboard we simply redirect to content
+        $targetUrl = UrlHelper::cpUrl('llmify/content');
+        return $this->redirect($targetUrl);
     }
 }

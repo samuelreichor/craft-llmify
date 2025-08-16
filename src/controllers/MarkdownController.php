@@ -6,7 +6,6 @@ use Craft;
 use craft\elements\Entry;
 use craft\errors\ElementNotFoundException;
 use craft\web\Controller;
-use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;

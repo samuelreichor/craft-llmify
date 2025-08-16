@@ -27,8 +27,11 @@
   staticRows: true,
 }) }}
 
+{% if canGenerate or canClear %}
 <h2>Actions</h2>
+{% endif %}
 
+{% if canGenerate %}
 <form class="utility" method="post" accept-charset="UTF-8">
   {{ actionInput('llmify/markdown/generate') }}
   {{ redirectInput('utilities/llmify') }}
@@ -36,7 +39,9 @@
   <p>Generate Markdown for all Pages</p>
   <button type="submit" class="btn submit">Generate</button>
 </form>
+{% endif %}
 
+{% if canClear %}
 <form class="utility" method="post" accept-charset="UTF-8">
   {{ actionInput('llmify/markdown/clear') }}
   {{ redirectInput('utilities/llmify') }}
@@ -44,3 +49,4 @@
   <p>Clear Markdown for all Pages</p>
   <button type="submit" class="btn submit">Clear Markdown</button>
 </form>
+{% endif %}

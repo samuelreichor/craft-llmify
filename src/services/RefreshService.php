@@ -8,7 +8,6 @@ use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\db\Query;
 use craft\db\Query as DbQuery;
-use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\helpers\ElementHelper;
@@ -20,6 +19,7 @@ use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\jobs\RefreshMarkdownJob;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\RefreshData;
+use Throwable;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -194,9 +194,14 @@ class RefreshService extends Component
      * @throws RuntimeError
      * @throws \yii\base\Exception
      * @throws LoaderError
+     * @throws Throwable
      */
     public function getSidebarHtml(Entry $entry): string
     {
+        if (!PermissionService::canViewSidebarPanel()) {
+            return '';
+        }
+
         if (!$this->isRefreshableElement($entry)) {
             return '';
         }

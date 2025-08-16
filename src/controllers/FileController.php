@@ -12,6 +12,7 @@ use yii\web\Response;
 
 class FileController extends Controller
 {
+    protected array|bool|int $allowAnonymous = true;
     /**
      * @throws Exception
      */

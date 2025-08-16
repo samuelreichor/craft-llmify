@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\console\controllers;
 
-use Craft;
 use craft\console\Controller;
 use samuelreichor\llmify\Llmify;
 use yii\console\ExitCode;

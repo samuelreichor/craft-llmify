@@ -4,10 +4,10 @@ namespace samuelreichor\llmify\controllers;
 
 use Craft;
 use craft\errors\SiteNotFoundException;
-use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
-use samuelreichor\llmify\models\GlobalSettings;
+use samuelreichor\llmify\services\PermissionService;
+use Throwable;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\MethodNotAllowedHttpException;
@@ -18,9 +18,12 @@ class GlobalsController extends Controller
     /**
      * @throws SiteNotFoundException
      * @throws Exception
+     * @throws Throwable
      */
     public function actionIndex(): Response
     {
+        PermissionService::requireEditSiteSettings();
+
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $globalSettings = Llmify::getInstance()->settings;
         $settings = $globalSettings->getGlobalSetting($currentSiteId);
@@ -35,10 +38,12 @@ class GlobalsController extends Controller
      * @throws Exception
      * @throws BadRequestHttpException
      * @throws MethodNotAllowedHttpException
+     * @throws Throwable
      */
     public function actionSaveSettings(): ?Response
     {
         $this->requirePostRequest();
+        PermissionService::requireEditSiteSettings();
 
         $siteId = $this->request->getBodyParam('siteId');
         $settingService = Llmify::getInstance()->settings;
@@ -56,12 +61,5 @@ class GlobalsController extends Controller
 
         $this->setSuccessFlash(Craft::t('app', 'Global Setting saved.'));
         return $this->redirectToPostedUrl();
-    }
-
-    public function actionRedirect(): Response
-    {
-        // As there is no dashboard we simply redirect to globals
-        $targetUrl = UrlHelper::cpUrl('llmify/globals');
-        return $this->redirect($targetUrl);
     }
 }

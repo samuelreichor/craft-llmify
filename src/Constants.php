@@ -9,6 +9,10 @@ class Constants
     public const TABLE_META = '{{%llmify_metadata}}';
     public const TABLE_GLOBALS = '{{%llmify_globals}}';
 
-    // Cache Identifier
-    public const CACHE_TAG_GLOBAL = 'llmify:global';
+    // Permissions
+    public const PERMISSION_GENERATE = 'llmify:generate';
+    public const PERMISSION_CLEAR = 'llmify:clear';
+    public const PERMISSION_VIEW_SIDEBAR_PANEL = 'llmify:view-sidebar-panel';
+    public const PERMISSION_EDIT_CONTENT = 'llmify:edit-content';
+    public const PERMISSION_EDIT_SITE = 'llmify:edit-site';
 }

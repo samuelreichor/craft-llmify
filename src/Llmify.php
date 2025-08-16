@@ -4,7 +4,6 @@ namespace samuelreichor\llmify;
 
 use Craft;
 use craft\base\Element;
-use craft\base\Model;
 use craft\base\Plugin;
 use craft\elements\Entry;
 use craft\events\DefineHtmlEvent;
@@ -12,6 +11,7 @@ use craft\events\ElementEvent;
 use craft\events\MultiElementActionEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterUserPermissionsEvent;
 use craft\events\SectionEvent;
 use craft\events\SiteEvent;
 use craft\events\TemplateEvent;
@@ -19,6 +19,7 @@ use craft\services\Elements;
 use craft\services\Entries;
 use craft\services\Fields;
 use craft\services\Sites;
+use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use craft\web\View;
@@ -34,12 +35,12 @@ use samuelreichor\llmify\services\RequestService;
 use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
+use Throwable;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use yii\base\Event;
 use yii\base\Exception;
-use yii\base\InvalidConfigException;
 use yii\log\FileTarget;
 
 /**
@@ -88,6 +89,7 @@ class Llmify extends Plugin
         $this->_initLogger();
         $this->registerTwigExtension();
         $this->attachEventHandlers();
+        $this->registerPermissions();
 
         Craft::$app->onAfterRequest(function() {
             $this->refresh->refresh();
@@ -99,14 +101,36 @@ class Llmify extends Plugin
         });
     }
 
+    /**
+     * @throws Throwable
+     */
     public function getCpNavItem(): ?array
     {
-        $navItem = parent::getCpNavItem();
-        $navItem['subnav'] = [
-            'globals' => ['label' => 'Site Settings', 'url' => 'llmify/globals'],
-            'content' => ['label' => 'Content', 'url' => 'llmify/content'],
-        ];
-        return $navItem;
+        $subNavs = [];
+        $item = parent::getCpNavItem();
+        $currentUser = Craft::$app->getUser()->getIdentity();
+
+        if ($currentUser->can(Constants::PERMISSION_EDIT_CONTENT)) {
+            $subNavs['content'] = ['label' => 'Content', 'url' => 'llmify/content'];
+        }
+
+        if ($currentUser->can(Constants::PERMISSION_EDIT_SITE)) {
+            $subNavs['globals'] = ['label' => 'Site', 'url' => 'llmify/globals'];
+        }
+
+        if (empty($subNavs)) {
+            return null;
+        }
+
+        if (count($subNavs) <= 1) {
+            return array_merge($item, [
+                'subnav' => [],
+            ]);
+        }
+
+        return array_merge($item, [
+            'subnav' => $subNavs,
+        ]);
     }
 
     /**
@@ -155,12 +179,12 @@ class Llmify extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
-                $event->rules['llmify'] = 'llmify/globals/redirect';
-                $event->rules['llmify/globals'] = 'llmify/globals/index';
-                $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
+                $event->rules['llmify'] = 'llmify/content/redirect';
                 $event->rules['llmify/content'] = 'llmify/content/index';
                 $event->rules['llmify/content/<sectionId:\d+>'] = 'llmify/content/edit-section';
                 $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
+                $event->rules['llmify/globals'] = 'llmify/globals/index';
+                $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
             }
         );
 
@@ -172,7 +196,7 @@ class Llmify extends Plugin
                 $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
 
                 $mdPrefix = $this->getSettings()->markdownUrlPrefix;
-                $event->rules[$mdPrefix .'/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
+                $event->rules[$mdPrefix . '/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
             }
         );
 
@@ -290,6 +314,36 @@ class Llmify extends Plugin
     private function registerTwigExtension(): void
     {
         Craft::$app->view->registerTwigExtension(new LlmifyExtension());
+    }
+
+    private function registerPermissions(): void
+    {
+        Event::on(
+            UserPermissions::class,
+            UserPermissions::EVENT_REGISTER_PERMISSIONS,
+            function(RegisterUserPermissionsEvent $event) {
+                $event->permissions[] = [
+                    'heading' => 'LLMify',
+                    'permissions' => [
+                        Constants::PERMISSION_GENERATE => [
+                            'label' => 'Generate Markdown',
+                        ],
+                        Constants::PERMISSION_CLEAR => [
+                            'label' => 'Clear Markdown',
+                        ],
+                        Constants::PERMISSION_EDIT_CONTENT => [
+                            'label' => 'Edit Content Settings',
+                        ],
+                        Constants::PERMISSION_EDIT_SITE => [
+                            'label' => 'Edit Site Settings',
+                        ],
+                        Constants::PERMISSION_VIEW_SIDEBAR_PANEL => [
+                            'label' => 'View sidebar panel on element edit pages',
+                        ],
+                    ],
+                ];
+            }
+        );
     }
 
     private function _initLogger(): void

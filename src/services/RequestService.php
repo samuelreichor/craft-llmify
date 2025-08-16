@@ -26,7 +26,8 @@ class RequestService extends Component
     public int $requestTimeout;
     private int $generated = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $settings = Llmify::getInstance()->getSettings();
         $this->concurrentRequests = $settings->concurrentRequests;

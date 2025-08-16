@@ -62,6 +62,7 @@ class Llmify extends Plugin
 {
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = true;
+    public bool $hasReadOnlyCpSettings = true;
     public bool $hasCpSection = true;
     private bool|null|PluginSettings $_settings;
 
@@ -136,6 +137,7 @@ class Llmify extends Plugin
         return Craft::$app->view->renderTemplate('llmify/settings/plugin/index', [
             'plugin' => $this,
             'settings' => $this->getSettings(),
+            'readOnly' => !Craft::$app->getConfig()->getGeneral()->allowAdminChanges,
         ]);
     }
 
@@ -168,7 +170,9 @@ class Llmify extends Plugin
             function(RegisterUrlRulesEvent $event) {
                 $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
                 $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
-                $event->rules['raw/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
+
+                $mdPrefix = $this->getSettings()->markdownUrlPrefix;
+                $event->rules[$mdPrefix .'/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
             }
         );
 

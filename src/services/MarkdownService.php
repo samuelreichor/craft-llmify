@@ -136,11 +136,8 @@ class MarkdownService extends Component
 
     private function htmlToMarkdown(string $html): string
     {
-        $converter = new HtmlConverter([
-            'strip_tags' => true,
-            'header_style' => 'atx',
-            'remove_nodes' => 'img picture style',
-        ]);
+        $config = Llmify::getInstance()->getSettings()->markdownConfig;
+        $converter = new HtmlConverter($config);
 
         $markdownRaw = $converter->convert($html);
         return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);

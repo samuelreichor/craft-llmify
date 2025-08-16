@@ -7,6 +7,7 @@ use Amp\Http\Client\HttpException;
 use Amp\Http\Client\Request;
 use Amp\Pipeline\Pipeline;
 use Craft;
+use samuelreichor\llmify\Llmify;
 use yii\base\Component;
 
 /**
@@ -17,13 +18,20 @@ class RequestService extends Component
     /**
      * @var int The max number of concurrent requests.
      */
-    public int $concurrency = 3;
+    public int $concurrentRequests;
 
     /**
      * @var int The timeout for requests in seconds.
      */
-    public int $timeout = 60;
+    public int $requestTimeout;
     private int $generated = 0;
+
+    public function __construct() {
+        parent::__construct();
+        $settings = Llmify::getInstance()->getSettings();
+        $this->concurrentRequests = $settings->concurrentRequests;
+        $this->requestTimeout = $settings->requestTimeout;
+    }
 
     public function generateUrlsWithProgress(array $urls, callable $setProgressHandler = null): void
     {
@@ -35,7 +43,7 @@ class RequestService extends Component
         $client = HttpClientBuilder::buildDefault();
 
         $concurrentIterator = Pipeline::fromIterable($urls)
-            ->concurrent($this->concurrency);
+            ->concurrent($this->concurrentRequests);
 
         foreach ($concurrentIterator as $url) {
             $count++;
@@ -62,10 +70,10 @@ class RequestService extends Component
 
         // Set all timeout types, since at least two have been reported:
         // https://github.com/putyourlightson/craft-blitz/issues/467#issuecomment-1410308809
-        $request->setTcpConnectTimeout($this->timeout);
-        $request->setTlsHandshakeTimeout($this->timeout);
-        $request->setTransferTimeout($this->timeout);
-        $request->setInactivityTimeout($this->timeout);
+        $request->setTcpConnectTimeout($this->requestTimeout);
+        $request->setTlsHandshakeTimeout($this->requestTimeout);
+        $request->setTransferTimeout($this->requestTimeout);
+        $request->setInactivityTimeout($this->requestTimeout);
 
         return $request;
     }

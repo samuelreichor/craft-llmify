@@ -148,7 +148,8 @@ class LlmsService extends Component
     private function constructMdUrl(Page $page, string $currentSiteUrl): string
     {
         $entryUri = $page->entryMeta['uri'];
-        $markdownUrl = "{$currentSiteUrl}raw/{$entryUri}.md";
+        $mdPrefix = Llmify::getInstance()->getSettings()->markdownUrlPrefix;
+        $markdownUrl = "{$currentSiteUrl}{$mdPrefix}/{$entryUri}.md";
         return "- [{$page->title}]({$markdownUrl}): {$page->description}.\n";
     }
 
@@ -187,7 +188,7 @@ class LlmsService extends Component
             /**
              * @var Page $page
              */
-            $content .= "{$page->content}\n\n";
+            $content .= "{$page->content}\n\n---\n\n";
         }
 
         return $content;

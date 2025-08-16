@@ -1,9 +1,68 @@
 {% import '_includes/forms.twig' as forms %}
 
-  {{ forms.lightswitchField({
-    label: 'Real Urls in llmify.txt',
-    instructions: 'If there should be real urls in the llmify.txt. It defaults to the raw markdown file.',
-    id: 'isRealUrlLlm',
-    name: 'isRealUrlLlm',
-    on: settings.isRealUrlLlm,
-  }) }}
+{{ forms.lightswitchField({
+  label: 'Enable LLMify',
+  instructions: 'Whether LLMify should be enabled.',
+  id: 'isEnabled',
+  name: 'isEnabled',
+  on: settings.isEnabled,
+  first: true,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>General</h2>
+
+{{ forms.lightswitchField({
+  label: 'Real Urls',
+  instructions: 'Whether real or the markdown urls should be used in the llms.txt file.',
+  id: 'isRealUrlLlm',
+  name: 'isRealUrlLlm',
+  on: settings.isRealUrlLlm,
+  disabled: readOnly,
+}) }}
+
+{{ forms.textField({
+  label: 'Markdown Url Prefix',
+  instructions: 'This prefix is used to generate links for the markdowns (eg. https://example.com/raw/__home__.md). Change this if there is a conflict with the raw prefix.',
+  id: 'markdownUrlPrefix',
+  name: 'markdownUrlPrefix',
+  value: settings.markdownUrlPrefix,
+  errors: settings.getErrors('markdownUrlPrefix'),
+  required: true,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>Markdown Generation</h2>
+
+{{ forms.textField({
+  label: 'Concurrent Requests',
+  instructions: 'The max number of concurrent requests to use when generating the markdown. ',
+  id: 'concurrentRequests',
+  name: 'concurrentRequests',
+  value: settings.concurrentRequests,
+  type: 'number',
+  min: 1,
+  max: 100,
+  errors: settings.getErrors('concurrentRequests'),
+  required: true,
+  unit: 'Concurrent Requests',
+  disabled: readOnly,
+}) }}
+
+{{ forms.textField({
+  label: 'Request Timeout',
+  instructions: 'The max amount of seconds requests can take.',
+  id: 'requestTimeout',
+  name: 'requestTimeout',
+  value: settings.requestTimeout,
+  type: 'number',
+  min: 1,
+  errors: settings.getErrors('requestTimeout'),
+  required: true,
+  unit: 'Seconds',
+  disabled: readOnly,
+}) }}

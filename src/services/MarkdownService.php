@@ -12,6 +12,7 @@ use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\Page;
 use samuelreichor\llmify\records\PageRecord;
 use yii\base\InvalidConfigException;
+use yii\db\Expression;
 
 class MarkdownService extends Component
 {
@@ -75,6 +76,7 @@ class MarkdownService extends Component
         $pageEntry->title = $metaDataService->getLlmTitle();
         $pageEntry->description = $metaDataService->getLlmDescription();
         $pageEntry->content = $markdown;
+        $pageEntry->dateUpdated = new Expression('NOW()');
         $pageEntry->entryMeta = [
             "fullUrl" => $entry->getUrl(),
             "uri" => $entry->uri,

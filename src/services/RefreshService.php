@@ -120,8 +120,7 @@ class RefreshService extends Component
      */
     public function isRefreshAbleElement(ElementInterface $element): bool
     {
-        /*Todo: This logic does not work with categories or other elements.*/
-        if (!($element instanceof Element) || $element instanceof Asset) {
+        if (!($element instanceof GlobalSet || $element instanceof Entry)) {
             return false;
         }
 
@@ -134,15 +133,15 @@ class RefreshService extends Component
             return false;
         }
 
-        if ($element instanceof Entry) {
-            if ($element->getOwnerId()) {
-                return false;
-            }
-
-            if (!$this->canRefreshEntry($element)) {
-                return false;
-            }
+        // element is an entry
+        if ($element->getOwnerId()) {
+            return false;
         }
+
+        if (!$this->canRefreshEntry($element)) {
+            return false;
+        }
+
 
         return true;
     }

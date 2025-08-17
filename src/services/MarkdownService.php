@@ -17,6 +17,7 @@ use yii\db\Expression;
 class MarkdownService extends Component
 {
     public array $contentBlocks = [];
+    public array $excludedContentBlocks = [];
     public ?int $entryId = null;
     public ?int $siteId = null;
 
@@ -39,9 +40,19 @@ class MarkdownService extends Component
         }
     }
 
+    public function addExcludedContentBlock(string $html, int $entryId, int $siteId): void
+    {
+        $this->excludedContentBlocks[] = $html;
+        if ($this->entryId === null) {
+            $this->entryId = $entryId;
+            $this->siteId = $siteId;
+        }
+    }
+
     public function getCombinedHtml(): string
     {
-        return implode('', $this->contentBlocks);
+        $fullHtml = implode('', $this->contentBlocks);
+        return str_replace($this->excludedContentBlocks, '', $fullHtml);
     }
 
     public function clearBlocks(): void

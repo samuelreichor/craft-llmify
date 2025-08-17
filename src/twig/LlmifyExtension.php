@@ -10,6 +10,7 @@ class LlmifyExtension extends AbstractExtension
     {
         return [
             new LlmifyTokenParser(),
+            new ExcludeLlmifyTokenParser(),
         ];
     }
 }

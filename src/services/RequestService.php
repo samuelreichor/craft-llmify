@@ -7,6 +7,7 @@ use Amp\Http\Client\HttpException;
 use Amp\Http\Client\Request;
 use Amp\Pipeline\Pipeline;
 use Craft;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use yii\base\Component;
 
@@ -68,9 +69,7 @@ class RequestService extends Component
     protected function createRequest(string $url): Request
     {
         $request = new Request($url);
-
-        // Set all timeout types, since at least two have been reported:
-        // https://github.com/putyourlightson/craft-blitz/issues/467#issuecomment-1410308809
+        $request->setHeader(Constants::HEADER_REFRESH, '1');
         $request->setTcpConnectTimeout($this->requestTimeout);
         $request->setTlsHandshakeTimeout($this->requestTimeout);
         $request->setTransferTimeout($this->requestTimeout);

@@ -4,31 +4,37 @@
 <div class="data">
   <div class="heading">Status</div>
   <div class="value statusMsg" style="justify-content: space-between">
+    {% if isEnabled %}
     <p>
       {{ markdownExists ? 'Generated' : 'Not generated' }}
     </p>
+    {% else %}
+      <p>Plugin disabled</p>
+    {% endif %}
   </div>
   {% if markdownExists %}
     <div class="heading status-update">Last Updated</div>
     <div class="value status-update">{{ page.dateUpdated|datetime('short') }}</div>
   {% endif %}
-  <div class="llmify-btn-group">
-    {{ tag('button', {
-      text: 'Update',
-      class: 'btn primary generate',
-      data: {
-        action: generateActionUrl,
-      },
-    }) }}
+  {% if isEnabled %}
+    <div class="llmify-btn-group">
+      {{ tag('button', {
+        text: 'Update',
+        class: 'btn primary generate',
+        data: {
+          action: generateActionUrl,
+        },
+      }) }}
 
-    {{ tag('button', {
-      text: 'Clear',
-      class: 'btn secondary clear',
-      data: {
-        action: clearActionUrl,
-      },
-    }) }}
-  </div>
+      {{ tag('button', {
+        text: 'Clear',
+        class: 'btn secondary clear',
+        data: {
+          action: clearActionUrl,
+        },
+      }) }}
+    </div>
+  {% endif %}
 </div>
 
 {% css %}

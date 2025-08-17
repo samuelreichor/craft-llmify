@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Utility;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\records\PageRecord;
+use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\PermissionService;
 use Throwable;
 use Twig\Error\LoaderError;
@@ -56,6 +57,7 @@ class Utils extends Utility
         }
         return Craft::$app->getView()->renderTemplate('llmify/utilities/actions.twig', [
             'markdownTable' => $markdownTable,
+            'isEnabled' => HelperService::isMarkdownCreationEnabled(),
             'canGenerate' => PermissionService::canGenerate(),
             'canClear' => PermissionService::canClear(),
         ]);

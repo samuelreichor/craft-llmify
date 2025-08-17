@@ -1,9 +1,8 @@
 {% import '_includes/forms.twig' as forms %}
 
-{#Todo: Implement this setting#}
 {{ forms.lightswitchField({
   label: 'Enable LLMify',
-  instructions: 'Whether LLMify should be enabled.',
+  instructions: 'Whether Markdown creation should be enabled.',
   id: 'isEnabled',
   name: 'isEnabled',
   on: settings.isEnabled,

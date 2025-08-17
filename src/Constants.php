@@ -15,4 +15,7 @@ class Constants
     public const PERMISSION_VIEW_SIDEBAR_PANEL = 'llmify:view-sidebar-panel';
     public const PERMISSION_EDIT_CONTENT = 'llmify:edit-content';
     public const PERMISSION_EDIT_SITE = 'llmify:edit-site';
+
+    // Random
+    public const HEADER_REFRESH = 'X-Llmify-Refresh-Request';
 }

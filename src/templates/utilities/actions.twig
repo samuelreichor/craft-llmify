@@ -27,26 +27,29 @@
   staticRows: true,
 }) }}
 
-{% if canGenerate or canClear %}
-<h2>Actions</h2>
-{% endif %}
+{% if not isEnabled %}
+  <p>Markdown Creation is disabled. If you want to see the actions you need to enable it in the plugin settings.</p>
+{% elseif canGenerate or canClear %}
+  <h2>Actions</h2>
 
-{% if canGenerate %}
-<form class="utility" method="post" accept-charset="UTF-8">
-  {{ actionInput('llmify/markdown/generate') }}
-  {{ redirectInput('utilities/llmify') }}
-  {{ csrfInput() }}
-  <p>Generate Markdown for all Pages</p>
-  <button type="submit" class="btn submit">Generate</button>
-</form>
-{% endif %}
 
-{% if canClear %}
-<form class="utility" method="post" accept-charset="UTF-8">
-  {{ actionInput('llmify/markdown/clear') }}
-  {{ redirectInput('utilities/llmify') }}
-  {{ csrfInput() }}
-  <p>Clear Markdown for all Pages</p>
-  <button type="submit" class="btn submit">Clear Markdown</button>
-</form>
+  {% if canGenerate %}
+  <form class="utility" method="post" accept-charset="UTF-8">
+    {{ actionInput('llmify/markdown/generate') }}
+    {{ redirectInput('utilities/llmify') }}
+    {{ csrfInput() }}
+    <p>Generate Markdown for all Pages</p>
+    <button type="submit" class="btn submit">Generate</button>
+  </form>
+  {% endif %}
+
+  {% if canClear %}
+  <form class="utility" method="post" accept-charset="UTF-8">
+    {{ actionInput('llmify/markdown/clear') }}
+    {{ redirectInput('utilities/llmify') }}
+    {{ csrfInput() }}
+    <p>Clear Markdown for all Pages</p>
+    <button type="submit" class="btn submit">Clear Markdown</button>
+  </form>
+  {% endif %}
 {% endif %}

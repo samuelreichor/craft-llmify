@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Element;
 use craft\base\Plugin;
 use craft\elements\Entry;
+use craft\enums\CmsEdition;
 use craft\events\DefineHtmlEvent;
 use craft\events\ElementEvent;
 use craft\events\MultiElementActionEvent;
@@ -88,17 +89,31 @@ class Llmify extends Plugin
 
         $this->_initLogger();
         $this->registerTwigExtension();
-        $this->attachEventHandlers();
-        $this->registerPermissions();
 
-        Craft::$app->onAfterRequest(function() {
-            $this->refresh->refresh();
-        });
-        // Any code that creates an element query or loads Twig should be deferred until
-        // after Craft is fully initialized, to avoid conflicts with other plugins/modules
-        Craft::$app->onInit(function() {
-            // ...
-        });
+        if (HelperService::isMarkdownCreationEnabled()) {
+            $this->registerGeneralEvents();
+
+            if (Craft::$app->request->getIsSiteRequest()) {
+                $this->registerSiteEvents();
+            }
+
+            if (Craft::$app->request->getIsCpRequest()) {
+                $this->registerElementChangeEvents();
+            }
+
+            Craft::$app->onAfterRequest(function() {
+                $this->refresh->refresh();
+            });
+        }
+
+        if (Craft::$app->request->getIsCpRequest()) {
+            $this->registerSettingEvents();
+            $this->registerGeneralCpEvents();
+
+            if (Craft::$app->edition === CmsEdition::Pro) {
+                $this->registerUserPermissionEvents();
+            }
+        }
     }
 
     /**
@@ -165,41 +180,8 @@ class Llmify extends Plugin
         ]);
     }
 
-    private function attachEventHandlers(): void
+    private function registerSettingEvents(): void
     {
-        Event::on(
-            Fields::class,
-            Fields::EVENT_REGISTER_FIELD_TYPES,
-            function(RegisterComponentTypesEvent $event) {
-                $event->types[] = LlmifySettingsField::class;
-            }
-        );
-
-        Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function(RegisterUrlRulesEvent $event) {
-                $event->rules['llmify'] = 'llmify/content/redirect';
-                $event->rules['llmify/content'] = 'llmify/content/index';
-                $event->rules['llmify/content/<sectionId:\d+>'] = 'llmify/content/edit-section';
-                $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
-                $event->rules['llmify/globals'] = 'llmify/globals/index';
-                $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
-            }
-        );
-
-        Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function(RegisterUrlRulesEvent $event) {
-                $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
-                $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
-
-                $mdPrefix = $this->getSettings()->markdownUrlPrefix;
-                $event->rules[$mdPrefix . '/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
-            }
-        );
-
         // Create Content Settings for new Sections
         Event::on(
             Entries::class,
@@ -247,7 +229,72 @@ class Llmify extends Plugin
                 $this->settings->delGlobalSetting($siteId);
             }
         );
+    }
 
+    private function registerGeneralCpEvents(): void
+    {
+        Event::on(
+            Fields::class,
+            Fields::EVENT_REGISTER_FIELD_TYPES,
+            function(RegisterComponentTypesEvent $event) {
+                $event->types[] = LlmifySettingsField::class;
+            }
+        );
+
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
+            function(RegisterUrlRulesEvent $event) {
+                $event->rules['llmify'] = 'llmify/content/redirect';
+                $event->rules['llmify/content'] = 'llmify/content/index';
+                $event->rules['llmify/content/<sectionId:\d+>'] = 'llmify/content/edit-section';
+                $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
+                $event->rules['llmify/globals'] = 'llmify/globals/index';
+                $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
+            }
+        );
+
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function(RegisterComponentTypesEvent $event) {
+            $event->types[] = Utils::class;
+        });
+
+        Event::on(Entry::class, Entry::EVENT_DEFINE_SIDEBAR_HTML,
+            function(DefineHtmlEvent $event) {
+                /** @var Entry $entry */
+                $entry = $event->sender;
+                $event->html .= $this->refresh->getSidebarHtml($entry);
+            },
+        );
+    }
+
+    private function registerGeneralEvents(): void
+    {
+        // Save Markdown for site requests triggered by the queue.
+        Event::on(
+            View::class,
+            View::EVENT_AFTER_RENDER_TEMPLATE,
+            function(TemplateEvent $event) {
+                if ($event->templateMode !== 'site') {
+                    return;
+                }
+
+                // Check if the request is coming from the queue job
+                if (Craft::$app->request->getHeaders()->get(Constants::HEADER_REFRESH)) {
+                    $markdownService = $this->markdown;
+                    $html = $markdownService->getCombinedHtml();
+                    if (!empty($html)) {
+                        $markdownService->process($html);
+                    }
+                }
+
+                // Always clear blocks to prevent memory leaks
+                $this->markdown->clearBlocks();
+            }
+        );
+    }
+
+    private function registerElementChangeEvents(): void
+    {
         // Set the previous status of an element so we can compare later
         $events = [
             Elements::EVENT_BEFORE_SAVE_ELEMENT,
@@ -284,30 +331,20 @@ class Llmify extends Plugin
                 }
             );
         }
+    }
 
-        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function(RegisterComponentTypesEvent $event) {
-            $event->types[] = Utils::class;
-        });
-
+    private function registerSiteEvents(): void
+    {
         Event::on(
-            View::class,
-            View::EVENT_AFTER_RENDER_TEMPLATE,
-            function(TemplateEvent $event) {
-                $markdownService = $this->markdown;
-                $html = $markdownService->getCombinedHtml();
-                if (!empty($html)) {
-                    $markdownService->process($html);
-                }
-                $markdownService->clearBlocks();
-            }
-        );
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            function(RegisterUrlRulesEvent $event) {
+                $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
+                $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
 
-        Event::on(Entry::class, Entry::EVENT_DEFINE_SIDEBAR_HTML,
-            function(DefineHtmlEvent $event) {
-                /** @var Entry $entry */
-                $entry = $event->sender;
-                $event->html .= $this->refresh->getSidebarHtml($entry);
-            },
+                $mdPrefix = $this->getSettings()->markdownUrlPrefix;
+                $event->rules[$mdPrefix . '/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
+            }
         );
     }
 
@@ -316,7 +353,7 @@ class Llmify extends Plugin
         Craft::$app->view->registerTwigExtension(new LlmifyExtension());
     }
 
-    private function registerPermissions(): void
+    private function registerUserPermissionEvents(): void
     {
         Event::on(
             UserPermissions::class,

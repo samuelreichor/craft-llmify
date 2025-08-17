@@ -236,6 +236,7 @@ class RefreshService extends Component
         return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
             'isRefreshable' => true,
             'page' => $page,
+            'isEnabled' => HelperService::isMarkdownCreationEnabled(),
             'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
             'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
         ]);

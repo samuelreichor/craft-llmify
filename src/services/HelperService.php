@@ -10,6 +10,7 @@ use craft\errors\SiteNotFoundException;
 use craft\fields\PlainText;
 use craft\models\EntryType;
 use craft\models\Section;
+use samuelreichor\llmify\Llmify;
 
 class HelperService extends Component
 {
@@ -120,5 +121,10 @@ class HelperService extends Component
         }
 
         return null;
+    }
+
+    public static function isMarkdownCreationEnabled(): bool
+    {
+        return Llmify::getInstance()->getSettings()->isEnabled;
     }
 }

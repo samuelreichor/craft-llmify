@@ -1,3 +1,5 @@
+# The Craft License
+
 Copyright © Samuel Reichör
 
 Permission is hereby granted to any person obtaining a copy of this software

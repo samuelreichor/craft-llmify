@@ -31,7 +31,13 @@ class Utils extends Utility
 
     public static function icon(): ?string
     {
-        return 'wrench';
+        $iconPath = Craft::getAlias('@samuelreichor/llmify/icon-mask.svg');
+
+        if (!is_string($iconPath)) {
+            return null;
+        }
+
+        return $iconPath;
     }
 
     /**

@@ -30,8 +30,8 @@
   "extra": {
     "handle": "llmify",
     "name": "LLMify",
-    "developer": "Samuel Reichör",
-    "documentationUrl": "https://github.com/samuelreichor/craft-llmify",
+    "developer": "Samuel Reichoer",
+    "documentationUrl": "https://samuelreichor.at/libraries/craft-llmify",
     "class": "samuelreichor\\llmify\\Llmify"
   },
   "scripts": {
@@ -41,6 +41,7 @@
   },
   "config": {
     "sort-packages": true,
+    "optimize-autoloader": true,
     "platform": {
       "php": "8.2"
     },

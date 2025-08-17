@@ -16,6 +16,11 @@ class PluginSettings extends Model
         'header_style' => 'atx',
         'remove_nodes' => 'img picture style',
     ];
+    public array $excludeClasses = [
+        [
+            'classes' => 'exclude-llmify',
+        ]
+    ];
 
     public function defineRules(): array
     {

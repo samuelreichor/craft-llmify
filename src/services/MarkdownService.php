@@ -7,6 +7,11 @@ use craft\db\Query as DbQuery;
 use craft\elements\Entry;
 use Exception;
 use League\HTMLToMarkdown\HtmlConverter;
+use PHPHtmlParser\Dom;
+use PHPHtmlParser\Exceptions\ChildNotFoundException;
+use PHPHtmlParser\Exceptions\CircularException;
+use PHPHtmlParser\Exceptions\NotLoadedException;
+use PHPHtmlParser\Exceptions\StrictException;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\Page;
@@ -49,15 +54,28 @@ class MarkdownService extends Component
         }
     }
 
+    /**
+     * @throws ChildNotFoundException
+     * @throws NotLoadedException
+     * @throws CircularException
+     * @throws StrictException
+     */
     public function getCombinedHtml(): string
     {
         $fullHtml = implode('', $this->contentBlocks);
-        return str_replace($this->excludedContentBlocks, '', $fullHtml);
+
+        // removes content in excludeLlmify tags
+        if (!empty($this->excludedContentBlocks)) {
+            $fullHtml = str_replace($this->excludedContentBlocks, '', $fullHtml);
+        }
+
+        return $this->removeTags($fullHtml);
     }
 
     public function clearBlocks(): void
     {
         $this->contentBlocks = [];
+        $this->excludedContentBlocks = [];
         $this->entryId = null;
         $this->siteId = null;
     }
@@ -154,6 +172,32 @@ class MarkdownService extends Component
 
         $markdownRaw = $converter->convert($html);
         return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);
+    }
+
+    /**
+     * @throws ChildNotFoundException
+     * @throws NotLoadedException
+     * @throws CircularException
+     * @throws StrictException
+     */
+    private function removeTags(string $html): string
+    {
+        $dom = new Dom;
+        $dom->loadStr($html);
+        $excludedClass = $this->getExcludeClass();
+        $nodesToRemove = $dom->find($excludedClass);
+
+        foreach ($nodesToRemove as $node) {
+            $node->delete();
+        }
+
+        return $dom;
+    }
+
+    private function getExcludeClass(): string
+    {
+        $excludedClasses = Llmify::getInstance()->getSettings()->excludeClasses;
+        return implode(',', array_map(function ($n) { return ".{$n['classes']}"; }, $excludedClasses));
     }
 
     private function _createPageQuery(): DbQuery

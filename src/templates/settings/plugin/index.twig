@@ -1,5 +1,6 @@
 {% import '_includes/forms.twig' as forms %}
 
+{#Todo: Implement this setting#}
 {{ forms.lightswitchField({
   label: 'Enable LLMify',
   instructions: 'Whether LLMify should be enabled.',
@@ -31,6 +32,28 @@
   value: settings.markdownUrlPrefix,
   errors: settings.getErrors('markdownUrlPrefix'),
   required: true,
+  placeholder: 'raw',
+  disabled: readOnly,
+}) }}
+
+{% set cols = {
+    classes: {
+      type: 'singleline',
+      heading: 'Classes',
+    }
+  } %}
+
+{{ forms.editableTableField({
+  label: "Exclude Classes",
+  instructions: '',
+  name: 'excludeClasses',
+  id: 'excludeClasses',
+  cols: cols,
+  rows: settings.excludeClasses,
+  addRowLabel: "Add a class",
+  allowAdd: true,
+  allowDelete: true,
+  allowReorder: true,
   disabled: readOnly,
 }) }}
 
@@ -50,6 +73,7 @@
   errors: settings.getErrors('concurrentRequests'),
   required: true,
   unit: 'Concurrent Requests',
+  placeholder: 3,
   disabled: readOnly,
 }) }}
 
@@ -64,5 +88,6 @@
   errors: settings.getErrors('requestTimeout'),
   required: true,
   unit: 'Seconds',
+  placeholder: 100,
   disabled: readOnly,
 }) }}

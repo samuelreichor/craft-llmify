@@ -15,7 +15,8 @@
     "php": ">=8.2",
     "amphp/http-client": "^5.3",
     "craftcms/cms": "^5.0.0",
-    "league/html-to-markdown": "^5.1"
+    "league/html-to-markdown": "^5.1",
+    "paquettg/php-html-parser": "^2.2"
   },
   "require-dev": {
     "craftcms/ecs": "dev-main",

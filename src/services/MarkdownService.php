@@ -182,7 +182,7 @@ class MarkdownService extends Component
      */
     private function removeTags(string $html): string
     {
-        $dom = new Dom;
+        $dom = new Dom();
         $dom->loadStr($html);
         $excludedClass = $this->getExcludeClass();
         $nodesToRemove = $dom->find($excludedClass);
@@ -197,7 +197,9 @@ class MarkdownService extends Component
     private function getExcludeClass(): string
     {
         $excludedClasses = Llmify::getInstance()->getSettings()->excludeClasses;
-        return implode(',', array_map(function ($n) { return ".{$n['classes']}"; }, $excludedClasses));
+        return implode(',', array_map(function($n) {
+            return ".{$n['classes']}";
+        }, $excludedClasses));
     }
 
     private function _createPageQuery(): DbQuery

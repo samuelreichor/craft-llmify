@@ -19,7 +19,7 @@ class PluginSettings extends Model
     public array $excludeClasses = [
         [
             'classes' => 'exclude-llmify',
-        ]
+        ],
     ];
 
     public function defineRules(): array

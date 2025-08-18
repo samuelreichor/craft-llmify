@@ -5,6 +5,7 @@ namespace samuelreichor\llmify\services;
 use Craft;
 use craft\base\Component;
 use craft\db\Query as DbQuery;
+use craft\models\Section;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
@@ -55,6 +56,7 @@ class SettingsService extends Component
 
         $contentRecord->save();
 
+        // on installation no refresh is needed
         if ($triggerRefresh) {
             Llmify::getInstance()->refresh->refreshSection(
                 [$contentSettings->sectionId],
@@ -165,10 +167,20 @@ class SettingsService extends Component
     public function setAllContentSettings(): void
     {
         $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
-        $allSectionIds = Craft::$app->entries->getAllSectionIds();
+
+        $allSection = Craft::$app->entries->getAllSections();
+        $sectionIdsWithUrls = [];
+        foreach ($allSection as $section) {
+            foreach ($section->getSiteSettings() as $siteSetting) {
+                if ($siteSetting->hasUrls) {
+                    $sectionIdsWithUrls[] = $section->id;
+                    break;
+                }
+            }
+        }
 
         foreach ($allSiteIds as $siteId) {
-            foreach ($allSectionIds as $sectionId) {
+            foreach ($sectionIdsWithUrls as $sectionId) {
                 $this->setContentSetting($sectionId, $siteId, false);
             }
         }

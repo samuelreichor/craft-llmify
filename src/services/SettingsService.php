@@ -25,7 +25,7 @@ class SettingsService extends Component
      * @throws Exception
      * @throws \yii\base\Exception
      */
-    public function saveContentSettings(ContentSettings $contentSettings, bool $runValidation = true): bool
+    public function saveContentSettings(ContentSettings $contentSettings, bool $runValidation = true, bool $triggerRefresh = true): bool
     {
         $isNewsSetting = !$contentSettings->id;
 
@@ -53,9 +53,14 @@ class SettingsService extends Component
         $contentRecord->llmSectionDescription = $contentSettings->llmSectionDescription;
         $contentRecord->sectionId = $contentSettings->sectionId;
 
-        Llmify::getInstance()->refresh->refreshSection([$contentSettings->sectionId], [$contentSettings->siteId]);
-
         $contentRecord->save();
+
+        if ($triggerRefresh) {
+            Llmify::getInstance()->refresh->refreshSection(
+                [$contentSettings->sectionId],
+                [$contentSettings->siteId]
+            );
+        }
 
         if ($isNewsSetting) {
             $contentSettings->id = $contentRecord->id;
@@ -64,9 +69,9 @@ class SettingsService extends Component
     }
 
     /**
-     * @throws Exception
+     * @throws Exception|\yii\base\Exception
      */
-    public function getContentSetting(int $sectionId, int $siteId): ContentSettings
+    public function getContentSetting(int $sectionId, int $siteId, bool $triggerRefresh = true): ContentSettings
     {
         $cacheKey = $this->createContentCacheKey($sectionId, $siteId);
 
@@ -84,7 +89,7 @@ class SettingsService extends Component
             $settings = new ContentSettings();
             $settings->sectionId = $sectionId;
             $settings->siteId = $siteId;
-            $this->saveContentSettings($settings);
+            $this->saveContentSettings($settings, true, $triggerRefresh);
         }
 
         $this->contentSettings[$cacheKey] = $settings;
@@ -136,10 +141,11 @@ class SettingsService extends Component
 
     /**
      * @throws Exception
+     * @throws \yii\base\Exception
      */
-    public function setContentSetting($sectionId, $siteId): void
+    public function setContentSetting(int $sectionId, int $siteId, bool $triggerRefresh = true): void
     {
-        $this->getContentSetting($sectionId, $siteId);
+        $this->getContentSetting($sectionId, $siteId, $triggerRefresh);
     }
 
     /**
@@ -154,6 +160,7 @@ class SettingsService extends Component
 
     /**
      * @throws Exception
+     * @throws \yii\base\Exception
      */
     public function setAllContentSettings(): void
     {
@@ -162,7 +169,7 @@ class SettingsService extends Component
 
         foreach ($allSiteIds as $siteId) {
             foreach ($allSectionIds as $sectionId) {
-                $this->setContentSetting($sectionId, $siteId);
+                $this->setContentSetting($sectionId, $siteId, false);
             }
         }
     }

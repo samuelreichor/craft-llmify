@@ -172,6 +172,7 @@ class Install extends Migration
 
     /**
      * @throws DbException
+     * @throws Exception
      */
     protected function insertDefaultData(): void
     {

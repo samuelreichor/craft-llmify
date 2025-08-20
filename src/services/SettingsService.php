@@ -58,7 +58,7 @@ class SettingsService extends Component
 
         // on installation no refresh is needed
         if ($triggerRefresh) {
-            Llmify::getInstance()->refresh->refreshSection(
+            Llmify::getInstance()->refresh->refreshPagesBySections(
                 [$contentSettings->sectionId],
                 [$contentSettings->siteId]
             );

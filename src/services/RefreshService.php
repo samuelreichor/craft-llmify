@@ -119,6 +119,22 @@ class RefreshService extends Component
     /**
      * @throws Exception|\yii\base\Exception
      */
+    public function refreshPagesBySections(array $sectionIds, array $siteIds): void
+    {
+        $entryIds = PageRecord::find()
+            ->where(['sectionId' => $sectionIds, 'siteId' => $siteIds])
+            ->select('entryId')
+            ->column();
+
+        $refreshableEntries = Entry::find()->id($entryIds)->sectionId($sectionIds)->siteId($siteIds)->all();
+        foreach ($refreshableEntries as $entry) {
+            $this->addElement($entry);
+        }
+    }
+
+    /**
+     * @throws Exception|\yii\base\Exception
+     */
     public function isRefreshAbleElement(ElementInterface $element): bool
     {
         if (!($element instanceof GlobalSet || $element instanceof Entry)) {

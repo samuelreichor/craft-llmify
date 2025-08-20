@@ -5,7 +5,6 @@ namespace samuelreichor\llmify\services;
 use Craft;
 use craft\base\Component;
 use craft\db\Query as DbQuery;
-use craft\models\Section;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;

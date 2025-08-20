@@ -150,7 +150,8 @@ class LlmsService extends Component
         $entryUri = $page->entryMeta['uri'];
         $mdPrefix = Llmify::getInstance()->getSettings()->markdownUrlPrefix;
         $markdownUrl = "{$currentSiteUrl}{$mdPrefix}/{$entryUri}.md";
-        return "- [{$page->title}]({$markdownUrl}): {$page->description}.\n";
+
+        return $this->constructUrl($page->title, $markdownUrl, $page->description);
     }
 
     private function constructRealUrl(Page $page, string $currentSiteUrl): string
@@ -161,7 +162,20 @@ class LlmsService extends Component
             $entryUri = '';
         }
         $realUrl = "{$currentSiteUrl}{$entryUri}";
-        return "- [{$page->title}]({$realUrl}): {$page->description}.\n";
+
+        return $this->constructUrl($page->title, $realUrl, $page->description);
+    }
+
+    private function constructUrl(string $title, string $url, string $description): string
+    {
+        if (!$title || !$url) {
+            return '';
+        }
+
+        $markdownUrl = "[{$title}]({$url})";
+        $descriptionPart = $description ? ": {$description}" : '';
+
+        return "- {$markdownUrl}{$descriptionPart}\n";
     }
 
     private function constructFooter(): string

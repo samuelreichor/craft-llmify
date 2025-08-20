@@ -3,7 +3,7 @@
   "description": "Optimize your site for LLMs",
   "type": "craft-plugin",
   "license": "proprietary",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "support": {
     "email": "samuelreichor@gmail.com",
     "issues": "https://github.com/samuelreichor/craft-llmify/issues?state=open",

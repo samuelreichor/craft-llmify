@@ -9,6 +9,7 @@ use craft\elements\Entry;
 use craft\enums\CmsEdition;
 use craft\events\DefineHtmlEvent;
 use craft\events\ElementEvent;
+use craft\events\MoveElementEvent;
 use craft\events\MultiElementActionEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
@@ -20,11 +21,12 @@ use craft\services\Elements;
 use craft\services\Entries;
 use craft\services\Fields;
 use craft\services\Sites;
+use craft\services\Structures;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use craft\web\View;
-use samuelreichor\llmify\behaviors\ElementChangedBehavior;
+use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\HelperService;
@@ -310,7 +312,7 @@ class Llmify extends Plugin
                     /** @var Element $element */
                     $element = $event->element;
                     if ($this->refresh->isRefreshableElement($element)) {
-                        $element->attachBehavior(ElementChangedBehavior::BEHAVIOR_NAME, ElementChangedBehavior::class);
+                        $element->attachBehavior(LlmifyChangedBehavior::BEHAVIOR_NAME, LlmifyChangedBehavior::class);
                     }
                 }
             );
@@ -331,6 +333,12 @@ class Llmify extends Plugin
                 }
             );
         }
+
+        Event::on(Structures::class, Structures::EVENT_AFTER_MOVE_ELEMENT,
+            function(MoveElementEvent $event) {
+                $this->refresh->addElement($event->element);
+            }
+        );
     }
 
     private function registerSiteEvents(): void

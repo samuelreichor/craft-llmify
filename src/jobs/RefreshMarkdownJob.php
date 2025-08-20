@@ -6,12 +6,12 @@ use craft\helpers\Queue as QueueHelper;
 use craft\queue\BaseBatchedJob;
 use samuelreichor\llmify\batchers\SiteUrlBatcher;
 use samuelreichor\llmify\Llmify;
-use samuelreichor\llmify\models\RefreshData;
+use samuelreichor\llmify\models\LlmifyRefreshData;
 use yii\queue\Queue;
 
 class RefreshMarkdownJob extends BaseBatchedJob
 {
-    public RefreshData $data;
+    public LlmifyRefreshData $data;
 
     private Queue $queue;
 

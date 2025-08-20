@@ -2,7 +2,7 @@
 
 namespace samuelreichor\llmify\models;
 
-class RefreshData
+class LlmifyRefreshData
 {
     /**
      * @var array{
@@ -45,7 +45,8 @@ class RefreshData
 
     public function addUrl(string $url): void
     {
-        $this->data['urls'][$url] = true;
+        // query string here to bypass blitz caching
+        $this->data['urls'][$url . '?llmify=true'] = true;
     }
 
     public function getUrls(): array

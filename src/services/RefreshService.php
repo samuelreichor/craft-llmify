@@ -14,11 +14,12 @@ use craft\helpers\ElementHelper;
 use craft\helpers\Html;
 use craft\helpers\Queue;
 use craft\helpers\UrlHelper;
-use samuelreichor\llmify\behaviors\ElementChangedBehavior;
+use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\jobs\RefreshMarkdownJob;
 use samuelreichor\llmify\Llmify;
-use samuelreichor\llmify\models\RefreshData;
+use samuelreichor\llmify\models\LlmifyRefreshData;
+use samuelreichor\llmify\records\PageRecord;
 use Throwable;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -27,7 +28,7 @@ use yii\db\Exception;
 
 class RefreshService extends Component
 {
-    public RefreshData $refreshData;
+    public LlmifyRefreshData $llmifyRefreshData;
 
     public function init(): void
     {
@@ -37,7 +38,7 @@ class RefreshService extends Component
 
     public function reset(): void
     {
-        $this->refreshData = new RefreshData();
+        $this->llmifyRefreshData = new LlmifyRefreshData();
     }
 
     /**
@@ -51,9 +52,12 @@ class RefreshService extends Component
         }
 
         // Get the custom behavior to decide if the Markdown should be refreshed.
-        /** @var ElementChangedBehavior|null $elementChanged */
-        $elementChanged = $element->getBehavior(ElementChangedBehavior::BEHAVIOR_NAME);
-        if ($elementChanged !== null) {
+        /** @var LlmifyChangedBehavior|null $elementChanged */
+        $elementChanged = $element->getBehavior(LlmifyChangedBehavior::BEHAVIOR_NAME);
+        $pageRecordExists = PageRecord::find()->where(['id' => $element->getId()])->exists();
+
+        // only check if a page record exists, otherwise this validation is faulty
+        if ($elementChanged !== null && $pageRecordExists) {
             // Delete Markdowns if entry gets deleted or deactivated
             if ($elementChanged->hasBeenDeleted()
                 || ($elementChanged->hasStatusChanged() && !$elementChanged->hasRefreshableStatus())) {
@@ -71,19 +75,21 @@ class RefreshService extends Component
             }
         }
 
-        $this->refreshData->addSiteId($element->siteId);
-        $this->refreshData->addUrl($element->getUrl());
-        $this->refreshData->addElementId($element->id, $element::class);
+        $this->llmifyRefreshData->addSiteId($element->siteId);
+        $this->llmifyRefreshData->addUrl($element->getUrl());
+        $this->llmifyRefreshData->addElementId($element->id, $element::class);
     }
 
     public function refresh(): void
     {
-        if ($this->refreshData->isEmpty()) {
+        Craft::debug(json_encode($this->llmifyRefreshData), 'llmify');
+        if ($this->llmifyRefreshData->isEmpty()) {
             return;
         }
 
+        Craft::debug(json_encode($this->llmifyRefreshData), 'llmify');
         $job = new RefreshMarkdownJob([
-            'data' => $this->refreshData,
+            'data' => $this->llmifyRefreshData,
         ]);
 
         Queue::push($job);
@@ -156,6 +162,7 @@ class RefreshService extends Component
 
     /**
      * @throws Exception
+     * @throws \yii\base\Exception
      */
     public function canRefreshEntry(Entry $entry): bool
     {

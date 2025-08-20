@@ -15,9 +15,9 @@ use yii\base\Exception;
  *
  * @property Entry $owner
  */
-class ElementChangedBehavior extends Behavior
+class LlmifyChangedBehavior extends Behavior
 {
-    public const BEHAVIOR_NAME = 'elementChanged';
+    public const BEHAVIOR_NAME = 'llmifyChanged';
     public ?Element $originalElement = null;
     public array $originalElementSiteStatuses = [];
     /**

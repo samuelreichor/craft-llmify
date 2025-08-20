@@ -55,7 +55,6 @@ class RequestService extends Component
 
                 if ($response->getStatus() === 200) {
                     $this->generated++;
-                    Craft::debug("Generated URL {$url} response");
                 }
 
                 if (is_callable($setProgressHandler)) {

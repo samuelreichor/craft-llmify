@@ -54,10 +54,7 @@ class RefreshService extends Component
         // Get the custom behavior to decide if the Markdown should be refreshed.
         /** @var LlmifyChangedBehavior|null $elementChanged */
         $elementChanged = $element->getBehavior(LlmifyChangedBehavior::BEHAVIOR_NAME);
-        $pageRecordExists = PageRecord::find()->where(['id' => $element->getId()])->exists();
-
-        // only check if a page record exists, otherwise this validation is faulty
-        if ($elementChanged !== null && $pageRecordExists) {
+        if ($elementChanged !== null) {
             // Delete Markdowns if entry gets deleted or deactivated
             if ($elementChanged->hasBeenDeleted()
                 || ($elementChanged->hasStatusChanged() && !$elementChanged->hasRefreshableStatus())) {
@@ -82,12 +79,10 @@ class RefreshService extends Component
 
     public function refresh(): void
     {
-        Craft::debug(json_encode($this->llmifyRefreshData), 'llmify');
         if ($this->llmifyRefreshData->isEmpty()) {
             return;
         }
 
-        Craft::debug(json_encode($this->llmifyRefreshData), 'llmify');
         $job = new RefreshMarkdownJob([
             'data' => $this->llmifyRefreshData,
         ]);

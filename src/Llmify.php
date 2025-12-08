@@ -280,6 +280,11 @@ class Llmify extends Plugin
                     return;
                 }
 
+                // Only web requests have headers
+                if (Craft::$app->request->getIsConsoleRequest()) {
+                    return;
+                }
+
                 // Check if the request is coming from the queue job
                 if (Craft::$app->request->getHeaders()->get(Constants::HEADER_REFRESH)) {
                     $markdownService = $this->markdown;

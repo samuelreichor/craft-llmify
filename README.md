@@ -31,6 +31,7 @@
 - **Twig Tags for Control**: Use `{% llmify %}` to include or `{% excludellmify %}` to exclude HTML from the output.
 - **Exclude Tags with Classes**: Define classes that should be excluded from the HTML output.
 - **Flexible Configuration**: Site-wide, section, and entry-level settings.
+- **YAML Front Matter**: Add configurable metadata to your Markdown.
 - **Easy Refresh Options**: Automatic background jobs, manual updates in the CP, or console commands for deployments.
 
 ## Requirements

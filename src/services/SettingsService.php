@@ -5,6 +5,7 @@ namespace samuelreichor\llmify\services;
 use Craft;
 use craft\base\Component;
 use craft\db\Query as DbQuery;
+use craft\helpers\Json;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
@@ -51,6 +52,10 @@ class SettingsService extends Component
         $contentRecord->llmDescriptionSource = $contentSettings->llmDescriptionSource;
         $contentRecord->llmSectionTitle = $contentSettings->llmSectionTitle;
         $contentRecord->llmSectionDescription = $contentSettings->llmSectionDescription;
+        $contentRecord->frontMatterFields = !empty($contentSettings->frontMatterFields)
+            ? Json::encode($contentSettings->frontMatterFields)
+            : null;
+        $contentRecord->overrideFrontMatter = $contentSettings->overrideFrontMatter;
         $contentRecord->sectionId = $contentSettings->sectionId;
 
         $contentRecord->save();
@@ -84,6 +89,10 @@ class SettingsService extends Component
             ->where(['sectionId' => $sectionId, 'siteId' => $siteId])
             ->one();
 
+        if ($result) {
+            $result = $this->decodeContentSettingsJson($result);
+        }
+
         $settings = $result ? new ContentSettings($result) : null;
 
         if (!$settings) {
@@ -109,6 +118,7 @@ class SettingsService extends Component
                 ->all();
 
             foreach ($results as $result) {
+                $result = $this->decodeContentSettingsJson($result);
                 $settings = new ContentSettings($result);
                 $this->allEnabledContentSettings[] = $settings;
 
@@ -131,6 +141,7 @@ class SettingsService extends Component
             ->all();
 
         foreach ($results as $result) {
+            $result = $this->decodeContentSettingsJson($result);
             $settings = new ContentSettings($result);
             $this->contentSettingsBySiteId[$siteId][] = $settings;
             $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
@@ -201,6 +212,9 @@ class SettingsService extends Component
         $globalRecord->llmTitle = $globalSettings->llmTitle;
         $globalRecord->llmDescription = $globalSettings->llmDescription;
         $globalRecord->llmNote = $globalSettings->llmNote;
+        $globalRecord->frontMatterFields = !empty($globalSettings->frontMatterFields)
+            ? Json::encode($globalSettings->frontMatterFields)
+            : null;
 
         $globalRecord->save();
         return true;
@@ -218,6 +232,10 @@ class SettingsService extends Component
         $result = $this->_createGlobalSettingsQuery()
             ->where(['siteId' => $siteId])
             ->one();
+
+        if ($result) {
+            $result = $this->decodeGlobalSettingsJson($result);
+        }
 
         $settings = $result ? new GlobalSettings($result) : null;
 
@@ -242,6 +260,7 @@ class SettingsService extends Component
             ->all();
 
         foreach ($results as $result) {
+            $result = $this->decodeGlobalSettingsJson($result);
             $settings = new GlobalSettings($result);
             $this->globalSettings[$settings->siteId] = $settings;
             $this->allEnabledSiteIds[] = $settings->siteId;
@@ -291,6 +310,8 @@ class SettingsService extends Component
                 'llmDescription',
                 'llmSectionTitle',
                 'llmSectionDescription',
+                'frontMatterFields',
+                'overrideFrontMatter',
                 'sectionId',
                 'siteId',
             ])
@@ -305,6 +326,7 @@ class SettingsService extends Component
                 'llmTitle',
                 'llmDescription',
                 'llmNote',
+                'frontMatterFields',
                 'enabled',
             ])
             ->from([Constants::TABLE_GLOBALS]);
@@ -313,5 +335,36 @@ class SettingsService extends Component
     private function createContentCacheKey(string $sectionId, string $siteId): string
     {
         return  $sectionId . '-' . $siteId;
+    }
+
+    /**
+     * Decode JSON fields in content settings result
+     */
+    private function decodeContentSettingsJson(array $result): array
+    {
+        if (isset($result['frontMatterFields']) && is_string($result['frontMatterFields'])) {
+            $result['frontMatterFields'] = Json::decode($result['frontMatterFields']) ?? [];
+        } else {
+            $result['frontMatterFields'] = [];
+        }
+
+        $result['overrideFrontMatter'] = (bool)($result['overrideFrontMatter'] ?? false);
+
+        return $result;
+    }
+
+    /**
+     * Decode JSON fields in global settings result
+     */
+    private function decodeGlobalSettingsJson(array $result): array
+    {
+        if (isset($result['frontMatterFields']) && is_string($result['frontMatterFields']) && $result['frontMatterFields'] !== '') {
+            $result['frontMatterFields'] = Json::decode($result['frontMatterFields']) ?? [];
+        } else {
+            // Remove from result so the model uses its default value
+            unset($result['frontMatterFields']);
+        }
+
+        return $result;
     }
 }

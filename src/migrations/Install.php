@@ -93,6 +93,8 @@ class Install extends Migration
                     'llmDescription' => $this->string(),
                     'llmSectionTitle' => $this->string(),
                     'llmSectionDescription' => $this->string(),
+                    'frontMatterFields' => $this->text(),
+                    'overrideFrontMatter' => $this->boolean()->defaultValue(false),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                 ]
@@ -110,6 +112,7 @@ class Install extends Migration
                     'llmTitle' => $this->string(),
                     'llmDescription' => $this->string(),
                     'llmNote' => $this->string(),
+                    'frontMatterFields' => $this->text(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                     'PRIMARY KEY([[siteId]])',

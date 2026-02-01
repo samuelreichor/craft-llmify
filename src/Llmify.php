@@ -29,6 +29,7 @@ use craft\web\View;
 use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
+use samuelreichor\llmify\services\FrontMatterService;
 use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
@@ -61,6 +62,7 @@ use yii\log\FileTarget;
  * @property-read HelperService $helper
  * @property-read RefreshService $refresh
  * @property-read RequestService $request
+ * @property-read FrontMatterService $frontMatter
  */
 class Llmify extends Plugin
 {
@@ -81,6 +83,7 @@ class Llmify extends Plugin
                 'helper' => HelperService::class,
                 'refresh' => RefreshService::class,
                 'request' => RequestService::class,
+                'frontMatter' => FrontMatterService::class,
             ],
         ];
     }

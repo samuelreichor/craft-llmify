@@ -90,3 +90,16 @@
   placeholder: 100,
   disabled: readOnly,
 }) }}
+
+<hr>
+
+<h2>Front Matter</h2>
+
+{{ forms.lightswitchField({
+  label: 'Include in llms-full.txt',
+  instructions: 'Whether front matter should also be included for each page in llms-full.txt. Front matter fields are configured per site in the Site Settings.',
+  id: 'frontMatterInFullTxt',
+  name: 'frontMatterInFullTxt',
+  on: settings.frontMatterInFullTxt,
+  disabled: readOnly,
+}) }}

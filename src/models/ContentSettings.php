@@ -38,6 +38,14 @@ class ContentSettings extends Model
      */
     public string $llmSectionDescription = '';
     /**
+     * @var array Front matter field configuration for this section
+     */
+    public array $frontMatterFields = [];
+    /**
+     * @var bool Whether to override site-level front matter settings
+     */
+    public bool $overrideFrontMatter = false;
+    /**
      * @var int Section ID of the content setting
      */
     public int $sectionId;

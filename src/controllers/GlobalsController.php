@@ -27,10 +27,12 @@ class GlobalsController extends Controller
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $globalSettings = Llmify::getInstance()->settings;
         $settings = $globalSettings->getGlobalSetting($currentSiteId);
+        $frontMatterFieldOptions = Llmify::getInstance()->helper->getFrontMatterFieldOptions();
 
         return $this->renderTemplate('llmify/settings/globals/index', [
             'settings' => $settings,
             'siteId' => $currentSiteId,
+            'frontMatterFieldOptions' => $frontMatterFieldOptions,
         ]);
     }
 
@@ -53,6 +55,7 @@ class GlobalsController extends Controller
         $globalSetting->llmTitle = $this->request->getBodyParam('llmTitle');
         $globalSetting->llmDescription = $this->request->getBodyParam('llmDescription');
         $globalSetting->llmNote = $this->request->getBodyParam('llmNote');
+        $globalSetting->frontMatterFields = $this->request->getBodyParam('frontMatterFields') ?? [];
 
         if (!$settingService->saveGlobalSettings($globalSetting)) {
             $this->setFailFlash(Craft::t('app', 'Couldn’t save Global Setting.'));

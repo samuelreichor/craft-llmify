@@ -66,12 +66,19 @@ class ContentController extends Controller
 
         $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId);
         $textFieldOptions = $helperService->getTextFieldsForSection($section);
+        $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions($section);
+
+        // Get inherited front matter fields from site settings
+        $globalSettings = Llmify::getInstance()->settings->getGlobalSetting($currentSiteId);
+        $inheritedFrontMatterFields = $globalSettings->frontMatterFields;
 
         return $this->renderTemplate('llmify/settings/content/edit', [
             'section' => $section,
             'textFieldOptions' => $textFieldOptions,
+            'frontMatterFieldOptions' => $frontMatterFieldOptions,
             'settings' => $sectionSettings,
             'siteId' => $currentSiteId,
+            'inheritedFrontMatterFields' => $inheritedFrontMatterFields,
         ]);
     }
 
@@ -105,6 +112,8 @@ class ContentController extends Controller
         $content->llmDescriptionSource = $this->request->getBodyParam('llmDescriptionSource');
         $content->llmSectionTitle = $this->request->getBodyParam('llmSectionTitle');
         $content->llmSectionDescription = $this->request->getBodyParam('llmSectionDescription');
+        $content->overrideFrontMatter = (bool)$this->request->getBodyParam('overrideFrontMatter');
+        $content->frontMatterFields = $this->request->getBodyParam('frontMatterFields') ?? [];
         $content->sectionId = $this->request->getBodyParam('sectionId');
 
         if (!$settingService->saveContentSettings($content)) {

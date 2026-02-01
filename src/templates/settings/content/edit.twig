@@ -109,6 +109,52 @@
         name: 'llmDescription',
         value: settings.llmDescription ?? '',
     }) }}
+
+    <hr>
+
+    <h2>Front Matter Settings</h2>
+
+    {{ forms.lightswitchField({
+        label: 'Override Front Matter',
+        instructions: 'Enable to override the site-level front matter settings for all entries in this section.',
+        id: 'overrideFrontMatter',
+        name: 'overrideFrontMatter',
+        on: settings.overrideFrontMatter ?? false,
+    }) }}
+
+    {% set frontMatterFieldsCols = {
+        handle: {
+          type: 'select',
+          heading: 'Field',
+          options: frontMatterFieldOptions,
+        },
+        enabled: {
+          type: 'lightswitch',
+          heading: 'Enabled',
+        },
+        label: {
+          type: 'singleline',
+          heading: 'Output Label',
+          placeholder: 'e.g., title',
+        }
+      } %}
+
+    {% set displayedFrontMatterFields = settings.frontMatterFields|length ? settings.frontMatterFields : inheritedFrontMatterFields %}
+
+    <div id="frontMatterFieldsWrapper" class="{% if not (settings.overrideFrontMatter ?? false) %}fields-disabled{% endif %}">
+        {{ forms.editableTableField({
+          label: "Front Matter Fields",
+          instructions: 'Configure which fields to include in the YAML front matter for markdown pages in this section. Inherits from site settings by default.',
+          name: 'frontMatterFields',
+          id: 'frontMatterFields',
+          cols: frontMatterFieldsCols,
+          rows: displayedFrontMatterFields,
+          addRowLabel: "Add a field",
+          allowAdd: true,
+          allowDelete: true,
+          allowReorder: true,
+        }) }}
+    </div>
 {% endblock %}
 
 {% js %}
@@ -136,4 +182,34 @@
 
     setupConditionalField('#llmTitleSource', '#llmTitle-field');
     setupConditionalField('#llmDescriptionSource', '#llmDescription-field');
+
+    // Front Matter override toggle
+    (function() {
+        const overrideSwitch = document.querySelector('#overrideFrontMatter');
+        const wrapper = document.querySelector('#frontMatterFieldsWrapper');
+
+        if (!overrideSwitch || !wrapper) {
+            return;
+        }
+
+        function updateDisabledState() {
+            const isOn = overrideSwitch.classList.contains('on');
+            if (isOn) {
+                wrapper.classList.remove('fields-disabled');
+            } else {
+                wrapper.classList.add('fields-disabled');
+            }
+        }
+
+        overrideSwitch.addEventListener('click', function() {
+            setTimeout(updateDisabledState, 100);
+        });
+    })();
 {% endjs %}
+
+{% css %}
+    .fields-disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+{% endcss %}

@@ -21,6 +21,7 @@ class PluginSettings extends Model
             'classes' => 'exclude-llmify',
         ],
     ];
+    public bool $frontMatterInFullTxt = false;
 
     public function defineRules(): array
     {

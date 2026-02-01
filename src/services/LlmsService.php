@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
 use samuelreichor\llmify\Llmify;
@@ -99,7 +100,8 @@ class LlmsService extends Component
             return '';
         }
 
-        return $page->content;
+        $entry = Entry::find()->id($page->entryId)->siteId($siteId)->one();
+        return Llmify::getInstance()->frontMatter->prependFrontMatter($page->content, $page, $entry);
     }
 
 
@@ -197,12 +199,22 @@ class LlmsService extends Component
     private function constructAllPages(): string
     {
         $content = '';
+        $settings = Llmify::getInstance()->getSettings();
+        $frontMatterService = Llmify::getInstance()->frontMatter;
         $pages = Llmify::getInstance()->markdown->getActivePagesForSite($this->currentSiteId);
+
         foreach ($pages as $page) {
             /**
              * @var Page $page
              */
-            $content .= "{$page->content}\n\n---\n\n";
+            $pageContent = $page->content;
+
+            if ($settings->frontMatterInFullTxt) {
+                $entry = Entry::find()->id($page->entryId)->siteId($this->currentSiteId)->one();
+                $pageContent = $frontMatterService->prependFrontMatter($pageContent, $page, $entry);
+            }
+
+            $content .= "{$pageContent}\n\n---\n\n";
         }
 
         return $content;

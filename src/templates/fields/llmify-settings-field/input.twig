@@ -1,74 +1,234 @@
 {% import "_includes/forms" as forms %}
 
+
+{% set overrideTitleSwitchId = name ~ 'overrideTitleSettings' %}
+{% set overrideDescriptionSwitchId = name ~ 'overrideDescriptionSettings' %}
+{% set overrideFrontMatterSwitchId = name ~ 'overrideFrontMatterSettings' %}
+
 {% set llmTitleSourceId = name ~ 'llmTitleSource' %}
 {% set llmTitleFieldId = name ~ 'llmTitle' %}
 
 {% set llmDescriptionSourceId = name ~ 'llmDescriptionSource' %}
 {% set llmDescriptionFieldId = name ~ 'llmDescription' %}
 
-<p>
-  You can overwrite the section settings with these fields.
-</p>
+{% set frontMatterFieldsId = name ~ 'frontMatterFields' %}
+
+{# Title Section #}
+{{ forms.lightswitchField({
+  label: 'Override Title Settings',
+  instructions: 'Enable to override the section-level title settings for this entry.',
+  id: overrideTitleSwitchId,
+  name: name ~ '[overrideTitleSettings]',
+  on: isOverrideTitleActive,
+}) }}
 
 {{ forms.selectField({
   label: 'LLM Title Source',
   instructions: 'Choose a field to dynamically source the title, or select "Custom" to enter one manually.',
   id: llmTitleSourceId,
-  name: name ~  '[llmTitleSource]',
+  name: name ~ '[llmTitleSource]',
   options: textFieldOptions,
-  value: value.llmTitleSource ?? defaultValues.llmTitleSource
+  value: value.llmTitleSource ?? defaultValues.llmTitleSource,
 }) }}
 
 {{ forms.textField({
   label: 'LLM Title',
   instructions: "Enter the static title for this entry. This field is only used if 'Custom' is selected in the source dropdown above.",
   id: llmTitleFieldId,
-  name: name ~  '[llmTitle]',
+  name: name ~ '[llmTitle]',
   value: value.llmTitle ?? '',
+}) }}
+
+<hr style="margin: 24px 0;">
+
+{# Description Section #}
+{{ forms.lightswitchField({
+  label: 'Override Description Settings',
+  instructions: 'Enable to override the section-level description settings for this entry.',
+  id: overrideDescriptionSwitchId,
+  name: name ~ '[overrideDescriptionSettings]',
+  on: isOverrideDescriptionActive,
 }) }}
 
 {{ forms.selectField({
   label: 'LLM Description Source',
   instructions: 'Choose a field to dynamically source the description, or select "Custom" to enter one manually.',
   id: llmDescriptionSourceId,
-  name: name ~  '[llmDescriptionSource]',
+  name: name ~ '[llmDescriptionSource]',
   options: textFieldOptions,
-  value: value.llmDescriptionSource ?? defaultValues.llmDescriptionSource
+  value: value.llmDescriptionSource ?? defaultValues.llmDescriptionSource,
 }) }}
 
-{# Das Textfeld wird von Craft automatisch in ein div mit der ID `{{ llmDescriptionFieldId }}-field` gewrappt #}
 {{ forms.textField({
   label: 'LLM Description',
   instructions: "Enter the static description for this entry. This field is only used if 'Custom' is selected in the source dropdown above.",
   id: llmDescriptionFieldId,
-  name: name ~  '[llmDescription]',
+  name: name ~ '[llmDescription]',
   value: value.llmDescription ?? '',
 }) }}
 
-{# JavaScript zur Steuerung der Sichtbarkeit #}
+<hr style="margin: 24px 0;">
+
+{# Front Matter Section #}
+{{ forms.lightswitchField({
+  label: 'Override Front Matter Settings',
+  instructions: 'Enable to override the section or site-level front matter settings for this entry.',
+  id: overrideFrontMatterSwitchId,
+  name: name ~ '[overrideFrontMatterSettings]',
+  on: isOverrideFrontMatterActive,
+}) }}
+
+{% set frontMatterFieldsCols = {
+    handle: {
+      type: 'select',
+      heading: 'Field',
+      options: frontMatterFieldOptions,
+    },
+    enabled: {
+      type: 'lightswitch',
+      heading: 'Enabled',
+    },
+    label: {
+      type: 'singleline',
+      heading: 'Output Label',
+      placeholder: 'e.g., title',
+    }
+  } %}
+
+<div id="{{ frontMatterFieldsId }}-wrapper" class="{% if not isOverrideFrontMatterActive %}fields-disabled{% endif %}">
+    {{ forms.editableTableField({
+      label: "Front Matter Fields",
+      instructions: 'Configure which fields to include in the YAML front matter for this entry.',
+      name: name ~ '[frontMatterFields]',
+      id: frontMatterFieldsId,
+      cols: frontMatterFieldsCols,
+      rows: value.frontMatterFields ?? defaultFrontMatterFields,
+      addRowLabel: "Add a field",
+      allowAdd: true,
+      allowDelete: true,
+      allowReorder: true,
+    }) }}
+</div>
+
 {% js %}
-    function setupConditionalField(sourceSelector, targetSelector) {
-      const sourceElement = document.querySelector(sourceSelector);
-      const targetElement = document.querySelector(targetSelector);
+(function() {
+    // Use vanilla JS with proper selectors
+    var titleSwitch = document.getElementById('fields-{{ overrideTitleSwitchId }}');
+    var titleSourceSelect = document.getElementById('fields-{{ llmTitleSourceId }}');
+    var titleInput = document.getElementById('fields-{{ llmTitleFieldId }}');
+    var titleInputField = document.getElementById('fields-{{ llmTitleFieldId }}-field');
 
-      if (!sourceElement || !targetElement) {
-        return;
-      }
+    var descSwitch = document.getElementById('fields-{{ overrideDescriptionSwitchId }}');
+    var descSourceSelect = document.getElementById('fields-{{ llmDescriptionSourceId }}');
+    var descInput = document.getElementById('fields-{{ llmDescriptionFieldId }}');
+    var descInputField = document.getElementById('fields-{{ llmDescriptionFieldId }}-field');
 
-      const toggleVisibility = () => {
-        if (sourceElement.value === 'custom') {
-          targetElement.style.display = 'block';
-        } else {
-          const input = targetElement.querySelector('input')
-          input.value = ''
-          targetElement.style.display = 'none';
+    var frontMatterSwitch = document.getElementById('fields-{{ overrideFrontMatterSwitchId }}');
+    var frontMatterWrapper = document.getElementById('fields-{{ frontMatterFieldsId }}-wrapper');
+
+    function updateTitleFields() {
+        if (!titleSwitch) return;
+        var isOn = titleSwitch.classList.contains('on');
+        if (titleSourceSelect) titleSourceSelect.disabled = !isOn;
+        if (titleInput) titleInput.disabled = !isOn;
+
+        // Custom field visibility
+        if (titleInputField) {
+            if (titleSourceSelect && titleSourceSelect.value === 'custom') {
+                titleInputField.style.display = 'block';
+            } else {
+                titleInputField.style.display = 'none';
+            }
         }
-      };
-
-      sourceElement.addEventListener('change', toggleVisibility);
-      toggleVisibility();
     }
 
-    setupConditionalField('#fields-{{ llmTitleSourceId }}', '#fields-{{ llmTitleFieldId }}-field');
-    setupConditionalField('#fields-{{ llmDescriptionSourceId }}', '#fields-{{ llmDescriptionFieldId}}-field');
+    function updateDescriptionFields() {
+        if (!descSwitch) return;
+        var isOn = descSwitch.classList.contains('on');
+        if (descSourceSelect) descSourceSelect.disabled = !isOn;
+        if (descInput) descInput.disabled = !isOn;
+
+        // Custom field visibility
+        if (descInputField) {
+            if (descSourceSelect && descSourceSelect.value === 'custom') {
+                descInputField.style.display = 'block';
+            } else {
+                descInputField.style.display = 'none';
+            }
+        }
+    }
+
+    function updateFrontMatterFields() {
+        if (!frontMatterSwitch || !frontMatterWrapper) return;
+        var isOn = frontMatterSwitch.classList.contains('on');
+        if (isOn) {
+            frontMatterWrapper.classList.remove('fields-disabled');
+        } else {
+            frontMatterWrapper.classList.add('fields-disabled');
+        }
+    }
+
+    // Listen to click on the lightswitch button
+    if (titleSwitch) {
+        titleSwitch.addEventListener('click', function() {
+            setTimeout(updateTitleFields, 100);
+        });
+    }
+
+    if (descSwitch) {
+        descSwitch.addEventListener('click', function() {
+            setTimeout(updateDescriptionFields, 100);
+        });
+    }
+
+    if (frontMatterSwitch) {
+        frontMatterSwitch.addEventListener('click', function() {
+            setTimeout(updateFrontMatterFields, 100);
+        });
+    }
+
+    // Listen to select changes for custom field visibility
+    if (titleSourceSelect) {
+        titleSourceSelect.addEventListener('change', updateTitleFields);
+    }
+    if (descSourceSelect) {
+        descSourceSelect.addEventListener('change', updateDescriptionFields);
+    }
+
+    // Initial state
+    updateTitleFields();
+    updateDescriptionFields();
+})();
+{% endjs %}
+
+{% css %}
+    .fields-disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+{% endcss %}
+
+{% js %}
+(function() {
+    // Add section settings link to the field heading
+    var fieldContainer = document.querySelector('.field[data-attribute="{{ name }}"]');
+    if (fieldContainer) {
+        var heading = fieldContainer.querySelector(':scope > .heading');
+        if (heading) {
+            var link = document.createElement('a');
+            link.href = '{{ sectionSettingsUrl|e("js") }}';
+            link.className = 'go';
+            link.target = '_blank';
+            link.textContent = 'Section Settings';
+            link.style.fontSize = '12px';
+            link.style.marginLeft = 'auto';
+            link.style.marginRight = '10px';
+
+            var flexGrow = heading.querySelector(':scope > .flex-grow');
+            if (flexGrow) {
+                flexGrow.before(link);
+            }
+        }
+    }
+})();
 {% endjs %}

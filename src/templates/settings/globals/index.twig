@@ -71,4 +71,34 @@
         name: 'llmNote',
         value: settings.llmNote,
     }) }}
+
+    {% set frontMatterFieldsCols = {
+        handle: {
+          type: 'select',
+          heading: 'Field',
+          options: frontMatterFieldOptions,
+        },
+        enabled: {
+          type: 'lightswitch',
+          heading: 'Enabled',
+        },
+        label: {
+          type: 'singleline',
+          heading: 'Output Label',
+          placeholder: 'e.g., title',
+        }
+      } %}
+
+    {{ forms.editableTableField({
+      label: "Front Matter Fields",
+      instructions: 'Configure which fields to include in the YAML front matter for markdown pages. These settings apply to all sections unless overridden at the section or entry level.',
+      name: 'frontMatterFields',
+      id: 'frontMatterFields',
+      cols: frontMatterFieldsCols,
+      rows: settings.frontMatterFields,
+      addRowLabel: "Add a field",
+      allowAdd: true,
+      allowDelete: true,
+      allowReorder: true,
+    }) }}
 {% endblock %}

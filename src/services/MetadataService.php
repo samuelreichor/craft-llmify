@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\services;
 
 use craft\base\Component;
 use craft\base\FieldInterface;
+use craft\elements\ContentBlock;
 use craft\elements\Entry;
 use craft\errors\InvalidFieldException;
 use samuelreichor\llmify\fields\LlmifySettingsField;
@@ -63,11 +64,15 @@ class MetadataService extends Component
 
         if ($this->entrySettingsField) {
             $fieldData = $this->entry->getFieldValue($this->entrySettingsField->handle);
-            $sourceHandle = $fieldData['llmTitleSource'] ?? null;
-            $customValue = $fieldData['llmTitle'] ?? null;
+
+            // Only use entry-level data if override is explicitly enabled
+            if ($fieldData['overrideTitleSettings'] ?? false) {
+                $sourceHandle = $fieldData['llmTitleSource'] ?? null;
+                $customValue = $fieldData['llmTitle'] ?? null;
+            }
         }
 
-        if ($sourceHandle === null) {
+        if ($sourceHandle === null || $sourceHandle === '') {
             $sourceHandle = $this->getContentTitleSource();
             $customValue = $this->getContentTitle();
         }
@@ -77,7 +82,7 @@ class MetadataService extends Component
         }
 
         if ($sourceHandle) {
-            return strip_tags($this->entry[$sourceHandle]);
+            return $this->resolveFieldValue($sourceHandle);
         }
 
         return $this->entry->title ?? '';
@@ -93,11 +98,15 @@ class MetadataService extends Component
 
         if ($this->entrySettingsField) {
             $fieldData = $this->entry->getFieldValue($this->entrySettingsField->handle);
-            $sourceHandle = $fieldData['llmDescriptionSource'] ?? null;
-            $customValue = $fieldData['llmDescription'] ?? null;
+
+            // Only use entry-level data if override is explicitly enabled
+            if ($fieldData['overrideDescriptionSettings'] ?? false) {
+                $sourceHandle = $fieldData['llmDescriptionSource'] ?? null;
+                $customValue = $fieldData['llmDescription'] ?? null;
+            }
         }
 
-        if ($sourceHandle === null) {
+        if ($sourceHandle === null || $sourceHandle === '') {
             $sourceHandle = $this->getContentDescriptionSource();
             $customValue = $this->getContentDescription();
         }
@@ -107,9 +116,30 @@ class MetadataService extends Component
         }
 
         if ($sourceHandle) {
-            return strip_tags($this->entry[$sourceHandle]);
+            return $this->resolveFieldValue($sourceHandle);
         }
 
         return '';
+    }
+
+    /**
+     * Resolves a field value from either a direct field or a Content Block nested field.
+     * Supports dot notation for Content Block fields (e.g., "contentBlockHandle.fieldHandle").
+     */
+    private function resolveFieldValue(string $sourceHandle): string
+    {
+        if (str_contains($sourceHandle, '.')) {
+            [$contentBlockHandle, $fieldHandle] = explode('.', $sourceHandle, 2);
+            $contentBlock = $this->entry->getFieldValue($contentBlockHandle);
+
+            if ($contentBlock instanceof ContentBlock) {
+                $value = $contentBlock->getFieldValue($fieldHandle);
+                return strip_tags((string)($value ?? ''));
+            }
+
+            return '';
+        }
+
+        return strip_tags((string)($this->entry[$sourceHandle] ?? ''));
     }
 }

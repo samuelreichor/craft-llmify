@@ -6,12 +6,13 @@ use craft\db\ActiveRecord;
 use samuelreichor\llmify\Constants;
 
 /**
- * Content Setting Record
+ * Global Setting Record
  * @property int $siteId
  * @property bool $enabled
  * @property string $llmTitle
  * @property string $llmDescription
  * @property string $llmNote
+ * @property string|null $frontMatterFields
  */
 class GlobalSettingRecord extends ActiveRecord
 {

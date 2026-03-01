@@ -113,7 +113,7 @@ class LlmsService extends Component
                 /**
                  * @var Page $page
                  */
-                $content .= ($shouldUseRealUrls ? $this->constructRealUrl($page, $currentSiteUrl) : $this->constructMdUrl($page, $currentSiteUrl));
+                $content .= ($shouldUseRealUrls ? $this->constructRealUrl($page, $currentSiteUrl) : $this->constructMdUrl($page));
             }
         }
 
@@ -134,11 +134,9 @@ class LlmsService extends Component
         return $content;
     }
 
-    private function constructMdUrl(Page $page, string $currentSiteUrl): string
+    private function constructMdUrl(Page $page): string
     {
-        $entryUri = $page->entryMeta['uri'];
-        $mdPrefix = Llmify::getInstance()->getSettings()->markdownUrlPrefix;
-        $markdownUrl = "{$currentSiteUrl}{$mdPrefix}/{$entryUri}.md";
+        $markdownUrl = HelperService::getMarkdownUrl($page->entryMeta['uri']);
 
         return $this->constructUrl($page->title, $markdownUrl, $page->description);
     }

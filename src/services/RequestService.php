@@ -35,6 +35,15 @@ class RequestService extends Component
         $this->requestTimeout = $settings->requestTimeout;
     }
 
+    public function generateUrl(string $url): bool
+    {
+        $client = HttpClientBuilder::buildDefault();
+        $request = $this->createRequest($url);
+        $response = $client->request($request);
+
+        return $response->getStatus() === 200;
+    }
+
     public function generateUrlsWithProgress(array $urls, callable $setProgressHandler = null): void
     {
         $this->generateWithProgress($urls, $setProgressHandler, 0, count($urls));

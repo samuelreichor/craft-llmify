@@ -131,9 +131,7 @@ class MarkdownService extends Component
             return null;
         }
 
-        $contentSetting = Llmify::getInstance()->settings->getContentSetting($page->sectionId, $siteId);
-
-        if (!$contentSetting->isEnabled()) {
+        if (!$this->isSectionServable($page->sectionId, $siteId)) {
             return null;
         }
 
@@ -148,19 +146,23 @@ class MarkdownService extends Component
             return null;
         }
 
-        if (!Llmify::getInstance()->settings->getGlobalSetting($this->siteId)->isEnabled()) {
-            return null;
-        }
-
         $entry = Entry::find()->id($this->entryId)->siteId($this->siteId)->one();
 
-        if (!$entry) {
+        if (!$entry || !$this->isSectionServable($entry->section->id, $this->siteId)) {
             return null;
         }
 
         $this->processContentBlocks();
 
         return $this->getRenderedMarkdown($entry->uri, $this->siteId, $entry);
+    }
+
+    public function isSectionServable(int $sectionId, int $siteId): bool
+    {
+        $settings = Llmify::getInstance()->settings;
+
+        return $settings->getGlobalSetting($siteId)->isEnabled()
+            && $settings->getContentSetting($sectionId, $siteId)->isEnabled();
     }
 
     public function processContentBlocks(): void
@@ -198,11 +200,8 @@ class MarkdownService extends Component
         $groupedPages = $this->getGroupedPagesForSite($siteId);
 
         $activePages = [];
-        $settingsService = Llmify::getInstance()->settings;
         foreach ($groupedPages as $sectionId => $pages) {
-            $contentSetting = $settingsService->getContentSetting($sectionId, $siteId);
-
-            if (!$contentSetting->isEnabled()) {
+            if (!$this->isSectionServable($sectionId, $siteId)) {
                 continue;
             }
 

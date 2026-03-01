@@ -6,7 +6,6 @@ use Craft;
 use craft\base\Component;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
-use craft\helpers\UrlHelper;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
@@ -82,13 +81,29 @@ class LlmsService extends Component
      */
     public function getMarkdownForUri(string $uri): string
     {
-        if (!$this->globalSettings->isEnabled()) {
-            return '';
+        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
+        $markdownService = Llmify::getInstance()->markdown;
+
+        $markdown = $markdownService->getRenderedMarkdown($uri, $siteId);
+
+        if ($markdown !== null) {
+            return $markdown;
         }
 
-        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
+        // Try to generate on-the-fly if the entry exists
+        $entry = Entry::find()->uri($uri)->siteId($siteId)->one();
+        if ($entry && $entry->getUrl()) {
+            try {
+                Llmify::getInstance()->request->generateUrl($entry->getUrl());
+            } catch (\Throwable $e) {
+                Craft::warning("On-the-fly markdown generation failed for URI: {$uri}. " . $e->getMessage(), 'llmify');
+                return '';
+            }
 
-        return Llmify::getInstance()->markdown->getRenderedMarkdown($uri, $siteId) ?? '';
+            return $markdownService->getRenderedMarkdown($uri, $siteId) ?? '';
+        }
+
+        return '';
     }
 
 
@@ -98,22 +113,34 @@ class LlmsService extends Component
     private function constructAllUrls(): string
     {
         $content = '';
-        $currentSiteUrl = UrlHelper::siteUrl();
         $shouldUseRealUrls = Llmify::getInstance()->getSettings()->isRealUrlLlm;
         $settingsService = Llmify::getInstance()->settings;
-        $groupedPages = Llmify::getInstance()->markdown->getGroupedPagesForSite($this->currentSiteId);
+        $markdownService = Llmify::getInstance()->markdown;
+        $allSettings = $settingsService->getContentSettingsBySiteId($this->currentSiteId);
 
-        foreach ($groupedPages as $sectionId => $pages) {
-            $contentSetting = $settingsService->getContentSetting($sectionId, $this->currentSiteId);
-            if (!$contentSetting->isEnabled()) {
+        foreach ($allSettings as $contentSetting) {
+            if (!$markdownService->isSectionServable($contentSetting->sectionId, $this->currentSiteId)) {
                 continue;
             }
+
+            $entries = Entry::find()
+                ->sectionId($contentSetting->sectionId)
+                ->siteId($this->currentSiteId)
+                ->all();
+
+            if (empty($entries)) {
+                continue;
+            }
+
             $content .= $this->constructSectionHeader($contentSetting);
-            foreach ($pages as $page) {
-                /**
-                 * @var Page $page
-                 */
-                $content .= ($shouldUseRealUrls ? $this->constructRealUrl($page, $currentSiteUrl) : $this->constructMdUrl($page));
+
+            foreach ($entries as $entry) {
+                $metadata = new MetadataService($entry);
+                $title = $metadata->getLlmTitle();
+                $description = $metadata->getLlmDescription();
+                $url = $shouldUseRealUrls ? $entry->getUrl() : HelperService::getMarkdownUrl($entry->uri);
+
+                $content .= $this->constructUrl($title, $url, $description);
             }
         }
 
@@ -132,25 +159,6 @@ class LlmsService extends Component
         }
 
         return $content;
-    }
-
-    private function constructMdUrl(Page $page): string
-    {
-        $markdownUrl = HelperService::getMarkdownUrl($page->entryMeta['uri']);
-
-        return $this->constructUrl($page->title, $markdownUrl, $page->description);
-    }
-
-    private function constructRealUrl(Page $page, string $currentSiteUrl): string
-    {
-        $entryUri = $page->entryMeta['uri'];
-
-        if ($entryUri === '__home__') {
-            $entryUri = '';
-        }
-        $realUrl = "{$currentSiteUrl}{$entryUri}";
-
-        return $this->constructUrl($page->title, $realUrl, $page->description);
     }
 
     private function constructUrl(string $title, string $url, string $description): string

@@ -9,6 +9,7 @@ use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use craft\fields\ContentBlock;
 use craft\fields\PlainText;
+use craft\helpers\UrlHelper;
 use craft\models\EntryType;
 use craft\models\Section;
 use samuelreichor\llmify\Llmify;
@@ -201,6 +202,12 @@ class HelperService extends Component
     public static function isMarkdownCreationEnabled(): bool
     {
         return Llmify::getInstance()->getSettings()->isEnabled;
+    }
+
+    public static function getMarkdownUrl(string $uri, ?int $siteId = null): string
+    {
+        $mdPrefix = Llmify::getInstance()->getSettings()->markdownUrlPrefix;
+        return UrlHelper::siteUrl("{$mdPrefix}/{$uri}.md", null, null, $siteId);
     }
 
     /**

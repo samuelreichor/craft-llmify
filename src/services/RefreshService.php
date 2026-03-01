@@ -255,6 +255,7 @@ class RefreshService extends Component
             'isRefreshable' => true,
             'page' => $page,
             'isEnabled' => HelperService::isMarkdownCreationEnabled(),
+            'markdownUrl' => HelperService::getMarkdownUrl($entry->uri, $entry->siteId),
             'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
             'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
         ]);

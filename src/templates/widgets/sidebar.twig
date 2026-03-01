@@ -6,7 +6,11 @@
   <div class="value statusMsg" style="justify-content: space-between">
     {% if isEnabled %}
     <p>
-      {{ markdownExists ? 'Generated' : 'Not generated' }}
+      {% if markdownExists %}
+        <a href="{{ markdownUrl }}" target="_blank" rel="noopener">Generated</a>
+      {% else %}
+        Not generated
+      {% endif %}
     </p>
     {% else %}
       <p>Plugin disabled</p>

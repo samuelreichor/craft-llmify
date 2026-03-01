@@ -8,6 +8,7 @@ class PluginSettings extends Model
 {
     public bool $isEnabled = true;
     public bool $isRealUrlLlm = false;
+    public bool $autoServeMarkdown = false;
     public string $markdownUrlPrefix = 'raw';
     public int $concurrentRequests = 3;
     public int $requestTimeout = 100;

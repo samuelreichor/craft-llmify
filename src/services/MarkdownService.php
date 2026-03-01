@@ -123,6 +123,55 @@ class MarkdownService extends Component
         return $result ? new Page($result) : null;
     }
 
+    public function getRenderedMarkdown(string $uri, int $siteId, ?Entry $entry = null): ?string
+    {
+        $page = $this->getMarkdown($uri, $siteId);
+
+        if (!$page) {
+            return null;
+        }
+
+        $contentSetting = Llmify::getInstance()->settings->getContentSetting($page->sectionId, $siteId);
+
+        if (!$contentSetting->isEnabled()) {
+            return null;
+        }
+
+        $entry = $entry ?? Entry::find()->id($page->entryId)->siteId($siteId)->one();
+
+        return Llmify::getInstance()->frontMatter->prependFrontMatter($page->content, $page, $entry);
+    }
+
+    public function resolveAutoServeMarkdown(): ?string
+    {
+        if ($this->entryId === null || $this->siteId === null) {
+            return null;
+        }
+
+        if (!Llmify::getInstance()->settings->getGlobalSetting($this->siteId)->isEnabled()) {
+            return null;
+        }
+
+        $entry = Entry::find()->id($this->entryId)->siteId($this->siteId)->one();
+
+        if (!$entry) {
+            return null;
+        }
+
+        $this->processContentBlocks();
+
+        return $this->getRenderedMarkdown($entry->uri, $this->siteId, $entry);
+    }
+
+    public function processContentBlocks(): void
+    {
+        $html = $this->getCombinedHtml();
+
+        if (!empty($html)) {
+            $this->process($html);
+        }
+    }
+
     public function getGroupedPagesForSite(int $siteId): array
     {
         $pageRecords = $this->_createPageQuery()

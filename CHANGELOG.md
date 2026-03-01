@@ -1,5 +1,13 @@
 # Release Notes for LLMify
 
+## 1.2.0 - 2026-03-01
+
+- Add auto serve markdown mode if the `text/markdown` header is present.
+- Add auto serve markdown setting.
+- Add blitz support for auto serve markdown mode.
+- Add link to generated markdown in entry sidebar.
+- Add auto try to generate markdown files before showing a 404 for requests with `text/markdown` and `raw/${uri}.md` routes. 
+
 ## 1.1.0 - 2026-02-01
 
 - Add front matter support with hierarchical inheritance (Site → Section → Entry)

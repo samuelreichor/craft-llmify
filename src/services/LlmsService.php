@@ -79,7 +79,6 @@ class LlmsService extends Component
 
     /**
      * @throws SiteNotFoundException
-     * @throws Exception
      */
     public function getMarkdownForUri(string $uri): string
     {
@@ -88,20 +87,8 @@ class LlmsService extends Component
         }
 
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
-        $page = Llmify::getInstance()->markdown->getMarkdown($uri, $siteId);
 
-        if (!$page) {
-            return '';
-        }
-
-        $contentSetting = Llmify::getInstance()->settings->getContentSetting($page->sectionId, $siteId);
-
-        if (!$contentSetting->isEnabled()) {
-            return '';
-        }
-
-        $entry = Entry::find()->id($page->entryId)->siteId($siteId)->one();
-        return Llmify::getInstance()->frontMatter->prependFrontMatter($page->content, $page, $entry);
+        return Llmify::getInstance()->markdown->getRenderedMarkdown($uri, $siteId) ?? '';
     }
 
 

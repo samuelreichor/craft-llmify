@@ -23,6 +23,15 @@
   disabled: readOnly,
 }) }}
 
+{{ forms.lightswitchField({
+  label: 'Automatically Serve Markdown',
+  instructions: 'When enabled, pages will automatically serve markdown instead of HTML when the request contains an `Accept: text/markdown` header.',
+  id: 'autoServeMarkdown',
+  name: 'autoServeMarkdown',
+  on: settings.autoServeMarkdown,
+  disabled: readOnly,
+}) }}
+
 {{ forms.textField({
   label: 'Markdown Url Prefix',
   instructions: 'This prefix is used to generate links for the markdowns (eg. https://example.com/raw/__home__.md). Change this if there is a conflict with the raw prefix.',

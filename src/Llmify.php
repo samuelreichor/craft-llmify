@@ -7,6 +7,7 @@ use craft\base\Element;
 use craft\base\Plugin;
 use craft\elements\Entry;
 use craft\enums\CmsEdition;
+use craft\events\CancelableEvent;
 use craft\events\DefineHtmlEvent;
 use craft\events\ElementEvent;
 use craft\events\MoveElementEvent;
@@ -26,6 +27,7 @@ use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\UrlManager;
 use craft\web\View;
+use putyourlightson\blitz\services\CacheRequestService;
 use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
@@ -100,6 +102,7 @@ class Llmify extends Plugin
 
             if (Craft::$app->request->getIsSiteRequest()) {
                 $this->registerSiteEvents();
+                $this->registerAutoServeEvent();
             }
 
             if (Craft::$app->request->getIsCpRequest()) {
@@ -288,12 +291,22 @@ class Llmify extends Plugin
                     return;
                 }
 
+                $headers = Craft::$app->request->getHeaders();
+
                 // Check if the request is coming from the queue job
-                if (Craft::$app->request->getHeaders()->get(Constants::HEADER_REFRESH)) {
-                    $markdownService = $this->markdown;
-                    $html = $markdownService->getCombinedHtml();
-                    if (!empty($html)) {
-                        $markdownService->process($html);
+                if ($headers->get(Constants::HEADER_REFRESH)) {
+                    $this->markdown->processContentBlocks();
+                } elseif ($this->isAutoServeAble()) {
+                    // Fallback: generate on-the-fly when no cached markdown exists
+                    // (early auto-serve in init() handles the cached case)
+                    $markdown = $this->markdown->resolveAutoServeMarkdown();
+
+                    if ($markdown !== null) {
+                        $event->output = $markdown;
+                        $response = Craft::$app->response;
+                        $response->format = $response::FORMAT_RAW;
+                        $response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
+                        $response->headers->set('Vary', 'Accept');
                     }
                 }
 
@@ -301,6 +314,40 @@ class Llmify extends Plugin
                 $this->markdown->clearBlocks();
             }
         );
+    }
+
+    /**
+     * Tell Blitz to skip caching for text/markdown requests so our template event can handle them.
+     */
+    private function registerAutoServeEvent(): void
+    {
+        if (!$this->getSettings()->autoServeMarkdown) {
+            return;
+        }
+
+        if (Craft::$app->request->getIsConsoleRequest()) {
+            return;
+        }
+
+        $accept = Craft::$app->request->getHeaders()->get('Accept', '');
+        if (!str_contains($accept, 'text/markdown')) {
+            return;
+        }
+
+        // Tell Blitz (or other caching plugins) to not serve from cache
+        if (class_exists(CacheRequestService::class)) {
+            Event::on(CacheRequestService::class, CacheRequestService::EVENT_IS_CACHEABLE_REQUEST,
+                function(CancelableEvent $event) {
+                    $event->isValid = false;
+                }
+            );
+        }
+    }
+
+    private function isAutoServeAble(): bool
+    {
+        $accept = Craft::$app->request->getHeaders()->get('Accept', '');
+        return $this->getSettings()->autoServeMarkdown && str_contains($accept, 'text/markdown');
     }
 
     private function registerElementChangeEvents(): void

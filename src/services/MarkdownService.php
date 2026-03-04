@@ -2,7 +2,9 @@
 
 namespace samuelreichor\llmify\services;
 
+use Craft;
 use craft\base\Component;
+use craft\base\ElementInterface;
 use craft\db\Query as DbQuery;
 use craft\elements\Entry;
 use Exception;
@@ -83,32 +85,36 @@ class MarkdownService extends Component
     /**
      * @throws Exception
      */
-    public function saveMarkdown(string $markdown, int $entryId, int $siteId): void
+    public function saveMarkdown(string $markdown, int $elementId, int $siteId): void
     {
-        $entry = Entry::find()->id($entryId)->siteId($siteId)->one();
+        $element = Craft::$app->elements->getElementById($elementId, null, $siteId);
 
-        if (!$entry) {
-            throw new Exception('Entry not found, unable to save markdown for page ' . $entryId);
+        if (!$element) {
+            throw new Exception('Element not found, unable to save markdown for element ' . $elementId);
         }
 
-        $pageEntry = PageRecord::findOne(['entryId' => $entryId, 'siteId' => $siteId]);
-        $metaDataService = new MetadataService($entry);
+        $groupId = HelperService::getGroupIdForElement($element);
+        $elementType = HelperService::getElementTypeForElement($element);
+
+        $pageEntry = PageRecord::findOne(['elementId' => $elementId, 'siteId' => $siteId]);
+        $metaDataService = new MetadataService($element);
 
         if (!$pageEntry) {
             $pageEntry = new PageRecord();
-            $pageEntry->entryId = $entry->id;
-            $pageEntry->sectionId = $entry->section->id;
+            $pageEntry->elementId = $element->id;
+            $pageEntry->elementType = $elementType;
+            $pageEntry->groupId = $groupId;
             $pageEntry->metadataId = $metaDataService->getMetaContentId();
-            $pageEntry->siteId = $entry->getSite()->id;
+            $pageEntry->siteId = $element->getSite()->id;
         }
 
         $pageEntry->title = $metaDataService->getLlmTitle();
         $pageEntry->description = $metaDataService->getLlmDescription();
         $pageEntry->content = $markdown;
         $pageEntry->dateUpdated = new Expression('NOW()');
-        $pageEntry->entryMeta = [
-            "fullUrl" => $entry->getUrl(),
-            "uri" => $entry->uri,
+        $pageEntry->elementMeta = [
+            "fullUrl" => $element->getUrl(),
+            "uri" => $element->uri,
         ];
         $pageEntry->save();
     }
@@ -117,13 +123,13 @@ class MarkdownService extends Component
     {
         $result = $this->_createPageQuery()
             ->where(['siteId' => $siteId])
-            ->andWhere("JSON_UNQUOTE(JSON_EXTRACT(entryMeta, '$.uri')) = :uri", [':uri' => $uri])
+            ->andWhere("JSON_UNQUOTE(JSON_EXTRACT(elementMeta, '$.uri')) = :uri", [':uri' => $uri])
             ->one();
 
         return $result ? new Page($result) : null;
     }
 
-    public function getRenderedMarkdown(string $uri, int $siteId, ?Entry $entry = null): ?string
+    public function getRenderedMarkdown(string $uri, int $siteId, ?ElementInterface $element = null): ?string
     {
         $page = $this->getMarkdown($uri, $siteId);
 
@@ -131,13 +137,13 @@ class MarkdownService extends Component
             return null;
         }
 
-        if (!$this->isSectionServable($page->sectionId, $siteId)) {
+        if (!$this->isGroupServable($page->groupId, $siteId, $page->elementType)) {
             return null;
         }
 
-        $entry = $entry ?? Entry::find()->id($page->entryId)->siteId($siteId)->one();
+        $element = $element ?? Craft::$app->elements->getElementById($page->elementId, $page->elementType, $siteId);
 
-        return Llmify::getInstance()->frontMatter->prependFrontMatter($page->content, $page, $entry);
+        return Llmify::getInstance()->frontMatter->prependFrontMatter($page->content, $page, $element);
     }
 
     public function resolveAutoServeMarkdown(): ?string
@@ -146,23 +152,31 @@ class MarkdownService extends Component
             return null;
         }
 
-        $entry = Entry::find()->id($this->entryId)->siteId($this->siteId)->one();
+        $element = Craft::$app->elements->getElementById($this->entryId, null, $this->siteId);
 
-        if (!$entry || !$this->isSectionServable($entry->section->id, $this->siteId)) {
+        if (!$element) {
+            return null;
+        }
+
+        $groupId = HelperService::getGroupIdForElement($element);
+        $elementType = HelperService::getElementTypeForElement($element);
+
+        if ($groupId === null || !$this->isGroupServable($groupId, $this->siteId, $elementType)) {
             return null;
         }
 
         $this->processContentBlocks();
 
-        return $this->getRenderedMarkdown($entry->uri, $this->siteId, $entry);
+        return $this->getRenderedMarkdown($element->uri, $this->siteId, $element);
     }
 
-    public function isSectionServable(int $sectionId, int $siteId): bool
+    public function isGroupServable(int $groupId, int $siteId, ?string $elementType = null): bool
     {
+        $elementType = $elementType ?? Entry::class;
         $settings = Llmify::getInstance()->settings;
 
         return $settings->getGlobalSetting($siteId)->isEnabled()
-            && $settings->getContentSetting($sectionId, $siteId)->isEnabled();
+            && $settings->getContentSetting($groupId, $siteId, $elementType)->isEnabled();
     }
 
     public function processContentBlocks(): void
@@ -183,10 +197,8 @@ class MarkdownService extends Component
         $groupedPages = [];
 
         foreach ($pageRecords as $page) {
-            /**
-             * @var PageRecord $page
-             */
-            $groupedPages[$page['sectionId']][] = new Page($page);
+            $groupKey = ($page['elementType'] ?? Entry::class) . ':' . $page['groupId'];
+            $groupedPages[$groupKey][] = new Page($page);
         }
 
         return $groupedPages;
@@ -200,8 +212,9 @@ class MarkdownService extends Component
         $groupedPages = $this->getGroupedPagesForSite($siteId);
 
         $activePages = [];
-        foreach ($groupedPages as $sectionId => $pages) {
-            if (!$this->isSectionServable($sectionId, $siteId)) {
+        foreach ($groupedPages as $groupKey => $pages) {
+            [$elementType, $groupId] = explode(':', $groupKey, 2);
+            if (!$this->isGroupServable((int)$groupId, $siteId, $elementType)) {
                 continue;
             }
 
@@ -253,16 +266,17 @@ class MarkdownService extends Component
     private function _createPageQuery(): DbQuery
     {
         return (new DbQuery())
-            ->orderBy('sectionId ASC')
+            ->orderBy('groupId ASC')
             ->select([
                 'siteId',
-                'sectionId',
-                'entryId',
+                'groupId',
+                'elementId',
+                'elementType',
                 'metadataId',
                 'content',
                 'title',
                 'description',
-                'entryMeta',
+                'elementMeta',
             ])
             ->from([Constants::TABLE_PAGES]);
     }

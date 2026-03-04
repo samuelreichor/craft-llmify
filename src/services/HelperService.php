@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\base\ElementInterface;
 use craft\base\FieldInterface;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
@@ -50,6 +51,44 @@ class HelperService extends Component
         return $site->id;
     }
 
+    /**
+     * Checks if Craft Commerce is installed and enabled
+     */
+    public static function isCommerceInstalled(): bool
+    {
+        $plugin = Craft::$app->plugins->getPlugin('commerce');
+
+        if ($plugin !== null && $plugin->isInstalled) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the groupId for an element (sectionId for entries, productTypeId for products)
+     */
+    public static function getGroupIdForElement(ElementInterface $element): ?int
+    {
+        if ($element instanceof Entry) {
+            return $element->sectionId;
+        }
+
+        if (self::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product) {
+            return $element->typeId;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the element type class for an element
+     */
+    public static function getElementTypeForElement(ElementInterface $element): string
+    {
+        return $element::class;
+    }
+
     public function getTextFieldsForSection(Section $section): array
     {
         $entryTypes = $section->getEntryTypes();
@@ -69,6 +108,34 @@ class HelperService extends Component
         return $result;
     }
 
+    /**
+     * Get text field options for a product type
+     *
+     * @return array<int, array{label: string, value?: string, disabled?: bool}>
+     */
+    public function getTextFieldsForProductType(object $productType): array
+    {
+        $fieldLayout = $productType->getFieldLayout();
+        if (!$fieldLayout) {
+            return self::textFieldOptionBase;
+        }
+
+        $fields = $fieldLayout->getCustomFields();
+        $textFields = [];
+
+        foreach ($fields as $field) {
+            $isCkEditorField = class_exists('\craft\ckeditor\Field') && is_a($field, '\craft\ckeditor\Field');
+            if ($field instanceof PlainText || $isCkEditorField) {
+                $textFields[] = [
+                    'label' => $field->name,
+                    'value' => $field->handle,
+                ];
+            }
+        }
+
+        return array_merge(self::textFieldOptionBase, $textFields);
+    }
+
     public function getTextFieldsForEntry(Entry $entry): array
     {
         $entryTypes = [$entry->type];
@@ -86,6 +153,22 @@ class HelperService extends Component
         }
 
         return $result;
+    }
+
+    /**
+     * Get text field options for any element
+     */
+    public function getTextFieldsForElement(ElementInterface $element): array
+    {
+        if ($element instanceof Entry) {
+            return $this->getTextFieldsForEntry($element);
+        }
+
+        if (self::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product) {
+            return $this->getTextFieldsForProductType($element->getType());
+        }
+
+        return self::textFieldOptionBase;
     }
 
     /**
@@ -181,9 +264,9 @@ class HelperService extends Component
         return $commonTextFields;
     }
 
-    public function getFieldOfTypeFromEntry(Entry $entry, string $fieldClass): ?FieldInterface
+    public function getFieldOfTypeFromElement(ElementInterface $element, string $fieldClass): ?FieldInterface
     {
-        $layout = $entry->getFieldLayout();
+        $layout = $element->getFieldLayout();
 
         if (!$layout) {
             return null;
@@ -212,13 +295,14 @@ class HelperService extends Component
 
     /**
      * Get combined dropdown options for front matter field selection.
-     * Returns built-in fields (with builtin: prefix) and entry fields (with field: prefix).
+     * Returns built-in fields (with builtin: prefix) and element fields (with field: prefix).
      *
      * @param Section|null $section Optional section to get entry fields from
      * @param Entry|null $entry Optional entry to get entry fields from
+     * @param object|null $productType Optional product type to get fields from
      * @return array<int, array{label: string, value?: string, disabled?: bool}>
      */
-    public function getFrontMatterFieldOptions(?Section $section = null, ?Entry $entry = null): array
+    public function getFrontMatterFieldOptions(?Section $section = null, ?Entry $entry = null, ?object $productType = null): array
     {
         $options = [
             ['label' => '--- Built-in Fields ---', 'disabled' => true],
@@ -232,6 +316,33 @@ class HelperService extends Component
             ['label' => 'Entry Type', 'value' => 'builtin:entry_type'],
             ['label' => 'Author', 'value' => 'builtin:author'],
         ];
+
+        // Handle product type fields
+        if ($productType !== null) {
+            $fieldLayout = $productType->getFieldLayout();
+            if ($fieldLayout) {
+                $fields = $fieldLayout->getCustomFields();
+                $textFields = [];
+                foreach ($fields as $field) {
+                    $isCkEditorField = class_exists('\craft\ckeditor\Field') && is_a($field, '\craft\ckeditor\Field');
+                    if ($field instanceof PlainText || $isCkEditorField) {
+                        $textFields[] = $field;
+                    }
+                }
+
+                if (!empty($textFields)) {
+                    $options[] = ['label' => '--- Product Fields ---', 'disabled' => true];
+                    foreach ($textFields as $field) {
+                        $options[] = [
+                            'label' => $field->name,
+                            'value' => 'field:' . $field->handle,
+                        ];
+                    }
+                }
+            }
+
+            return $options;
+        }
 
         // Get entry type fields (without "Custom Text" option)
         $entryTypes = [];

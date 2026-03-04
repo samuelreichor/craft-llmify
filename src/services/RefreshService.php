@@ -97,38 +97,49 @@ class RefreshService extends Component
      */
     public function refreshAll(): void
     {
-        $allRefreshableEntries = $this->findAllRefreshableEntries();
+        $allRefreshableElements = $this->findAllRefreshableElements();
 
-        foreach ($allRefreshableEntries as $entry) {
-            $this->addElement($entry);
+        foreach ($allRefreshableElements as $element) {
+            $this->addElement($element);
         }
     }
 
     /**
      * @throws Exception|\yii\base\Exception
      */
-    public function refreshSection(array $sectionIds, array $siteIds): void
+    public function refreshGroup(array $groupIds, array $siteIds, string $elementType = Entry::class): void
     {
-        $allRefreshableEntries = $this->findAllRefreshableEntriesForSection($sectionIds, $siteIds);
+        $allRefreshableElements = $this->findAllRefreshableElementsForGroup($groupIds, $siteIds, $elementType);
 
-        foreach ($allRefreshableEntries as $entry) {
-            $this->addElement($entry);
+        foreach ($allRefreshableElements as $element) {
+            $this->addElement($element);
         }
     }
 
     /**
      * @throws Exception|\yii\base\Exception
      */
-    public function refreshPagesBySections(array $sectionIds, array $siteIds): void
+    public function refreshPagesByGroups(array $groupIds, array $siteIds, string $elementType = Entry::class): void
     {
-        $entryIds = PageRecord::find()
-            ->where(['sectionId' => $sectionIds, 'siteId' => $siteIds])
-            ->select('entryId')
+        $elementIds = PageRecord::find()
+            ->where(['groupId' => $groupIds, 'siteId' => $siteIds, 'elementType' => $elementType])
+            ->select('elementId')
             ->column();
 
-        $refreshableEntries = Entry::find()->id($entryIds)->sectionId($sectionIds)->siteId($siteIds)->all();
-        foreach ($refreshableEntries as $entry) {
-            $this->addElement($entry);
+        if (empty($elementIds)) {
+            return;
+        }
+
+        if ($elementType === Entry::class) {
+            $refreshableElements = Entry::find()->id($elementIds)->sectionId($groupIds)->siteId($siteIds)->all();
+        } elseif (HelperService::isCommerceInstalled() && $elementType === \craft\commerce\elements\Product::class) {
+            $refreshableElements = \craft\commerce\elements\Product::find()->id($elementIds)->typeId($groupIds)->siteId($siteIds)->all();
+        } else {
+            return;
+        }
+
+        foreach ($refreshableElements as $element) {
+            $this->addElement($element);
         }
     }
 
@@ -137,7 +148,12 @@ class RefreshService extends Component
      */
     public function isRefreshAbleElement(ElementInterface $element): bool
     {
-        if (!($element instanceof GlobalSet || $element instanceof Entry)) {
+        if ($element instanceof GlobalSet) {
+            $this->refreshAll();
+            return false;
+        }
+
+        if (!($element instanceof Entry) && !$this->isCommerceProduct($element)) {
             return false;
         }
 
@@ -145,20 +161,14 @@ class RefreshService extends Component
             return false;
         }
 
-        if ($element instanceof GlobalSet) {
-            $this->refreshAll();
+        // element is an entry or product
+        if ($element instanceof Entry && $element->getOwnerId()) {
             return false;
         }
 
-        // element is an entry
-        if ($element->getOwnerId()) {
+        if (!$this->canRefreshElement($element)) {
             return false;
         }
-
-        if (!$this->canRefreshEntry($element)) {
-            return false;
-        }
-
 
         return true;
     }
@@ -175,15 +185,21 @@ class RefreshService extends Component
      * @throws Exception
      * @throws \yii\base\Exception
      */
-    public function canRefreshEntry(Entry $entry): bool
+    public function canRefreshElement(ElementInterface $element): bool
     {
         $settingsService = Llmify::getInstance()->settings;
+        $groupId = HelperService::getGroupIdForElement($element);
+        $elementType = HelperService::getElementTypeForElement($element);
 
-        $globalSettings = $settingsService->getGlobalSetting($entry->siteId);
+        if ($groupId === null) {
+            return false;
+        }
+
+        $globalSettings = $settingsService->getGlobalSetting($element->siteId);
 
         $result = false;
         if ($globalSettings->enabled) {
-            $contentSettings = $settingsService->getContentSetting($entry->sectionId, $entry->siteId);
+            $contentSettings = $settingsService->getContentSetting($groupId, $element->siteId, $elementType);
             $result = $contentSettings->enabled;
         }
 
@@ -195,13 +211,13 @@ class RefreshService extends Component
      */
     public function deleteElement(ElementInterface $element): void
     {
-        $entryId = $element->id;
+        $elementId = $element->id;
         $supportedSites = $element->getSupportedSites();
 
         foreach ($supportedSites as $supportedSite) {
             $this->deletePageByParams([
                 'siteId' => $supportedSite['siteId'],
-                'entryId' => $entryId,
+                'elementId' => $elementId,
             ]);
         }
     }
@@ -213,24 +229,24 @@ class RefreshService extends Component
      * @throws LoaderError
      * @throws Throwable
      */
-    public function getSidebarHtml(Entry $entry): string
+    public function getSidebarHtml(ElementInterface $element): string
     {
         if (!PermissionService::canViewSidebarPanel()) {
             return '';
         }
 
-        if (!$this->isRefreshableElement($entry)) {
+        if (!$this->isRefreshableElement($element)) {
             return '';
         }
 
-        $uri = $entry->uri;
+        $uri = $element->uri;
         if ($uri === null) {
             return '';
         }
 
         return Html::beginTag('fieldset', ['class' => 'llmify-sidebar']) .
             Html::tag('legend', 'Llmify', ['class' => 'h6']) .
-            Html::tag('div', self::sidebarHtml($entry), ['class' => 'meta']) .
+            Html::tag('div', self::sidebarHtml($element), ['class' => 'meta']) .
             Html::endTag('fieldset');
     }
 
@@ -240,7 +256,7 @@ class RefreshService extends Component
      * @throws \yii\base\Exception
      * @throws LoaderError
      */
-    private static function sidebarHtml(Entry $entry): string
+    private static function sidebarHtml(ElementInterface $element): string
     {
         $page = (new DbQuery())
         ->select([
@@ -248,16 +264,16 @@ class RefreshService extends Component
             'id',
         ])
         ->from([Constants::TABLE_PAGES])
-        ->where(['entryId' => $entry->id, 'siteId' => $entry->siteId])
+        ->where(['elementId' => $element->id, 'siteId' => $element->siteId])
         ->one();
 
         return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
             'isRefreshable' => true,
             'page' => $page,
             'isEnabled' => HelperService::isMarkdownCreationEnabled(),
-            'markdownUrl' => HelperService::getMarkdownUrl($entry->uri, $entry->siteId),
-            'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
-            'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page?entryId=' . $entry->id . '&siteId=' . $entry->siteId),
+            'markdownUrl' => HelperService::getMarkdownUrl($element->uri, $element->siteId),
+            'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page?elementId=' . $element->id . '&siteId=' . $element->siteId),
+            'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page?elementId=' . $element->id . '&siteId=' . $element->siteId),
         ]);
     }
 
@@ -272,7 +288,7 @@ class RefreshService extends Component
             ->execute();
     }
 
-    private function findAllRefreshableEntries(): array
+    private function findAllRefreshableElements(): array
     {
         $allSettings = Llmify::getInstance()->settings->getAllActiveContentSettings();
 
@@ -280,28 +296,54 @@ class RefreshService extends Component
             return [];
         }
 
-        $sectionIds = [];
-        $siteIds = [];
+        $entrySectionIds = [];
+        $entrySiteIds = [];
+        $productTypeIds = [];
+        $productSiteIds = [];
 
         foreach ($allSettings as $setting) {
-            $sectionIds[] = $setting->sectionId;
-            $siteIds[] = $setting->siteId;
+            if ($setting->elementType === Entry::class) {
+                $entrySectionIds[] = $setting->groupId;
+                $entrySiteIds[] = $setting->siteId;
+            } elseif (HelperService::isCommerceInstalled() && $setting->elementType === \craft\commerce\elements\Product::class) {
+                $productTypeIds[] = $setting->groupId;
+                $productSiteIds[] = $setting->siteId;
+            }
         }
 
-        $sectionIds = array_values(array_unique($sectionIds));
-        $siteIds = array_values(array_unique($siteIds));
+        $elements = [];
 
-        return Entry::find()
-            ->sectionId($sectionIds)
-            ->siteId($siteIds)
-            ->all();
+        if (!empty($entrySectionIds)) {
+            $entrySectionIds = array_values(array_unique($entrySectionIds));
+            $entrySiteIds = array_values(array_unique($entrySiteIds));
+            $elements = array_merge($elements, Entry::find()->sectionId($entrySectionIds)->siteId($entrySiteIds)->all());
+        }
+
+        if (!empty($productTypeIds) && HelperService::isCommerceInstalled()) {
+            $productTypeIds = array_values(array_unique($productTypeIds));
+            $productSiteIds = array_values(array_unique($productSiteIds));
+            $elements = array_merge($elements, \craft\commerce\elements\Product::find()->typeId($productTypeIds)->siteId($productSiteIds)->all());
+        }
+
+        return $elements;
     }
 
-    private function findAllRefreshableEntriesForSection(array $sectionIds, array $siteIds): array
+    private function findAllRefreshableElementsForGroup(array $groupIds, array $siteIds, string $elementType = Entry::class): array
     {
-        return Entry::find()
-            ->sectionId($sectionIds)
-            ->siteId($siteIds)
-            ->all();
+        if ($elementType === Entry::class) {
+            return Entry::find()->sectionId($groupIds)->siteId($siteIds)->all();
+        }
+
+        if (HelperService::isCommerceInstalled() && $elementType === \craft\commerce\elements\Product::class) {
+            return \craft\commerce\elements\Product::find()->typeId($groupIds)->siteId($siteIds)->all();
+        }
+
+        return [];
+    }
+
+    private function isCommerceProduct(ElementInterface $element): bool
+    {
+        return HelperService::isCommerceInstalled()
+            && $element instanceof \craft\commerce\elements\Product;
     }
 }

@@ -3,6 +3,7 @@
 namespace samuelreichor\llmify\services;
 
 use craft\base\Component;
+use craft\base\ElementInterface;
 use craft\base\FieldInterface;
 use craft\elements\ContentBlock;
 use craft\elements\Entry;
@@ -15,18 +16,22 @@ use yii\db\Exception;
 class MetadataService extends Component
 {
     public ?ContentSettings $metaContent;
-    public Entry $entry;
+    public ElementInterface $element;
     public ?FieldInterface $entrySettingsField;
 
     /**
      * @throws Exception
      */
-    public function __construct(Entry $entry)
+    public function __construct(ElementInterface $element)
     {
         parent::__construct();
-        $this->entry = $entry;
-        $this->metaContent = Llmify::getInstance()->settings->getContentSetting($entry->sectionId, $entry->siteId);
-        $this->entrySettingsField = Llmify::getInstance()->helper->getFieldOfTypeFromEntry($this->entry, LlmifySettingsField::class);
+        $this->element = $element;
+
+        $groupId = HelperService::getGroupIdForElement($element);
+        $elementType = HelperService::getElementTypeForElement($element);
+
+        $this->metaContent = Llmify::getInstance()->settings->getContentSetting($groupId, $element->siteId, $elementType);
+        $this->entrySettingsField = Llmify::getInstance()->helper->getFieldOfTypeFromElement($this->element, LlmifySettingsField::class);
     }
 
     public function getContentTitle(): string
@@ -63,7 +68,7 @@ class MetadataService extends Component
         $customValue = null;
 
         if ($this->entrySettingsField) {
-            $fieldData = $this->entry->getFieldValue($this->entrySettingsField->handle);
+            $fieldData = $this->element->getFieldValue($this->entrySettingsField->handle);
 
             // Only use entry-level data if override is explicitly enabled
             if ($fieldData['overrideTitleSettings'] ?? false) {
@@ -85,7 +90,7 @@ class MetadataService extends Component
             return $this->resolveFieldValue($sourceHandle);
         }
 
-        return $this->entry->title ?? '';
+        return $this->element->title ?? '';
     }
 
     /**
@@ -97,7 +102,7 @@ class MetadataService extends Component
         $customValue = null;
 
         if ($this->entrySettingsField) {
-            $fieldData = $this->entry->getFieldValue($this->entrySettingsField->handle);
+            $fieldData = $this->element->getFieldValue($this->entrySettingsField->handle);
 
             // Only use entry-level data if override is explicitly enabled
             if ($fieldData['overrideDescriptionSettings'] ?? false) {
@@ -130,7 +135,7 @@ class MetadataService extends Component
     {
         if (str_contains($sourceHandle, '.')) {
             [$contentBlockHandle, $fieldHandle] = explode('.', $sourceHandle, 2);
-            $contentBlock = $this->entry->getFieldValue($contentBlockHandle);
+            $contentBlock = $this->element->getFieldValue($contentBlockHandle);
 
             if ($contentBlock instanceof ContentBlock) {
                 $value = $contentBlock->getFieldValue($fieldHandle);
@@ -140,6 +145,6 @@ class MetadataService extends Component
             return '';
         }
 
-        return strip_tags((string)($this->entry[$sourceHandle] ?? ''));
+        return strip_tags((string)($this->element[$sourceHandle] ?? ''));
     }
 }

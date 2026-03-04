@@ -19,9 +19,10 @@ class LlmifyNode extends Node
             ->write("ob_start();\n")
             ->subcompile($this->getNode('body'))
             ->write("\$llmifyBody = ob_get_clean();\n")
-            ->write("if (isset(\$context['entry'], \$context['entry']->id, \$context['entry']->siteId)) {\n")
-            ->write("    \$entryId = \$context['entry']->id;\n")
-            ->write("    \$siteId = \$context['entry']->siteId;\n")
+            ->write("\$llmifyElement = \$context['product'] ?? \$context['entry'] ?? null;\n")
+            ->write("if (isset(\$llmifyElement, \$llmifyElement->id, \$llmifyElement->siteId)) {\n")
+            ->write("    \$entryId = \$llmifyElement->id;\n")
+            ->write("    \$siteId = \$llmifyElement->siteId;\n")
             ->write("    \\samuelreichor\\llmify\\Llmify::getInstance()->markdown->addContentBlock(\$llmifyBody, \$entryId, \$siteId);\n")
             ->write("}\n")
             ->write("echo \$llmifyBody;\n");

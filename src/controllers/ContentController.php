@@ -9,6 +9,7 @@ use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
+use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\PermissionService;
 use Throwable;
 use yii\db\Exception;
@@ -31,15 +32,33 @@ class ContentController extends Controller
 
         $settings = [];
         foreach ($contentSettings as $setting) {
-            $section = Craft::$app->entries->getSectionById($setting->sectionId);
-            if ($section) {
-                $entryAmount = Entry::find()->sectionId($setting->sectionId)->status('enabled')->count();
+            $groupName = null;
+            $groupType = null;
+            $elementCount = 0;
+
+            if ($setting->elementType === Entry::class) {
+                $section = Craft::$app->entries->getSectionById($setting->groupId);
+                if ($section) {
+                    $groupName = $section->name;
+                    $groupType = ucfirst($section->type);
+                    $elementCount = Entry::find()->sectionId($setting->groupId)->status('enabled')->count();
+                }
+            } elseif (HelperService::isCommerceInstalled() && $setting->elementType === \craft\commerce\elements\Product::class) {
+                $productType = \craft\commerce\Plugin::getInstance()->getProductTypes()->getProductTypeById($setting->groupId);
+                if ($productType) {
+                    $groupName = $productType->name;
+                    $groupType = 'Product';
+                    $elementCount = \craft\commerce\elements\Product::find()->typeId($setting->groupId)->status('enabled')->count();
+                }
+            }
+
+            if ($groupName) {
                 $settings[] = [
                     'status' => $setting->enabled,
-                    'url' => UrlHelper::cpUrl("llmify/content/{$setting->sectionId}"),
-                    'title' => $section->name,
-                    'type' => $section->type,
-                    'entries' => $entryAmount,
+                    'url' => UrlHelper::cpUrl("llmify/content/{$setting->groupId}", ['elementType' => $setting->elementType]),
+                    'title' => $groupName,
+                    'type' => $groupType,
+                    'entries' => $elementCount,
                     'llmTitle' => $setting->llmTitleSource !== 'custom' || $setting->llmTitle,
                     'llmDescription' => $setting->llmDescriptionSource !== 'custom' || $setting->llmDescription,
                 ];
@@ -59,21 +78,36 @@ class ContentController extends Controller
     {
         PermissionService::requireEditContentSettings();
 
-        $section = Craft::$app->entries->getSectionById($sectionId);
+        $elementType = Craft::$app->getRequest()->getQueryParam('elementType', Entry::class);
         $contentSettings = Llmify::getInstance()->settings;
         $helperService = Llmify::getInstance()->helper;
         $currentSiteId = $helperService->getCurrentCpSiteId();
 
-        $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId);
-        $textFieldOptions = $helperService->getTextFieldsForSection($section);
-        $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions($section);
+        $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId, $elementType);
+
+        $groupName = '';
+        $textFieldOptions = [];
+        $frontMatterFieldOptions = [];
+
+        if ($elementType === Entry::class) {
+            $section = Craft::$app->entries->getSectionById($sectionId);
+            $groupName = $section ? $section->name : '';
+            $textFieldOptions = $section ? $helperService->getTextFieldsForSection($section) : [];
+            $frontMatterFieldOptions = $section ? $helperService->getFrontMatterFieldOptions($section) : [];
+        } elseif (HelperService::isCommerceInstalled() && $elementType === \craft\commerce\elements\Product::class) {
+            $productType = \craft\commerce\Plugin::getInstance()->getProductTypes()->getProductTypeById($sectionId);
+            $groupName = $productType ? $productType->name : '';
+            $textFieldOptions = $productType ? $helperService->getTextFieldsForProductType($productType) : [];
+            $frontMatterFieldOptions = $productType ? $helperService->getFrontMatterFieldOptions(null, null, $productType) : [];
+        }
 
         // Get inherited front matter fields from site settings
         $globalSettings = Llmify::getInstance()->settings->getGlobalSetting($currentSiteId);
         $inheritedFrontMatterFields = $globalSettings->frontMatterFields;
 
         return $this->renderTemplate('llmify/settings/content/edit', [
-            'section' => $section,
+            'groupName' => $groupName,
+            'elementType' => $elementType,
             'textFieldOptions' => $textFieldOptions,
             'frontMatterFieldOptions' => $frontMatterFieldOptions,
             'settings' => $sectionSettings,
@@ -95,11 +129,12 @@ class ContentController extends Controller
         $this->requirePostRequest();
         $settingService = Llmify::getInstance()->settings;
         $contentId = $this->request->getBodyParam('contentId');
-        $sectionId = $this->request->getBodyParam('sectionId');
+        $groupId = $this->request->getBodyParam('groupId');
         $siteId = $this->request->getBodyParam('siteId');
+        $elementType = $this->request->getBodyParam('elementType', Entry::class);
 
         if ($contentId) {
-            $content = $settingService->getContentSetting($sectionId, $siteId);
+            $content = $settingService->getContentSetting($groupId, $siteId, $elementType);
         } else {
             $content = new ContentSettings();
             $content->siteId = $siteId;
@@ -114,10 +149,11 @@ class ContentController extends Controller
         $content->llmSectionDescription = $this->request->getBodyParam('llmSectionDescription');
         $content->overrideFrontMatter = (bool)$this->request->getBodyParam('overrideFrontMatter');
         $content->frontMatterFields = $this->request->getBodyParam('frontMatterFields') ?? [];
-        $content->sectionId = $this->request->getBodyParam('sectionId');
+        $content->groupId = $groupId;
+        $content->elementType = $elementType;
 
         if (!$settingService->saveContentSettings($content)) {
-            $this->setFailFlash(Craft::t('app', 'Couldn’t save Content Setting.'));
+            $this->setFailFlash(Craft::t('app', "Couldn't save Content Setting."));
             return null;
         }
 

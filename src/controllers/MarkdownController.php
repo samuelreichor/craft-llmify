@@ -3,7 +3,6 @@
 namespace samuelreichor\llmify\controllers;
 
 use Craft;
-use craft\elements\Entry;
 use craft\errors\ElementNotFoundException;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
@@ -48,17 +47,17 @@ class MarkdownController extends Controller
      * @throws MethodNotAllowedHttpException
      * @throws ElementNotFoundException
      */
-    public function actionGeneratePage(int $entryId, int $siteId): Response
+    public function actionGeneratePage(int $elementId, int $siteId): Response
     {
         $this->requirePostRequest();
-        $entry = Entry::find()->id($entryId)->siteId($siteId)->one();
+        $element = Craft::$app->elements->getElementById($elementId, null, $siteId);
 
-        if (!$entry) {
+        if (!$element) {
             throw new ElementNotFoundException();
         }
 
         try {
-            Llmify::getInstance()->refresh->addElement($entry);
+            Llmify::getInstance()->refresh->addElement($element);
         } catch (Exception|\yii\base\Exception $e) {
             Craft::error($e->getMessage(), 'llmify');
             return $this->asJson(['success' => false, 'message' => 'An error occurred while updating the Markdown.']);
@@ -75,17 +74,17 @@ class MarkdownController extends Controller
      * @throws MethodNotAllowedHttpException
      * @throws ElementNotFoundException
      */
-    public function actionClearPage(int $entryId, int $siteId): Response
+    public function actionClearPage(int $elementId, int $siteId): Response
     {
         $this->requirePostRequest();
-        $entry = Entry::find()->id($entryId)->siteId($siteId)->one();
+        $element = Craft::$app->elements->getElementById($elementId, null, $siteId);
 
-        if (!$entry) {
+        if (!$element) {
             throw new ElementNotFoundException();
         }
 
         try {
-            Llmify::getInstance()->refresh->deleteElement($entry);
+            Llmify::getInstance()->refresh->deleteElement($element);
         } catch (Exception $e) {
             Craft::error($e->getMessage(), 'llmify');
             return $this->asJson(['success' => false, 'message' => 'An error occurred while clearing the Markdown.']);

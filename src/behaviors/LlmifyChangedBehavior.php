@@ -4,7 +4,6 @@ namespace samuelreichor\llmify\behaviors;
 
 use Craft;
 use craft\base\Element;
-use craft\elements\Entry;
 use craft\helpers\ElementHelper;
 use samuelreichor\llmify\Llmify;
 use yii\base\Behavior;
@@ -13,7 +12,7 @@ use yii\base\Exception;
 /**
  * Element Changed behavior
  *
- * @property Entry $owner
+ * @property Element $owner
  */
 class LlmifyChangedBehavior extends Behavior
 {

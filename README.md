@@ -27,10 +27,12 @@
 ## Features
 
 - **Automatic Markdown Output**: Creates clean Markdown versions of your Twig templates.
+- **Auto-Serve Markdown**: Serve markdown instead of HTML based on the Accept: text/markdown header.
 - **LLM-Ready Text Files**: Generates `llms.txt` (summary) and `llms-full.txt` (full content).
 - **Twig Tags for Control**: Use `{% llmify %}` to include or `{% excludellmify %}` to exclude HTML from the output.
 - **Exclude Tags with Classes**: Define classes that should be excluded from the HTML output.
 - **Flexible Configuration**: Site-wide, section, and entry-level settings.
+- **Craft Commerce Support**: Out of the box support for commerce products. 
 - **YAML Front Matter**: Add configurable metadata to your Markdown.
 - **Easy Refresh Options**: Automatic background jobs, manual updates in the CP, or console commands for deployments.
 

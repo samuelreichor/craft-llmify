@@ -68,7 +68,7 @@ use yii\log\FileTarget;
  */
 class Llmify extends Plugin
 {
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = true;
     public bool $hasReadOnlyCpSettings = true;
     public bool $hasCpSection = true;
@@ -199,7 +199,7 @@ class Llmify extends Plugin
                 $sectionId = $section->id;
                 $siteIds = $section->getSiteIds();
                 foreach ($siteIds as $siteId) {
-                    $this->settings->setContentSetting($sectionId, $siteId);
+                    $this->settings->setContentSetting($sectionId, $siteId, Entry::class);
                 }
             }
         );
@@ -213,10 +213,25 @@ class Llmify extends Plugin
                 $sectionId = $section->id;
                 $siteIds = $section->getSiteIds();
                 foreach ($siteIds as $siteId) {
-                    $this->settings->delContentSetting($sectionId, $siteId);
+                    $this->settings->delContentSetting($sectionId, $siteId, Entry::class);
                 }
             }
         );
+
+        // Commerce Product Type events (guarded by Commerce existence)
+        if (HelperService::isCommerceInstalled()) {
+            Event::on(
+                \craft\commerce\services\ProductTypes::class,
+                \craft\commerce\services\ProductTypes::EVENT_AFTER_SAVE_PRODUCTTYPE,
+                function($event) {
+                    $productType = $event->productType;
+                    $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
+                    foreach ($allSiteIds as $siteId) {
+                        $this->settings->setContentSetting($productType->id, $siteId, \craft\commerce\elements\Product::class);
+                    }
+                }
+            );
+        }
 
         // Create Global Settings for new Sites
         Event::on(
@@ -273,6 +288,16 @@ class Llmify extends Plugin
                 $event->html .= $this->refresh->getSidebarHtml($entry);
             },
         );
+
+        // Commerce Product sidebar (guarded by Commerce existence)
+        if (HelperService::isCommerceInstalled()) {
+            Event::on(\craft\commerce\elements\Product::class, \craft\commerce\elements\Product::EVENT_DEFINE_SIDEBAR_HTML,
+                function(DefineHtmlEvent $event) {
+                    $product = $event->sender;
+                    $event->html .= $this->refresh->getSidebarHtml($product);
+                },
+            );
+        }
     }
 
     private function registerGeneralEvents(): void

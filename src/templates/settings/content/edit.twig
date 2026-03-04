@@ -1,7 +1,7 @@
 {% extends "_layouts/cp" %}
 {% import "_includes/forms" as forms %}
 
-{% set title = "Edit LLM Settings for Section: " ~ section.name %}
+{% set title = "Edit LLM Settings for: " ~ groupName %}
 {% set selectedSubnavItem = 'content' %}
 {% set fullPageForm = true %}
 
@@ -43,13 +43,14 @@
     {{ redirectInput('llmify/content/') }}
 
     {% if settings.id %}{{ hiddenInput('contentId', settings.id) }}{% endif %}
-    {{ hiddenInput('sectionId', section.id) }}
+    {{ hiddenInput('groupId', settings.groupId) }}
     {{ hiddenInput('siteId', siteId) }}
+    {{ hiddenInput('elementType', elementType) }}
 
     <h2 style="margin-top:0">Section Settings</h2>
     {{ forms.lightswitchField({
         label: 'Enable for Section',
-        instructions: 'Activates or deactivates LLM processing for all entries within this section for the current site. If turned off, no content from this section will be processed.',
+        instructions: 'Activates or deactivates LLM processing for all elements within this group for the current site. If turned off, no content from this group will be processed.',
         id: 'enabled',
         name: 'enabled',
         on: settings.enabled,
@@ -58,7 +59,7 @@
 
     {{ forms.textField({
         label: 'Section Title',
-        instructions: "Provide a descriptive title for the entire section. This title helps the LLM understand the general context of the entries contained within it (e.g., 'Company Blog Posts' or 'Product Documentation').",
+        instructions: "Provide a descriptive title for the entire section. This title helps the LLM understand the general context of the elements contained within it (e.g., 'Company Blog Posts' or 'Product Documentation').",
         id: 'llmSectionTitle',
         name: 'llmSectionTitle',
         value: settings.llmSectionTitle ?? ''
@@ -74,11 +75,11 @@
 
     <hr>
 
-    <h2>Default Entry Settings</h2>
+    <h2>Default Element Settings</h2>
 
     {{ forms.selectField({
-        label: 'Entry Default Title Source',
-        instructions: "Choose the source for each entry's default title. Select an existing field (like the entry's own 'Title') to use its content dynamically, or choose 'Custom' to define a static title in the field below.",
+        label: 'Default Title Source',
+        instructions: "Choose the source for each element's default title. Select an existing field (like the element's own 'Title') to use its content dynamically, or choose 'Custom' to define a static title in the field below.",
         id: 'llmTitleSource',
         name: 'llmTitleSource',
         options: textFieldOptions,
@@ -86,16 +87,16 @@
     }) }}
 
     {{ forms.textField({
-        label: 'Entry Default Title',
-        instructions: "Enter the static default title to be used for entries. This field is only used if 'Custom' is selected as the source above.",
+        label: 'Default Title',
+        instructions: "Enter the static default title to be used for elements. This field is only used if 'Custom' is selected as the source above.",
         id: 'llmTitle',
         name: 'llmTitle',
         value: settings.llmTitle ?? ''
     }) }}
 
     {{ forms.selectField({
-        label: 'Entry Default Description Source',
-        instructions: "Choose the source for each entry's default description. You can map this to an existing text field (like a 'Summary' or 'Meta Description') or select 'Custom' to enter a manual default below.",
+        label: 'Default Description Source',
+        instructions: "Choose the source for each element's default description. You can map this to an existing text field (like a 'Summary' or 'Meta Description') or select 'Custom' to enter a manual default below.",
         id: 'llmDescriptionSource',
         name: 'llmDescriptionSource',
         options: textFieldOptions,
@@ -103,8 +104,8 @@
     }) }}
 
     {{ forms.textField({
-        label: 'Entry Default Description',
-        instructions: "Enter the static default description for entries. This field is only used if 'Custom' is selected in the source dropdown above.",
+        label: 'Default Description',
+        instructions: "Enter the static default description for elements. This field is only used if 'Custom' is selected in the source dropdown above.",
         id: 'llmDescription',
         name: 'llmDescription',
         value: settings.llmDescription ?? '',
@@ -116,7 +117,7 @@
 
     {{ forms.lightswitchField({
         label: 'Override Front Matter',
-        instructions: 'Enable to override the site-level front matter settings for all entries in this section.',
+        instructions: 'Enable to override the site-level front matter settings for all elements in this group.',
         id: 'overrideFrontMatter',
         name: 'overrideFrontMatter',
         on: settings.overrideFrontMatter ?? false,
@@ -144,7 +145,7 @@
     <div id="frontMatterFieldsWrapper" class="{% if not (settings.overrideFrontMatter ?? false) %}fields-disabled{% endif %}">
         {{ forms.editableTableField({
           label: "Front Matter Fields",
-          instructions: 'Configure which fields to include in the YAML front matter for markdown pages in this section. Inherits from site settings by default.',
+          instructions: 'Configure which fields to include in the YAML front matter for markdown pages in this group. Inherits from site settings by default.',
           name: 'frontMatterFields',
           id: 'frontMatterFields',
           cols: frontMatterFieldsCols,

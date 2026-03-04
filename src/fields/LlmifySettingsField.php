@@ -9,6 +9,7 @@ use craft\elements\Entry;
 use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\MetadataService;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -50,14 +51,23 @@ class LlmifySettingsField extends Field
      */
     public function getInputHtml(mixed $value, ?ElementInterface $element = null): string
     {
-        if ($element::class !== Entry::class) {
-            return 'Only available for Entries.';
+        $isEntry = $element instanceof Entry;
+        $isProduct = HelperService::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product;
+
+        if (!$isEntry && !$isProduct) {
+            return 'Only available for Entries and Products.';
         }
 
         $view = Craft::$app->getView();
         $helperService = Llmify::getInstance()->helper;
-        $textFieldOptions = $helperService->getTextFieldsForEntry($element);
-        $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions(null, $element);
+        $textFieldOptions = $helperService->getTextFieldsForElement($element);
+
+        if ($isEntry) {
+            $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions(null, $element);
+        } else {
+            $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions(null, null, $element->getType());
+        }
+
         $metaDataService = new MetaDataService($element);
         $defaultValues['llmTitleSource'] = $metaDataService->getContentTitleSource();
         $defaultValues['llmDescriptionSource'] = $metaDataService->getContentDescriptionSource();
@@ -76,15 +86,16 @@ class LlmifySettingsField extends Field
         $globalSettings = Llmify::getInstance()->settings->getGlobalSetting($siteId);
         $defaultFrontMatterFields = $globalSettings->frontMatterFields;
 
-        // Check if section has override
-        $sectionId = $element->sectionId;
-        $contentSettings = Llmify::getInstance()->settings->getContentSetting($sectionId, $siteId);
+        // Check if group has override
+        $groupId = HelperService::getGroupIdForElement($element);
+        $elementType = HelperService::getElementTypeForElement($element);
+        $contentSettings = Llmify::getInstance()->settings->getContentSetting($groupId, $siteId, $elementType);
         if ($contentSettings->overrideFrontMatter && !empty($contentSettings->frontMatterFields)) {
             $defaultFrontMatterFields = $contentSettings->frontMatterFields;
         }
 
-        // Build section settings URL
-        $sectionSettingsUrl = UrlHelper::cpUrl("llmify/content/{$sectionId}");
+        // Build group settings URL
+        $groupSettingsUrl = UrlHelper::cpUrl("llmify/content/{$groupId}", ['elementType' => $elementType]);
 
         return $view->renderTemplate('llmify/fields/llmify-settings-field/input', [
             'name' => $this->handle,
@@ -97,7 +108,7 @@ class LlmifySettingsField extends Field
             'isOverrideDescriptionActive' => $isOverrideDescriptionActive,
             'isOverrideFrontMatterActive' => $isOverrideFrontMatterActive,
             'defaultFrontMatterFields' => $defaultFrontMatterFields,
-            'sectionSettingsUrl' => $sectionSettingsUrl,
+            'sectionSettingsUrl' => $groupSettingsUrl,
         ]);
     }
 }

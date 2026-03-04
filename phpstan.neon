@@ -5,3 +5,7 @@ parameters:
     level: 4
     paths:
         - src
+    ignoreErrors:
+        -
+            message: '#craft\\commerce\\#'
+            reportUnmatched: false

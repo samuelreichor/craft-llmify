@@ -19,10 +19,11 @@ class ExcludeLlmifyNode extends Node
             ->write("ob_start();\n")
             ->subcompile($this->getNode('body'))
             ->write("\$llmifyExcludedBody = ob_get_clean();\n")
-            ->write("if (isset(\$context['entry'], \$context['entry']->id, \$context['entry']->siteId)) {\n")
-            ->write("    \$entryId = \$context['entry']->id;\n")
-            ->write("    \$siteId = \$context['entry']->siteId;\n")
-            ->write("    \samuelreichor\\llmify\\Llmify::getInstance()->markdown->addExcludedContentBlock(\$llmifyExcludedBody, \$entryId, \$siteId);\n")
+            ->write("\$llmifyElement = \$context['product'] ?? \$context['entry'] ?? null;\n")
+            ->write("if (isset(\$llmifyElement, \$llmifyElement->id, \$llmifyElement->siteId)) {\n")
+            ->write("    \$entryId = \$llmifyElement->id;\n")
+            ->write("    \$siteId = \$llmifyElement->siteId;\n")
+            ->write("    \\samuelreichor\\llmify\\Llmify::getInstance()->markdown->addExcludedContentBlock(\$llmifyExcludedBody, \$entryId, \$siteId);\n")
             ->write("}\n")
             ->write("echo \$llmifyExcludedBody;\n");
     }

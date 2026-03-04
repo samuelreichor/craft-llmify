@@ -90,11 +90,17 @@ class LlmsService extends Component
             return $markdown;
         }
 
-        // Try to generate on-the-fly if the entry exists
-        $entry = Entry::find()->uri($uri)->siteId($siteId)->one();
-        if ($entry && $entry->getUrl()) {
+        // Try to generate on-the-fly - first try Entry
+        $element = Entry::find()->uri($uri)->siteId($siteId)->one();
+
+        // Try Commerce Product if Entry not found
+        if (!$element && HelperService::isCommerceInstalled()) {
+            $element = \craft\commerce\elements\Product::find()->uri($uri)->siteId($siteId)->one();
+        }
+
+        if ($element && $element->getUrl()) {
             try {
-                Llmify::getInstance()->request->generateUrl($entry->getUrl());
+                Llmify::getInstance()->request->generateUrl($element->getUrl());
             } catch (\Throwable $e) {
                 Craft::warning("On-the-fly markdown generation failed for URI: {$uri}. " . $e->getMessage(), 'llmify');
                 return '';
@@ -119,26 +125,23 @@ class LlmsService extends Component
         $allSettings = $settingsService->getContentSettingsBySiteId($this->currentSiteId);
 
         foreach ($allSettings as $contentSetting) {
-            if (!$markdownService->isSectionServable($contentSetting->sectionId, $this->currentSiteId)) {
+            if (!$markdownService->isGroupServable($contentSetting->groupId, $this->currentSiteId, $contentSetting->elementType)) {
                 continue;
             }
 
-            $entries = Entry::find()
-                ->sectionId($contentSetting->sectionId)
-                ->siteId($this->currentSiteId)
-                ->all();
+            $elements = $this->findElementsForContentSetting($contentSetting);
 
-            if (empty($entries)) {
+            if (empty($elements)) {
                 continue;
             }
 
             $content .= $this->constructSectionHeader($contentSetting);
 
-            foreach ($entries as $entry) {
-                $metadata = new MetadataService($entry);
+            foreach ($elements as $element) {
+                $metadata = new MetadataService($element);
                 $title = $metadata->getLlmTitle();
                 $description = $metadata->getLlmDescription();
-                $url = $shouldUseRealUrls ? $entry->getUrl() : HelperService::getMarkdownUrl($entry->uri);
+                $url = $shouldUseRealUrls ? $element->getUrl() : HelperService::getMarkdownUrl($element->uri);
 
                 $content .= $this->constructUrl($title, $url, $description);
             }
@@ -203,13 +206,37 @@ class LlmsService extends Component
             $pageContent = $page->content;
 
             if ($settings->frontMatterInFullTxt) {
-                $entry = Entry::find()->id($page->entryId)->siteId($this->currentSiteId)->one();
-                $pageContent = $frontMatterService->prependFrontMatter($pageContent, $page, $entry);
+                $element = Craft::$app->elements->getElementById($page->elementId, $page->elementType, $this->currentSiteId);
+                $pageContent = $frontMatterService->prependFrontMatter($pageContent, $page, $element);
             }
 
             $content .= "{$pageContent}\n\n---\n\n";
         }
 
         return $content;
+    }
+
+    /**
+     * Find elements for a given content setting
+     *
+     * @return array
+     */
+    private function findElementsForContentSetting(ContentSettings $contentSetting): array
+    {
+        if ($contentSetting->elementType === Entry::class) {
+            return Entry::find()
+                ->sectionId($contentSetting->groupId)
+                ->siteId($this->currentSiteId)
+                ->all();
+        }
+
+        if (HelperService::isCommerceInstalled() && $contentSetting->elementType === \craft\commerce\elements\Product::class) {
+            return \craft\commerce\elements\Product::find()
+                ->typeId($contentSetting->groupId)
+                ->siteId($this->currentSiteId)
+                ->all();
+        }
+
+        return [];
     }
 }

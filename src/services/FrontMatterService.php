@@ -3,6 +3,7 @@
 namespace samuelreichor\llmify\services;
 
 use craft\base\Component;
+use craft\base\ElementInterface;
 use craft\elements\Entry;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\Llmify;
@@ -26,39 +27,39 @@ class FrontMatterService extends Component
         $this->builtInFields = [
             'title' => [
                 'label' => 'Title',
-                'getValue' => fn(Page $page, ?Entry $entry) => $page->title,
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $page->title,
             ],
             'description' => [
                 'label' => 'Description',
-                'getValue' => fn(Page $page, ?Entry $entry) => $page->description,
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $page->description,
             ],
             'url' => [
                 'label' => 'URL',
-                'getValue' => fn(Page $page, ?Entry $entry) => $page->entryMeta['fullUrl'] ?? '',
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $page->elementMeta['fullUrl'] ?? '',
             ],
             'uri' => [
                 'label' => 'URI',
-                'getValue' => fn(Page $page, ?Entry $entry) => $page->entryMeta['uri'] ?? '',
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $page->elementMeta['uri'] ?? '',
             ],
             'date_modified' => [
                 'label' => 'Date Modified',
-                'getValue' => fn(Page $page, ?Entry $entry) => $entry?->dateUpdated?->format('c') ?? '',
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $element?->dateUpdated?->format('c') ?? '',
             ],
             'date_created' => [
                 'label' => 'Date Created',
-                'getValue' => fn(Page $page, ?Entry $entry) => $entry?->dateCreated?->format('c') ?? '',
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $element?->dateCreated?->format('c') ?? '',
             ],
             'section' => [
                 'label' => 'Section',
-                'getValue' => fn(Page $page, ?Entry $entry) => $entry?->section?->name ?? '',
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $this->getSectionName($element),
             ],
             'entry_type' => [
                 'label' => 'Entry Type',
-                'getValue' => fn(Page $page, ?Entry $entry) => $entry?->type?->name ?? '',
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $this->getTypeName($element),
             ],
             'author' => [
                 'label' => 'Author',
-                'getValue' => fn(Page $page, ?Entry $entry) => $this->getAuthorName($entry),
+                'getValue' => fn(Page $page, ?ElementInterface $element) => $this->getAuthorName($element),
             ],
         ];
     }
@@ -78,28 +79,29 @@ class FrontMatterService extends Component
     /**
      * Resolve front matter fields using inheritance: Site -> Section -> Entry
      *
-     * @param Entry $entry
+     * @param ElementInterface $element
      * @return array
      */
-    public function resolveFrontMatterFields(Entry $entry): array
+    public function resolveFrontMatterFields(ElementInterface $element): array
     {
-        $siteId = $entry->siteId;
-        $sectionId = $entry->sectionId;
+        $siteId = $element->siteId;
+        $groupId = HelperService::getGroupIdForElement($element);
+        $elementType = HelperService::getElementTypeForElement($element);
 
         // 1. Site-Level Defaults
         $globalSettings = Llmify::getInstance()->settings->getGlobalSetting($siteId);
         $fields = $globalSettings->frontMatterFields;
 
-        // 2. Section-Level Override?
-        $contentSettings = Llmify::getInstance()->settings->getContentSetting($sectionId, $siteId);
+        // 2. Section/Group-Level Override?
+        $contentSettings = Llmify::getInstance()->settings->getContentSetting($groupId, $siteId, $elementType);
         if ($contentSettings->overrideFrontMatter && !empty($contentSettings->frontMatterFields)) {
             $fields = $contentSettings->frontMatterFields;
         }
 
-        // 3. Entry-Level Override?
-        $entrySettingsField = Llmify::getInstance()->helper->getFieldOfTypeFromEntry($entry, LlmifySettingsField::class);
+        // 3. Entry-Level Override? (via LlmifySettingsField)
+        $entrySettingsField = Llmify::getInstance()->helper->getFieldOfTypeFromElement($element, LlmifySettingsField::class);
         if ($entrySettingsField) {
-            $fieldData = $entry->getFieldValue($entrySettingsField->handle);
+            $fieldData = $element->getFieldValue($entrySettingsField->handle);
             if (is_array($fieldData) && ($fieldData['overrideFrontMatterSettings'] ?? false)) {
                 $fields = $fieldData['frontMatterFields'] ?? [];
             }
@@ -108,14 +110,14 @@ class FrontMatterService extends Component
         return $fields;
     }
 
-    public function generateFrontMatter(Page $page, ?Entry $entry): string
+    public function generateFrontMatter(Page $page, ?ElementInterface $element): string
     {
-        // If no entry, we cannot resolve fields with inheritance
-        if ($entry === null) {
+        // If no element, we cannot resolve fields with inheritance
+        if ($element === null) {
             return '';
         }
 
-        $fields = $this->resolveFrontMatterFields($entry);
+        $fields = $this->resolveFrontMatterFields($element);
 
         // If empty fields array, no front matter output
         if (empty($fields)) {
@@ -142,14 +144,14 @@ class FrontMatterService extends Component
             if (str_starts_with($handle, 'builtin:')) {
                 $builtinHandle = substr($handle, 8); // Remove 'builtin:' prefix
                 if (isset($this->builtInFields[$builtinHandle])) {
-                    $value = ($this->builtInFields[$builtinHandle]['getValue'])($page, $entry);
+                    $value = ($this->builtInFields[$builtinHandle]['getValue'])($page, $element);
                     if ($value !== '' && $value !== null) {
                         $data[$label] = $value;
                     }
                 }
             } elseif (str_starts_with($handle, 'field:')) {
                 $fieldHandle = substr($handle, 6); // Remove 'field:' prefix
-                $value = $this->getEntryFieldValue($entry, $fieldHandle);
+                $value = $this->getElementFieldValue($element, $fieldHandle);
                 if ($value !== null && $value !== '') {
                     $data[$label] = $this->formatValue($value);
                 }
@@ -164,9 +166,9 @@ class FrontMatterService extends Component
     }
 
     /**
-     * Get value from entry field, supporting dot notation for content blocks
+     * Get value from element field, supporting dot notation for content blocks
      */
-    private function getEntryFieldValue(Entry $entry, string $fieldHandle): mixed
+    private function getElementFieldValue(ElementInterface $element, string $fieldHandle): mixed
     {
         // Check for dot notation (content block fields)
         if (str_contains($fieldHandle, '.')) {
@@ -174,11 +176,11 @@ class FrontMatterService extends Component
             $contentBlockHandle = $parts[0];
             $nestedFieldHandle = $parts[1];
 
-            if (!$entry->hasProperty($contentBlockHandle)) {
+            if (!$element->hasProperty($contentBlockHandle)) {
                 return null;
             }
 
-            $contentBlock = $entry->$contentBlockHandle;
+            $contentBlock = $element->$contentBlockHandle;
             if ($contentBlock === null) {
                 return null;
             }
@@ -202,16 +204,16 @@ class FrontMatterService extends Component
         }
 
         // Simple field
-        if (!$entry->hasProperty($fieldHandle)) {
+        if (!$element->hasProperty($fieldHandle)) {
             return null;
         }
 
-        return $entry->$fieldHandle;
+        return $element->$fieldHandle;
     }
 
-    public function prependFrontMatter(string $markdown, Page $page, ?Entry $entry): string
+    public function prependFrontMatter(string $markdown, Page $page, ?ElementInterface $element): string
     {
-        $frontMatter = $this->generateFrontMatter($page, $entry);
+        $frontMatter = $this->generateFrontMatter($page, $element);
 
         if ($frontMatter === '') {
             return $markdown;
@@ -275,9 +277,43 @@ class FrontMatterService extends Component
         return '"' . $escaped . '"';
     }
 
-    private function getAuthorName(?Entry $entry): string
+    private function getSectionName(?ElementInterface $element): string
     {
-        $author = $entry?->getAuthor();
+        if ($element instanceof Entry) {
+            return $element->section?->name ?? '';
+        }
+
+        if (HelperService::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product) {
+            return $element->getType()->name ?? '';
+        }
+
+        return '';
+    }
+
+    private function getTypeName(?ElementInterface $element): string
+    {
+        if ($element instanceof Entry) {
+            return $element->type?->name ?? '';
+        }
+
+        if (HelperService::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product) {
+            return $element->getType()->name ?? '';
+        }
+
+        return '';
+    }
+
+    private function getAuthorName(?ElementInterface $element): string
+    {
+        if ($element === null) {
+            return '';
+        }
+
+        if (!method_exists($element, 'getAuthor')) {
+            return '';
+        }
+
+        $author = $element->getAuthor();
 
         if ($author === null) {
             return '';

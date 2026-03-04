@@ -5,6 +5,7 @@ namespace samuelreichor\llmify\services;
 use Craft;
 use craft\base\Component;
 use craft\db\Query as DbQuery;
+use craft\elements\Entry;
 use craft\helpers\Json;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
@@ -56,15 +57,17 @@ class SettingsService extends Component
             ? Json::encode($contentSettings->frontMatterFields)
             : null;
         $contentRecord->overrideFrontMatter = $contentSettings->overrideFrontMatter;
-        $contentRecord->sectionId = $contentSettings->sectionId;
+        $contentRecord->groupId = $contentSettings->groupId;
+        $contentRecord->elementType = $contentSettings->elementType;
 
         $contentRecord->save();
 
         // on installation no refresh is needed
         if ($triggerRefresh) {
-            Llmify::getInstance()->refresh->refreshPagesBySections(
-                [$contentSettings->sectionId],
-                [$contentSettings->siteId]
+            Llmify::getInstance()->refresh->refreshPagesByGroups(
+                [$contentSettings->groupId],
+                [$contentSettings->siteId],
+                $contentSettings->elementType
             );
         }
 
@@ -77,16 +80,16 @@ class SettingsService extends Component
     /**
      * @throws Exception|\yii\base\Exception
      */
-    public function getContentSetting(int $sectionId, int $siteId, bool $triggerRefresh = true): ContentSettings
+    public function getContentSetting(int $groupId, int $siteId, string $elementType = Entry::class, bool $triggerRefresh = true): ContentSettings
     {
-        $cacheKey = $this->createContentCacheKey($sectionId, $siteId);
+        $cacheKey = $this->createContentCacheKey($groupId, $siteId, $elementType);
 
         if (isset($this->contentSettings[$cacheKey])) {
             return $this->contentSettings[$cacheKey];
         }
 
         $result = $this->_createContentMetaQuery()
-            ->where(['sectionId' => $sectionId, 'siteId' => $siteId])
+            ->where(['groupId' => $groupId, 'siteId' => $siteId, 'elementType' => $elementType])
             ->one();
 
         if ($result) {
@@ -97,8 +100,9 @@ class SettingsService extends Component
 
         if (!$settings) {
             $settings = new ContentSettings();
-            $settings->sectionId = $sectionId;
+            $settings->groupId = $groupId;
             $settings->siteId = $siteId;
+            $settings->elementType = $elementType;
             $this->saveContentSettings($settings, true, $triggerRefresh);
         }
 
@@ -122,7 +126,7 @@ class SettingsService extends Component
                 $settings = new ContentSettings($result);
                 $this->allEnabledContentSettings[] = $settings;
 
-                $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
+                $cacheKey = $this->createContentCacheKey($settings->groupId, $settings->siteId, $settings->elementType);
                 $this->contentSettings[$cacheKey] = $settings;
             }
         }
@@ -144,29 +148,29 @@ class SettingsService extends Component
             $result = $this->decodeContentSettingsJson($result);
             $settings = new ContentSettings($result);
             $this->contentSettingsBySiteId[$siteId][] = $settings;
-            $cacheKey = $this->createContentCacheKey($settings->sectionId, $settings->siteId);
+            $cacheKey = $this->createContentCacheKey($settings->groupId, $settings->siteId, $settings->elementType);
             $this->contentSettings[$cacheKey] = $settings;
         }
 
-        return $this->contentSettingsBySiteId[$siteId];
+        return $this->contentSettingsBySiteId[$siteId] ?? [];
     }
 
     /**
      * @throws Exception
      * @throws \yii\base\Exception
      */
-    public function setContentSetting(int $sectionId, int $siteId, bool $triggerRefresh = true): void
+    public function setContentSetting(int $groupId, int $siteId, string $elementType = Entry::class, bool $triggerRefresh = true): void
     {
-        $this->getContentSetting($sectionId, $siteId, $triggerRefresh);
+        $this->getContentSetting($groupId, $siteId, $elementType, $triggerRefresh);
     }
 
     /**
      * @throws Exception
      */
-    public function delContentSetting(int $sectionId, int $siteId): void
+    public function delContentSetting(int $groupId, int $siteId, string $elementType = Entry::class): void
     {
         Craft::$app->db->createCommand()
-            ->delete(Constants::TABLE_META, ['sectionId' => $sectionId, 'siteId' => $siteId])
+            ->delete(Constants::TABLE_META, ['groupId' => $groupId, 'siteId' => $siteId, 'elementType' => $elementType])
             ->execute();
     }
 
@@ -178,6 +182,7 @@ class SettingsService extends Component
     {
         $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
 
+        // Entry sections
         $allSection = Craft::$app->entries->getAllSections();
         $sectionIdsWithUrls = [];
         foreach ($allSection as $section) {
@@ -191,7 +196,17 @@ class SettingsService extends Component
 
         foreach ($allSiteIds as $siteId) {
             foreach ($sectionIdsWithUrls as $sectionId) {
-                $this->setContentSetting($sectionId, $siteId, false);
+                $this->setContentSetting($sectionId, $siteId, Entry::class, false);
+            }
+        }
+
+        // Commerce product types
+        if (HelperService::isCommerceInstalled()) {
+            $productTypes = \craft\commerce\Plugin::getInstance()->getProductTypes()->getAllProductTypes();
+            foreach ($allSiteIds as $siteId) {
+                foreach ($productTypes as $productType) {
+                    $this->setContentSetting($productType->id, $siteId, \craft\commerce\elements\Product::class, false);
+                }
             }
         }
     }
@@ -312,7 +327,8 @@ class SettingsService extends Component
                 'llmSectionDescription',
                 'frontMatterFields',
                 'overrideFrontMatter',
-                'sectionId',
+                'groupId',
+                'elementType',
                 'siteId',
             ])
             ->from([Constants::TABLE_META]);
@@ -332,9 +348,9 @@ class SettingsService extends Component
             ->from([Constants::TABLE_GLOBALS]);
     }
 
-    private function createContentCacheKey(string $sectionId, string $siteId): string
+    private function createContentCacheKey(string $groupId, string $siteId, string $elementType = Entry::class): string
     {
-        return  $sectionId . '-' . $siteId;
+        return  $groupId . '-' . $siteId . '-' . $elementType;
     }
 
     /**

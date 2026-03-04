@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\controllers;
 
 use Craft;
 use craft\errors\SiteNotFoundException;
+use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
 use yii\base\Exception;
@@ -13,6 +14,18 @@ use yii\web\Response;
 class FileController extends Controller
 {
     protected array|bool|int $allowAnonymous = true;
+
+    public function beforeAction($action): bool
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        Craft::$app->response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        return true;
+    }
+
     /**
      * @throws Exception
      */
@@ -66,7 +79,9 @@ class FileController extends Controller
             throw new NotFoundHttpException('Markdown not found for URI: ' . $uri);
         }
 
+        $canonicalUrl = UrlHelper::siteUrl($uri);
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
+        Craft::$app->response->headers->set('Link', '<' . $canonicalUrl . '>; rel="canonical"');
 
         return $this->asRaw($fileContent);
     }

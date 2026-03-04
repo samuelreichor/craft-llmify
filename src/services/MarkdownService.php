@@ -232,6 +232,13 @@ class MarkdownService extends Component
         $converter = new HtmlConverter($config);
 
         $markdownRaw = $converter->convert($html);
+
+        // Remove empty links left behind after image/node removal (e.g. [](url) or [ ](url))
+        $markdownRaw = preg_replace('/\[\s*]\([^)]*\)/', '', $markdownRaw);
+
+        // Decode HTML entities (e.g. &amp; → &, &nbsp; → space)
+        $markdownRaw = html_entity_decode($markdownRaw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         return preg_replace('/(\n[ \t]*){2,}/', "\n\n", $markdownRaw);
     }
 

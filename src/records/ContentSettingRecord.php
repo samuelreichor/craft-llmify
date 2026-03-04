@@ -16,7 +16,8 @@ use samuelreichor\llmify\Constants;
  * @property string $llmSectionDescription
  * @property string|null $frontMatterFields
  * @property bool $overrideFrontMatter
- * @property int $sectionId
+ * @property int $groupId
+ * @property string $elementType
  * @property int $entryTypeId
  * @property int $siteId
  * @property bool $enabled

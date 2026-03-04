@@ -62,10 +62,11 @@ class Install extends Migration
                 Constants::TABLE_PAGES,
                 [
                     'id' => $this->primaryKey(),
-                    'entryId' => $this->integer()->notNull(),
+                    'elementId' => $this->integer()->notNull(),
+                    'elementType' => $this->string()->notNull()->defaultValue('craft\\elements\\Entry'),
                     'siteId' => $this->integer(),
-                    'sectionId' => $this->integer(),
-                    'entryMeta' => $this->json(),
+                    'groupId' => $this->integer(),
+                    'elementMeta' => $this->json(),
                     'metadataId' => $this->integer(),
                     'title' => $this->string(),
                     'description' => $this->string(),
@@ -85,7 +86,8 @@ class Install extends Migration
                     'id' => $this->primaryKey(),
                     'enabled' => $this->boolean()->notNull(),
                     'siteId' => $this->integer(),
-                    'sectionId' => $this->integer(),
+                    'groupId' => $this->integer(),
+                    'elementType' => $this->string()->notNull()->defaultValue('craft\\elements\\Entry'),
                     'entryTypeId' => $this->integer(),
                     'llmTitleSource' => $this->string(),
                     'llmTitle' => $this->string(),
@@ -135,18 +137,8 @@ class Install extends Migration
         $this->addForeignKey(
             $this->db->getForeignKeyName(),
             Constants::TABLE_PAGES,
-            'entryId',
+            'elementId',
             '{{%elements}}',
-            'id',
-            'CASCADE',
-            null
-        );
-
-        $this->addForeignKey(
-            $this->db->getForeignKeyName(),
-            Constants::TABLE_PAGES,
-            'sectionId',
-            '{{%sections}}',
             'id',
             'CASCADE',
             null

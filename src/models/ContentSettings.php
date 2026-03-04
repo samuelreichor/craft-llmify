@@ -3,6 +3,7 @@
 namespace samuelreichor\llmify\models;
 
 use craft\base\Model;
+use craft\elements\Entry;
 
 /**
  * Content Settings model
@@ -46,9 +47,13 @@ class ContentSettings extends Model
      */
     public bool $overrideFrontMatter = false;
     /**
-     * @var int Section ID of the content setting
+     * @var int Group ID of the content setting (sectionId for entries, productTypeId for products)
      */
-    public int $sectionId;
+    public int $groupId;
+    /**
+     * @var string Element type class for this content setting
+     */
+    public string $elementType = Entry::class;
     /**
      * @var int Entry type ID of the content setting
      */

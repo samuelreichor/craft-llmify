@@ -10,14 +10,15 @@ use yii\db\Expression;
 /**
  * Page Record
  *
- * @property int $entryId
+ * @property int $elementId
+ * @property string $elementType
  * @property int $siteId
- * @property int $sectionId
+ * @property int $groupId
  * @property int $metadataId
  * @property string $content
  * @property string $title
  * @property string $description
- * @property array $entryMeta
+ * @property array $elementMeta
  */
 class PageRecord extends ActiveRecord
 {

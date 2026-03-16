@@ -1,5 +1,10 @@
 # Release Notes for LLMify
 
+## 1.3.1 - 2026-03-16
+
+### Fixed
+- Add icon to llmify settings field.
+
 ## 1.3.0 - 2026-03-04
 
 ### Added

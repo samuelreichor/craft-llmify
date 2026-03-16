@@ -24,6 +24,11 @@ class LlmifySettingsField extends Field
         return 'LLMify Settings';
     }
 
+    public static function icon(): string
+    {
+        return '@samuelreichor/llmify/icon-mask.svg';
+    }
+
     public function getContentColumnType(): string
     {
         return Schema::TYPE_TEXT;

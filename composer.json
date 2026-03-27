@@ -14,7 +14,7 @@
   "require": {
     "php": ">=8.2",
     "amphp/http-client": "^5.3",
-    "craftcms/cms": "^5.0.0",
+    "craftcms/cms": "^4.4.0",
     "league/html-to-markdown": "^5.1",
     "paquettg/php-html-parser": "^2.2"
   },
@@ -43,7 +43,7 @@
     "sort-packages": true,
     "optimize-autoloader": true,
     "platform": {
-      "php": "8.2"
+      "php": "8.0.2"
     },
     "allow-plugins": {
       "yiisoft/yii2-composer": true,

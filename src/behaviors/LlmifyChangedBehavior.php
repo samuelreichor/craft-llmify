@@ -79,7 +79,7 @@ class LlmifyChangedBehavior extends Behavior
                 return true;
             }
         } else {
-            if (!empty($element->duplicateOf->getModifiedAttributes()) || !empty($element->duplicateOf->getModifiedFields())) {
+            if (!empty($element->duplicateOf->getDirtyAttributes()) || !empty($element->duplicateOf->getDirtyFields())) {
                 return true;
             }
         }

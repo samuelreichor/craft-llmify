@@ -7,7 +7,7 @@ use craft\base\Batchable;
 class SiteUrlBatcher implements Batchable
 {
     public function __construct(
-        private readonly array $siteUrls,
+        private array $siteUrls,
     ) {
     }
 

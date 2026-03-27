@@ -161,11 +161,6 @@ class RefreshService extends Component
             return false;
         }
 
-        // element is an entry or product
-        if ($element instanceof Entry && $element->getOwnerId()) {
-            return false;
-        }
-
         if (!$this->canRefreshElement($element)) {
             return false;
         }

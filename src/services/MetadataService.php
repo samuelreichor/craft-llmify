@@ -5,7 +5,6 @@ namespace samuelreichor\llmify\services;
 use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\base\FieldInterface;
-use craft\elements\ContentBlock;
 use craft\elements\Entry;
 use craft\errors\InvalidFieldException;
 use samuelreichor\llmify\fields\LlmifySettingsField;
@@ -133,18 +132,6 @@ class MetadataService extends Component
      */
     private function resolveFieldValue(string $sourceHandle): string
     {
-        if (str_contains($sourceHandle, '.')) {
-            [$contentBlockHandle, $fieldHandle] = explode('.', $sourceHandle, 2);
-            $contentBlock = $this->element->getFieldValue($contentBlockHandle);
-
-            if ($contentBlock instanceof ContentBlock) {
-                $value = $contentBlock->getFieldValue($fieldHandle);
-                return strip_tags((string)($value ?? ''));
-            }
-
-            return '';
-        }
-
         return strip_tags((string)($this->element[$sourceHandle] ?? ''));
     }
 }

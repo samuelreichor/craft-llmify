@@ -9,3 +9,12 @@ parameters:
         -
             message: '#craft\\commerce\\#'
             reportUnmatched: false
+        -
+            message: '#craft\\services\\Sections#'
+            reportUnmatched: false
+        -
+            message: '#Strict comparison using === between craft\\enums\\CmsEdition and 2#'
+            reportUnmatched: false
+        -
+            message: '#EVENT_REGISTER_UTILITY_TYPES#'
+            reportUnmatched: false

@@ -183,7 +183,7 @@ class SettingsService extends Component
         $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
 
         // Entry sections
-        $allSection = Craft::$app->entries->getAllSections();
+        $allSection = Craft::$app->sections->getAllSections();
         $sectionIdsWithUrls = [];
         foreach ($allSection as $section) {
             foreach ($section->getSiteSettings() as $siteSetting) {

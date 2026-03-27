@@ -37,7 +37,7 @@ class ContentController extends Controller
             $elementCount = 0;
 
             if ($setting->elementType === Entry::class) {
-                $section = Craft::$app->entries->getSectionById($setting->groupId);
+                $section = Craft::$app->sections->getSectionById($setting->groupId);
                 if ($section) {
                     $groupName = $section->name;
                     $groupType = ucfirst($section->type);
@@ -90,7 +90,7 @@ class ContentController extends Controller
         $frontMatterFieldOptions = [];
 
         if ($elementType === Entry::class) {
-            $section = Craft::$app->entries->getSectionById($sectionId);
+            $section = Craft::$app->sections->getSectionById($sectionId);
             $groupName = $section ? $section->name : '';
             $textFieldOptions = $section ? $helperService->getTextFieldsForSection($section) : [];
             $frontMatterFieldOptions = $section ? $helperService->getFrontMatterFieldOptions($section) : [];

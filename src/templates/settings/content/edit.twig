@@ -27,16 +27,13 @@
     {% endif %}
 {% endif %}
 
-{% set crumbs = (crumbs ?? [])|unshift({
-    id: 'site-crumb',
-    icon: 'world',
-    iconAltText: 'Site'|t('app'),
-    label: selectedSite.name|t('site'),
-    menu: {
-        items: siteMenuItems(selectableSites, selectedSite),
-        label: 'Select site'|t('app')
-    }
-}) %}
+{% block toolbar %}
+    {% include "_elements/sitemenu" with {
+        siteIds: selectableSites|map(s => s.id),
+        selectedSiteId: selectedSite.id,
+        urlFormat: url(craft.app.request.pathInfo, {site: '{handle}'})
+    } only %}
+{% endblock %}
 
 {% block content %}
     {{ actionInput('llmify/content/save-section-settings') }}

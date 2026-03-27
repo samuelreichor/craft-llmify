@@ -6,7 +6,6 @@ use Craft;
 use craft\base\Element;
 use craft\base\Plugin;
 use craft\elements\Entry;
-use craft\enums\CmsEdition;
 use craft\events\CancelableEvent;
 use craft\events\DefineHtmlEvent;
 use craft\events\ElementEvent;
@@ -19,8 +18,8 @@ use craft\events\SectionEvent;
 use craft\events\SiteEvent;
 use craft\events\TemplateEvent;
 use craft\services\Elements;
-use craft\services\Entries;
 use craft\services\Fields;
+use craft\services\Sections;
 use craft\services\Sites;
 use craft\services\Structures;
 use craft\services\UserPermissions;
@@ -70,7 +69,6 @@ class Llmify extends Plugin
 {
     public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = true;
-    public bool $hasReadOnlyCpSettings = true;
     public bool $hasCpSection = true;
     private bool|null|PluginSettings $_settings;
 
@@ -118,7 +116,7 @@ class Llmify extends Plugin
             $this->registerSettingEvents();
             $this->registerGeneralCpEvents();
 
-            if (Craft::$app->edition === CmsEdition::Pro) {
+            if (Craft::$app->edition === Craft::Pro) {
                 $this->registerUserPermissionEvents();
             }
         }
@@ -192,8 +190,8 @@ class Llmify extends Plugin
     {
         // Create Content Settings for new Sections
         Event::on(
-            Entries::class,
-            Entries::EVENT_AFTER_SAVE_SECTION,
+            Sections::class,
+            Sections::EVENT_AFTER_SAVE_SECTION,
             function(SectionEvent $event) {
                 $section = $event->section;
                 $sectionId = $section->id;
@@ -206,8 +204,8 @@ class Llmify extends Plugin
 
         // Delete Content Settings if Section gets deleted
         Event::on(
-            Entries::class,
-            Entries::EVENT_AFTER_DELETE_SECTION,
+            Sections::class,
+            Sections::EVENT_AFTER_DELETE_SECTION,
             function(SectionEvent $event) {
                 $section = $event->section;
                 $sectionId = $section->id;
@@ -277,7 +275,7 @@ class Llmify extends Plugin
             }
         );
 
-        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function(RegisterComponentTypesEvent $event) {
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITY_TYPES, function(RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;
         });
 

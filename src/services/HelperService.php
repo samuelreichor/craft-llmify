@@ -8,7 +8,6 @@ use craft\base\ElementInterface;
 use craft\base\FieldInterface;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
-use craft\fields\ContentBlock;
 use craft\fields\PlainText;
 use craft\helpers\UrlHelper;
 use craft\models\EntryType;
@@ -177,53 +176,8 @@ class HelperService extends Component
      */
     private function getTextFieldsInContentBlocks(array $entryTypes): array
     {
-        if (empty($entryTypes) || !class_exists(ContentBlock::class)) {
-            return [];
-        }
-
-        $allContentBlockFields = [];
-
-        foreach ($entryTypes as $entryType) {
-            $fields = $entryType->getCustomFields();
-            $contentBlockFieldsInType = [];
-
-            foreach ($fields as $field) {
-                if (!$field instanceof ContentBlock) {
-                    continue;
-                }
-
-                $nestedFields = $field->getFieldLayout()->getCustomFields();
-                foreach ($nestedFields as $nestedField) {
-                    $isCkEditorField = class_exists('\craft\ckeditor\Field') && is_a($nestedField, '\craft\ckeditor\Field');
-                    if ($nestedField instanceof PlainText || $isCkEditorField) {
-                        $key = $field->handle . '.' . $nestedField->handle;
-                        $contentBlockFieldsInType[$key] = [
-                            'contentBlockName' => $field->name,
-                            'fieldName' => $nestedField->name,
-                        ];
-                    }
-                }
-            }
-
-            $allContentBlockFields[] = $contentBlockFieldsInType;
-        }
-
-        if (count($allContentBlockFields) === 1) {
-            $commonKeys = array_keys($allContentBlockFields[0]);
-        } else {
-            $commonKeys = array_keys(array_intersect_key(...$allContentBlockFields));
-        }
-        $result = [];
-
-        foreach ($commonKeys as $key) {
-            $info = $allContentBlockFields[0][$key];
-            $result[] = [
-                'label' => $info['contentBlockName'] . ' › ' . $info['fieldName'],
-                'value' => $key,
-            ];
-        }
-
-        return $result;
+        // ContentBlock fields are not available in Craft 4
+        return [];
     }
 
     /**

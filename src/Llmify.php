@@ -169,7 +169,35 @@ class Llmify extends Plugin
             $this->_settings = $this->createSettingsModel() ?: false;
         }
 
+        if ($this->_settings instanceof PluginSettings) {
+            $overrides = self::getTestOverrides();
+            if (!empty($overrides['pluginSettings'])) {
+                $this->_settings->setAttributes($overrides['pluginSettings'], false);
+            }
+        }
+
         return $this->_settings ?: null;
+    }
+
+    /**
+     * Read test settings overrides from temp file (used by the llmify-testing module).
+     * Returns null when no override file exists (production/normal usage).
+     */
+    public static function getTestOverrides(): ?array
+    {
+        static $loaded = false;
+        static $data = null;
+
+        if (!$loaded) {
+            $loaded = true;
+            $path = sys_get_temp_dir() . '/llmify-test-overrides.json';
+            if (file_exists($path)) {
+                $content = file_get_contents($path);
+                $data = $content ? json_decode($content, true) : null;
+            }
+        }
+
+        return $data;
     }
 
     public function getSettingsResponse(): mixed

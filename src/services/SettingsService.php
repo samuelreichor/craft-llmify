@@ -106,6 +106,13 @@ class SettingsService extends Component
             $this->saveContentSettings($settings, true, $triggerRefresh);
         }
 
+        // Apply test overrides if present
+        $testData = Llmify::getTestOverrides();
+        $csOverrides = $testData['contentSettings']["{$groupId}-{$siteId}"] ?? null;
+        if ($csOverrides !== null) {
+            $settings->setAttributes($csOverrides, false);
+        }
+
         $this->contentSettings[$cacheKey] = $settings;
         return $settings;
     }
@@ -147,6 +154,14 @@ class SettingsService extends Component
         foreach ($results as $result) {
             $result = $this->decodeContentSettingsJson($result);
             $settings = new ContentSettings($result);
+
+            // Apply test overrides if present
+            $testData = Llmify::getTestOverrides();
+            $csOverrides = $testData['contentSettings']["{$settings->groupId}-{$siteId}"] ?? null;
+            if ($csOverrides !== null) {
+                $settings->setAttributes($csOverrides, false);
+            }
+
             $this->contentSettingsBySiteId[$siteId][] = $settings;
             $cacheKey = $this->createContentCacheKey($settings->groupId, $settings->siteId, $settings->elementType);
             $this->contentSettings[$cacheKey] = $settings;
@@ -258,6 +273,13 @@ class SettingsService extends Component
             $settings = new GlobalSettings();
             $settings->siteId = $siteId;
             $this->saveGlobalSettings($settings);
+        }
+
+        // Apply test overrides if present
+        $testData = Llmify::getTestOverrides();
+        $gsOverrides = $testData['globalSettings'][(string)$siteId] ?? null;
+        if ($gsOverrides !== null) {
+            $settings->setAttributes($gsOverrides, false);
         }
 
         $this->globalSettings[$siteId] = $settings;

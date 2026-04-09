@@ -107,6 +107,12 @@ class FrontMatterService extends Component
             }
         }
 
+        // 4. Test override (bypasses all cascade levels)
+        $testData = Llmify::getTestOverrides();
+        if (!empty($testData['frontMatterFields'])) {
+            $fields = $testData['frontMatterFields'];
+        }
+
         return $fields;
     }
 

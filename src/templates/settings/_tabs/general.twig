@@ -1,0 +1,70 @@
+{% import '_includes/forms.twig' as forms %}
+
+{{ forms.lightswitchField({
+  label: 'Enable LLMify',
+  instructions: 'Whether Markdown creation should be enabled.',
+  id: 'isEnabled',
+  name: 'isEnabled',
+  on: settings.isEnabled,
+  first: true,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>Delivery</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem;">
+    <div>
+        {{ forms.lightswitchField({
+          label: 'Content Negotiation',
+          instructions: 'Serve markdown when the request contains an `Accept: text/markdown` header.',
+          id: 'autoServeMarkdown',
+          name: 'autoServeMarkdown',
+          on: settings.autoServeMarkdown,
+          disabled: readOnly,
+        }) }}
+    </div>
+
+    <div>
+        {{ forms.lightswitchField({
+          label: 'AI Crawler Detection',
+          instructions: 'Serve markdown to known AI crawlers like GPTBot, ClaudeBot, and ChatGPT-User based on their user agent.',
+          id: 'enableBotDetection',
+          name: 'enableBotDetection',
+          on: settings.enableBotDetection,
+          disabled: readOnly,
+        }) }}
+    </div>
+</div>
+
+{{ forms.lightswitchField({
+  label: 'Discovery Link Tag',
+  instructions: 'Inject a `<link rel="alternate" type="text/markdown">` tag into the HTML head of pages that have markdown available.',
+  id: 'autoInjectDiscoveryTag',
+  name: 'autoInjectDiscoveryTag',
+  on: settings.autoInjectDiscoveryTag,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>Output</h2>
+
+{{ forms.lightswitchField({
+  label: 'Use Real URLs in llms.txt',
+  instructions: 'Whether real page URLs or the markdown URLs should be used in the llms.txt file.',
+  id: 'isRealUrlLlm',
+  name: 'isRealUrlLlm',
+  on: settings.isRealUrlLlm,
+  disabled: readOnly,
+}) }}
+
+{{ forms.lightswitchField({
+  label: 'Include Front Matter in llms-full.txt',
+  instructions: 'Whether front matter should also be included for each page in llms-full.txt. Front matter fields are configured per site in the Site Settings.',
+  id: 'frontMatterInFullTxt',
+  name: 'frontMatterInFullTxt',
+  on: settings.frontMatterInFullTxt,
+  disabled: readOnly,
+}) }}

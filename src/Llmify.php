@@ -18,6 +18,7 @@ use craft\events\RegisterUserPermissionsEvent;
 use craft\events\SectionEvent;
 use craft\events\SiteEvent;
 use craft\events\TemplateEvent;
+use craft\helpers\UrlHelper;
 use craft\services\Elements;
 use craft\services\Entries;
 use craft\services\Fields;
@@ -43,11 +44,7 @@ use samuelreichor\llmify\services\SettingsService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
 use Throwable;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
 use yii\base\Event;
-use yii\base\Exception;
 use yii\log\FileTarget;
 
 /**
@@ -145,14 +142,12 @@ class Llmify extends Plugin
             $subNavs['globals'] = ['label' => 'Site', 'url' => 'llmify/globals'];
         }
 
-        if (empty($subNavs)) {
-            return null;
+        if ($currentUser->admin && Craft::$app->getConfig()->getGeneral()->allowAdminChanges) {
+            $subNavs['settings'] = ['label' => 'Settings', 'url' => 'llmify/settings'];
         }
 
-        if (count($subNavs) <= 1) {
-            return array_merge($item, [
-                'subnav' => [],
-            ]);
+        if (empty($subNavs)) {
+            return null;
         }
 
         return array_merge($item, [
@@ -177,19 +172,9 @@ class Llmify extends Plugin
         return $this->_settings ?: null;
     }
 
-    /**
-     * @throws SyntaxError
-     * @throws RuntimeError
-     * @throws Exception
-     * @throws LoaderError
-     */
-    protected function settingsHtml(): string
+    public function getSettingsResponse(): mixed
     {
-        return Craft::$app->view->renderTemplate('llmify/settings/plugin/index', [
-            'plugin' => $this,
-            'settings' => $this->getSettings(),
-            'readOnly' => !Craft::$app->getConfig()->getGeneral()->allowAdminChanges,
-        ]);
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/settings'));
     }
 
     private function registerSettingEvents(): void
@@ -278,6 +263,8 @@ class Llmify extends Plugin
                 $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
                 $event->rules['llmify/globals'] = 'llmify/globals/index';
                 $event->rules['llmify/globals/save-settings'] = 'llmify/globals/save-settings';
+                $event->rules['llmify/settings'] = 'llmify/settings/index';
+                $event->rules['llmify/settings/save-settings'] = 'llmify/settings/save-settings';
             }
         );
 

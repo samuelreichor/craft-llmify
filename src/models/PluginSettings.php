@@ -8,7 +8,7 @@ class PluginSettings extends Model
 {
     public bool $isEnabled = true;
     public bool $isRealUrlLlm = false;
-    public bool $autoServeMarkdown = false;
+    public bool $autoServeMarkdown = true;
     public string $markdownUrlPrefix = 'raw';
     public int $concurrentRequests = 3;
     public int $requestTimeout = 100;
@@ -22,6 +22,9 @@ class PluginSettings extends Model
             'classes' => 'exclude-llmify',
         ],
     ];
+    public bool $autoInjectDiscoveryTag = true;
+    public bool $enableBotDetection = true;
+    public array $additionalBotUserAgents = [];
     public bool $frontMatterInFullTxt = false;
 
     public function defineRules(): array

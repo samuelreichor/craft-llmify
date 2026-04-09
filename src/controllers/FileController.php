@@ -22,6 +22,7 @@ class FileController extends Controller
         }
 
         Craft::$app->response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        Craft::$app->response->headers->set('Vary', 'Accept');
 
         return true;
     }

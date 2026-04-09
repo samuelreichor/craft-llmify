@@ -31,6 +31,7 @@ use putyourlightson\blitz\services\CacheRequestService;
 use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
+use samuelreichor\llmify\services\BotDetectionService;
 use samuelreichor\llmify\services\FrontMatterService;
 use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
@@ -65,6 +66,7 @@ use yii\log\FileTarget;
  * @property-read RefreshService $refresh
  * @property-read RequestService $request
  * @property-read FrontMatterService $frontMatter
+ * @property-read BotDetectionService $botDetection
  */
 class Llmify extends Plugin
 {
@@ -86,6 +88,7 @@ class Llmify extends Plugin
                 'refresh' => RefreshService::class,
                 'request' => RequestService::class,
                 'frontMatter' => FrontMatterService::class,
+                'botDetection' => BotDetectionService::class,
             ],
         ];
     }
@@ -103,6 +106,7 @@ class Llmify extends Plugin
             if (Craft::$app->request->getIsSiteRequest()) {
                 $this->registerSiteEvents();
                 $this->registerAutoServeEvent();
+                $this->registerDiscoveryLinkTag();
             }
 
             if (Craft::$app->request->getIsCpRequest()) {
@@ -331,7 +335,8 @@ class Llmify extends Plugin
                         $response = Craft::$app->response;
                         $response->format = $response::FORMAT_RAW;
                         $response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
-                        $response->headers->set('Vary', 'Accept');
+                        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+                        $response->headers->set('Vary', 'Accept, User-Agent');
                     }
                 }
 
@@ -342,20 +347,15 @@ class Llmify extends Plugin
     }
 
     /**
-     * Tell Blitz to skip caching for text/markdown requests so our template event can handle them.
+     * Tell Blitz to skip caching for text/markdown or bot requests so our template event can handle them.
      */
     private function registerAutoServeEvent(): void
     {
-        if (!$this->getSettings()->autoServeMarkdown) {
-            return;
-        }
-
         if (Craft::$app->request->getIsConsoleRequest()) {
             return;
         }
 
-        $accept = Craft::$app->request->getHeaders()->get('Accept', '');
-        if (!str_contains($accept, 'text/markdown')) {
+        if (!$this->isAutoServeAble()) {
             return;
         }
 
@@ -371,8 +371,25 @@ class Llmify extends Plugin
 
     private function isAutoServeAble(): bool
     {
+        if (Craft::$app->request->getIsConsoleRequest()) {
+            return false;
+        }
+
+        $settings = $this->getSettings();
+
         $accept = Craft::$app->request->getHeaders()->get('Accept', '');
-        return $this->getSettings()->autoServeMarkdown && str_contains($accept, 'text/markdown');
+        if ($settings->autoServeMarkdown && str_contains($accept, 'text/markdown')) {
+            return true;
+        }
+
+        if ($settings->enableBotDetection) {
+            $userAgent = Craft::$app->request->getHeaders()->get('User-Agent', '');
+            if ($this->botDetection->isAiBot($userAgent)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function registerElementChangeEvents(): void
@@ -433,6 +450,44 @@ class Llmify extends Plugin
 
                 $mdPrefix = $this->getSettings()->markdownUrlPrefix;
                 $event->rules[$mdPrefix . '/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
+            }
+        );
+    }
+
+    private function registerDiscoveryLinkTag(): void
+    {
+        if (!$this->getSettings()->autoInjectDiscoveryTag) {
+            return;
+        }
+
+        $registered = false;
+
+        Event::on(
+            View::class,
+            View::EVENT_BEFORE_RENDER_TEMPLATE,
+            function(TemplateEvent $event) use (&$registered) {
+                if ($registered || $event->templateMode !== 'site') {
+                    return;
+                }
+
+                $registered = true;
+
+                /** @var UrlManager $urlManager */
+                $urlManager = Craft::$app->getUrlManager();
+                $element = $urlManager->getMatchedElement();
+
+                if (!$element || !$element->uri) {
+                    return;
+                }
+
+                if ($this->refresh->canRefreshElement($element)) {
+                    $markdownUrl = HelperService::getMarkdownUrl($element->uri, $element->siteId);
+                    Craft::$app->view->registerLinkTag([
+                        'rel' => 'alternate',
+                        'type' => 'text/markdown',
+                        'href' => $markdownUrl,
+                    ], 'llmify-alternate');
+                }
             }
         );
     }

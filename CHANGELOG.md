@@ -1,5 +1,34 @@
 # Release Notes for LLMify
 
+## 1.4.0 - 2026-04-11
+
+### Added
+- Add dashboard with site setup scores and section-level content statistics.
+- Add AI crawler detection to auto-serve markdown to known bots (GPTBot, ClaudeBot, ChatGPT-User, and more) based on user agent.
+- Add `<link rel="alternate" type="text/markdown">` discovery tag injection with configurable toggle.
+- Add `/.well-known/llms.txt` route for RFC 8615 compliant discovery.
+- Add per-entry exclude toggle via the LlmifySettingsField to individually exclude entries from markdown generation and all LLM outputs.
+- Add SEOmatic field support for automatic front matter population.
+- Add `Vary: Accept` header to all markdown endpoints and `Vary: Accept, User-Agent` to auto-serve responses.
+- Add `X-Robots-Tag: noindex, nofollow` header to auto-serve responses.
+- Add custom bot user agent configuration for extending the built-in bot list.
+- Add markdown preview targets for entries and products.
+- Add direct links to content and site settings from the entry sidebar and settings field.
+
+### Improved
+- Reorganize plugin settings into a tabbed UI (General, Advanced) integrated into the plugin subnav.
+- Enable content negotiation (`autoServeMarkdown`) and AI crawler detection (`enableBotDetection`) by default for fresh installs.
+- Make `markdownUrlPrefix` optional, leave it empty to use `${url}.md` URLs directly.
+- Refactor field discovery into dedicated `FieldDiscoveryService`.
+- Improve sidebar panel UX: show informative messages when LLMify is disabled at the site, section, or entry level instead of hiding the panel. Respect generate and clear permissions for sidebar buttons.
+- Enhance markdown generation for images inside links.
+
+### Fixed
+- Fix breadcrumbs in all plugin pages.
+- Fix bug in field discovery service with field layout overwrites.
+- Fix UI issue with front matter inheritance in the settings field.
+- Fix issue with cached SEOmatic field values in llms.txt.
+
 ## 1.3.1 - 2026-03-16
 
 ### Fixed

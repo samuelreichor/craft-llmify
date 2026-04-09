@@ -203,7 +203,11 @@ class RefreshService extends Component
             $result = $contentSettings->enabled;
         }
 
-        return $result;
+        if (!$result) {
+            return false;
+        }
+
+        return !HelperService::isElementExcluded($element);
     }
 
     /**

@@ -1,0 +1,101 @@
+{% import '_includes/forms.twig' as forms %}
+
+<h2>URL Configuration</h2>
+
+{{ forms.textField({
+  label: 'Markdown URL Prefix',
+  instructions: 'This prefix is used to generate links for the markdowns (eg. https://example.com/raw/__home__.md). Leave empty to append `.md` to the original URL (eg. https://example.com/about.md).',
+  id: 'markdownUrlPrefix',
+  name: 'markdownUrlPrefix',
+  value: settings.markdownUrlPrefix,
+  errors: settings.getErrors('markdownUrlPrefix'),
+  placeholder: 'raw',
+  first: true,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>Markdown Generation</h2>
+
+{{ forms.textField({
+  label: 'Concurrent Requests',
+  instructions: 'The max number of concurrent requests to use when generating the markdown.',
+  id: 'concurrentRequests',
+  name: 'concurrentRequests',
+  value: settings.concurrentRequests,
+  type: 'number',
+  min: 1,
+  max: 100,
+  errors: settings.getErrors('concurrentRequests'),
+  required: true,
+  unit: 'Concurrent Requests',
+  placeholder: 3,
+  disabled: readOnly,
+}) }}
+
+{{ forms.textField({
+  label: 'Request Timeout',
+  instructions: 'The max amount of seconds requests can take.',
+  id: 'requestTimeout',
+  name: 'requestTimeout',
+  value: settings.requestTimeout,
+  type: 'number',
+  min: 1,
+  errors: settings.getErrors('requestTimeout'),
+  required: true,
+  unit: 'Seconds',
+  placeholder: 100,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>Content Filtering</h2>
+
+{% set cols = {
+    classes: {
+      type: 'singleline',
+      heading: 'Classes',
+    }
+  } %}
+
+{{ forms.editableTableField({
+  label: "Exclude Classes",
+  instructions: 'CSS classes to exclude from the markdown output. Elements with these classes will be removed before conversion.',
+  name: 'excludeClasses',
+  id: 'excludeClasses',
+  cols: cols,
+  rows: settings.excludeClasses,
+  addRowLabel: "Add a class",
+  allowAdd: true,
+  allowDelete: true,
+  allowReorder: true,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
+<h2>Bot Detection</h2>
+
+{% set botCols = {
+    userAgent: {
+      type: 'singleline',
+      heading: 'User Agent',
+      placeholder: 'e.g. MyCustomBot',
+    }
+  } %}
+
+{{ forms.editableTableField({
+  label: "Additional Bot User Agents",
+  instructions: 'Add custom bot identifiers to detect in addition to the built-in list: GPTBot, ClaudeBot, ChatGPT-User, Amazonbot, Bytespider, CCBot, Google-Extended, FacebookBot, PerplexityBot, Applebot-Extended, cohere-ai, OAI-SearchBot, Claude-Web.',
+  name: 'additionalBotUserAgents',
+  id: 'additionalBotUserAgents',
+  cols: botCols,
+  rows: settings.additionalBotUserAgents,
+  addRowLabel: "Add a user agent",
+  allowAdd: true,
+  allowDelete: true,
+  allowReorder: true,
+  disabled: readOnly,
+}) }}

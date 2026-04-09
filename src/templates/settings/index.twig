@@ -1,0 +1,29 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'LLMify Settings' %}
+{% set fullPageForm = true %}
+{% set selectedSubnavItem = 'settings' %}
+
+{% set tabs = {
+    general: { label: 'General', url: '#general' },
+    advanced: { label: 'Advanced', url: '#advanced' },
+} %}
+
+{% block content %}
+
+    <input type="hidden" name="action" value="llmify/settings/save-settings">
+    {{ redirectInput('llmify/settings') }}
+
+    <div id="general">
+        {% namespace 'settings' %}
+            {% include 'llmify/settings/_tabs/general' %}
+        {% endnamespace %}
+    </div>
+
+    <div id="advanced" class="hidden">
+        {% namespace 'settings' %}
+            {% include 'llmify/settings/_tabs/advanced' %}
+        {% endnamespace %}
+    </div>
+
+{% endblock %}

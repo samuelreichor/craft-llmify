@@ -84,18 +84,20 @@ class LlmsService extends Component
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
         $markdownService = Llmify::getInstance()->markdown;
 
+        // Look up the element to check if it's excluded
+        $element = Entry::find()->uri($uri)->siteId($siteId)->one();
+        if (!$element && HelperService::isCommerceInstalled()) {
+            $element = \craft\commerce\elements\Product::find()->uri($uri)->siteId($siteId)->one();
+        }
+
+        if ($element && HelperService::isElementExcluded($element)) {
+            return '';
+        }
+
         $markdown = $markdownService->getRenderedMarkdown($uri, $siteId);
 
         if ($markdown !== null) {
             return $markdown;
-        }
-
-        // Try to generate on-the-fly - first try Entry
-        $element = Entry::find()->uri($uri)->siteId($siteId)->one();
-
-        // Try Commerce Product if Entry not found
-        if (!$element && HelperService::isCommerceInstalled()) {
-            $element = \craft\commerce\elements\Product::find()->uri($uri)->siteId($siteId)->one();
         }
 
         if ($element && $element->getUrl()) {
@@ -138,6 +140,10 @@ class LlmsService extends Component
             $content .= $this->constructSectionHeader($contentSetting);
 
             foreach ($elements as $element) {
+                if (HelperService::isElementExcluded($element)) {
+                    continue;
+                }
+
                 $metadata = new MetadataService($element);
                 $title = $metadata->getLlmTitle();
                 $description = $metadata->getLlmDescription();
@@ -203,10 +209,15 @@ class LlmsService extends Component
             /**
              * @var Page $page
              */
+            $element = Craft::$app->elements->getElementById($page->elementId, $page->elementType, $this->currentSiteId);
+
+            if ($element && HelperService::isElementExcluded($element)) {
+                continue;
+            }
+
             $pageContent = $page->content;
 
-            if ($settings->frontMatterInFullTxt) {
-                $element = Craft::$app->elements->getElementById($page->elementId, $page->elementType, $this->currentSiteId);
+            if ($settings->frontMatterInFullTxt && $element) {
                 $pageContent = $frontMatterService->prependFrontMatter($pageContent, $page, $element);
             }
 

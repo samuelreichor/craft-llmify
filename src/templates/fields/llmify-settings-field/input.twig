@@ -13,6 +13,19 @@
 
 {% set frontMatterFieldsId = name ~ 'frontMatterFields' %}
 
+{% set enabledSwitchId = name ~ 'enabled' %}
+
+{# Enable/Disable Section #}
+{{ forms.lightswitchField({
+  label: 'Include in LLMify',
+  instructions: 'When disabled, this entry will be excluded from markdown generation, llms.txt, and llms-full.txt.',
+  id: enabledSwitchId,
+  name: name ~ '[enabled]',
+  on: value.enabled ?? true,
+}) }}
+
+<hr style="margin: 24px 0;">
+
 {# Title Section #}
 {{ forms.lightswitchField({
   label: 'Override Title Settings',

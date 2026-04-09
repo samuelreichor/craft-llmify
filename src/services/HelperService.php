@@ -13,6 +13,7 @@ use craft\fields\PlainText;
 use craft\helpers\UrlHelper;
 use craft\models\EntryType;
 use craft\models\Section;
+use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\Llmify;
 
 class HelperService extends Component
@@ -287,10 +288,38 @@ class HelperService extends Component
         return Llmify::getInstance()->getSettings()->isEnabled;
     }
 
+    /**
+     * Check if an element is excluded from LLMify via the LlmifySettingsField.
+     */
+    public static function isElementExcluded(ElementInterface $element): bool
+    {
+        $field = Llmify::getInstance()->helper->getFieldOfTypeFromElement($element, LlmifySettingsField::class);
+        if (!$field) {
+            return false;
+        }
+
+        $fieldData = $element->getFieldValue($field->handle);
+        if (!is_array($fieldData)) {
+            return false;
+        }
+
+        // Lightswitch stores '1' when on, '' when off
+        // Default to enabled (not excluded) when the key doesn't exist
+        if (!array_key_exists('enabled', $fieldData)) {
+            return false;
+        }
+
+        return empty($fieldData['enabled']);
+    }
+
     public static function getMarkdownUrl(string $uri, ?int $siteId = null): string
     {
         $mdPrefix = Llmify::getInstance()->getSettings()->markdownUrlPrefix;
-        return UrlHelper::siteUrl("{$mdPrefix}/{$uri}.md", null, null, $siteId);
+        if ($mdPrefix !== '') {
+            return UrlHelper::siteUrl("{$mdPrefix}/{$uri}.md", null, null, $siteId);
+        }
+
+        return UrlHelper::siteUrl("{$uri}.md", null, null, $siteId);
     }
 
     /**

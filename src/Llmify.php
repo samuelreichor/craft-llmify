@@ -428,6 +428,7 @@ class Llmify extends Plugin
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
                 $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
+                $event->rules['.well-known/llms.txt'] = 'llmify/file/generate-llms-txt';
                 $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
 
                 $mdPrefix = $this->getSettings()->markdownUrlPrefix;

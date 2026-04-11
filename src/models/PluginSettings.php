@@ -32,7 +32,6 @@ class PluginSettings extends Model
         return [
             [
                 [
-                    'markdownUrlPrefix',
                     'concurrentRequests',
                     'requestTimeout',
                 ], 'required',

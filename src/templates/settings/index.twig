@@ -4,6 +4,10 @@
 {% set fullPageForm = true %}
 {% set selectedSubnavItem = 'settings' %}
 
+{% set crumbs = [
+    { label: 'LLMify', url: cpUrl('llmify') },
+] %}
+
 {% set tabs = {
     general: { label: 'General', url: '#general' },
     advanced: { label: 'Advanced', url: '#advanced' },

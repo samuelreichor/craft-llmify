@@ -5,10 +5,6 @@
 {% set selectedSubnavItem = 'content' %}
 {% set fullPageForm = true %}
 
-{% set crumbs = [
-    { label: "LLMify Content"|t('app'), url: url('llmify/content') }
-] %}
-
 {% if selectableSites is not defined %}
     {% if siteIds is defined %}
         {% set selectableSites = craft.app.sites.getEditableSites()|filter(s => s.id in siteIds) %}
@@ -27,16 +23,20 @@
     {% endif %}
 {% endif %}
 
-{% set crumbs = (crumbs ?? [])|unshift({
-    id: 'site-crumb',
-    icon: 'world',
-    iconAltText: 'Site'|t('app'),
-    label: selectedSite.name|t('site'),
-    menu: {
-        items: siteMenuItems(selectableSites, selectedSite),
-        label: 'Select site'|t('app')
-    }
-}) %}
+{% set crumbs = [
+    {
+        id: 'site-crumb',
+        icon: 'world',
+        iconAltText: 'Site'|t('app'),
+        label: selectedSite.name|t('site'),
+        menu: {
+            items: siteMenuItems(selectableSites, selectedSite),
+            label: 'Select site'|t('app')
+        }
+    },
+    { label: 'LLMify', url: cpUrl('llmify') },
+    { label: 'Content', url: cpUrl('llmify/content') },
+] %}
 
 {% block content %}
     {{ actionInput('llmify/content/save-section-settings') }}

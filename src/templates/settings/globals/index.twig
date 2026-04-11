@@ -23,16 +23,19 @@
     {% endif %}
 {% endif %}
 
-{% set crumbs = (crumbs ?? [])|unshift({
-    id: 'site-crumb',
-    icon: 'world',
-    iconAltText: 'Site'|t('app'),
-    label: selectedSite.name|t('site'),
-    menu: {
-        items: siteMenuItems(selectableSites, selectedSite),
-        label: 'Select site'|t('app')
-    }
-}) %}
+{% set crumbs = [
+    {
+        id: 'site-crumb',
+        icon: 'world',
+        iconAltText: 'Site'|t('app'),
+        label: selectedSite.name|t('site'),
+        menu: {
+            items: siteMenuItems(selectableSites, selectedSite),
+            label: 'Select site'|t('app')
+        }
+    },
+    { label: 'LLMify', url: cpUrl('llmify') },
+] %}
 
 {% block content %}
     {{ actionInput('llmify/globals/save-settings') }}

@@ -464,7 +464,8 @@ class Llmify extends Plugin
                 $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
 
                 $mdPrefix = $this->getSettings()->markdownUrlPrefix;
-                $event->rules[$mdPrefix . '/<slug:.*\.md>'] = 'llmify/file/generate-page-md';
+                $mdRoute = $mdPrefix !== '' ? $mdPrefix . '/<slug:.*\.md>' : '<slug:.*\.md>';
+                $event->rules[$mdRoute] = 'llmify/file/generate-page-md';
             }
         );
     }

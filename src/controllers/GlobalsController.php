@@ -27,7 +27,7 @@ class GlobalsController extends Controller
         $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
         $globalSettings = Llmify::getInstance()->settings;
         $settings = $globalSettings->getGlobalSetting($currentSiteId);
-        $frontMatterFieldOptions = Llmify::getInstance()->helper->getFrontMatterFieldOptions();
+        $frontMatterFieldOptions = Llmify::getInstance()->fieldDiscovery->getFrontMatterOptions();
 
         return $this->renderTemplate('llmify/settings/globals/index', [
             'settings' => $settings,

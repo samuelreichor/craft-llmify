@@ -64,13 +64,13 @@ class LlmifySettingsField extends Field
         }
 
         $view = Craft::$app->getView();
-        $helperService = Llmify::getInstance()->helper;
-        $textFieldOptions = $helperService->getTextFieldsForElement($element);
+        $fieldDiscovery = Llmify::getInstance()->fieldDiscovery;
+        $textFieldOptions = $fieldDiscovery->getSourceOptions($isEntry ? $element : $element->getType());
 
         if ($isEntry) {
-            $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions(null, $element);
+            $frontMatterFieldOptions = $fieldDiscovery->getFrontMatterOptions(null, $element);
         } else {
-            $frontMatterFieldOptions = $helperService->getFrontMatterFieldOptions(null, null, $element->getType());
+            $frontMatterFieldOptions = $fieldDiscovery->getFrontMatterOptions(null, null, $element->getType());
         }
 
         $metaDataService = new MetaDataService($element);

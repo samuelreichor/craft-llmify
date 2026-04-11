@@ -133,6 +133,11 @@ class MetadataService extends Component
      */
     private function resolveFieldValue(string $sourceHandle): string
     {
+        if (str_starts_with($sourceHandle, 'seomatic:')) {
+            [, $seoKey] = explode(':', $sourceHandle, 2);
+            return FieldDiscoveryService::resolveSeoValue($this->element, $seoKey);
+        }
+
         if (str_contains($sourceHandle, '.')) {
             [$contentBlockHandle, $fieldHandle] = explode('.', $sourceHandle, 2);
             $contentBlock = $this->element->getFieldValue($contentBlockHandle);

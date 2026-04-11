@@ -33,6 +33,7 @@ use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\BotDetectionService;
+use samuelreichor\llmify\services\FieldDiscoveryService;
 use samuelreichor\llmify\services\FrontMatterService;
 use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
@@ -60,6 +61,7 @@ use yii\log\FileTarget;
  * @property-read SettingsService $settings
  * @property-read MetadataService $metadata
  * @property-read HelperService $helper
+ * @property-read FieldDiscoveryService $fieldDiscovery
  * @property-read RefreshService $refresh
  * @property-read RequestService $request
  * @property-read FrontMatterService $frontMatter
@@ -82,6 +84,7 @@ class Llmify extends Plugin
                 'settings' => SettingsService::class,
                 'metadata' => MetadataService::class,
                 'helper' => HelperService::class,
+                'fieldDiscovery' => FieldDiscoveryService::class,
                 'refresh' => RefreshService::class,
                 'request' => RequestService::class,
                 'frontMatter' => FrontMatterService::class,

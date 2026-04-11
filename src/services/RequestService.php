@@ -2,11 +2,11 @@
 
 namespace samuelreichor\llmify\services;
 
-use Amp\Http\Client\HttpClientBuilder;
-use Amp\Http\Client\HttpException;
-use Amp\Http\Client\Request;
-use Amp\Pipeline\Pipeline;
 use Craft;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\ResponseInterface;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use yii\base\Component;
@@ -37,11 +37,15 @@ class RequestService extends Component
 
     public function generateUrl(string $url): bool
     {
-        $client = HttpClientBuilder::buildDefault();
-        $request = $this->createRequest($url);
-        $response = $client->request($request);
+        $client = Craft::createGuzzleClient([
+            'timeout' => $this->requestTimeout,
+            'connect_timeout' => $this->requestTimeout,
+        ]);
 
-        return $response->getStatus() === 200;
+        $request = new Request('GET', $url, [Constants::HEADER_REFRESH => '1']);
+        $response = $client->send($request);
+
+        return $response->getStatusCode() === 200;
     }
 
     public function generateUrlsWithProgress(array $urls, callable $setProgressHandler = null): void
@@ -51,39 +55,41 @@ class RequestService extends Component
 
     public function generateWithProgress(array $urls, callable $setProgressHandler, int $count, int $total): void
     {
-        $client = HttpClientBuilder::buildDefault();
+        $client = Craft::createGuzzleClient([
+            'timeout' => $this->requestTimeout,
+            'connect_timeout' => $this->requestTimeout,
+        ]);
 
-        $concurrentIterator = Pipeline::fromIterable($urls)
-            ->concurrent($this->concurrentRequests);
+        $requests = function() use ($urls) {
+            foreach ($urls as $url) {
+                yield new Request('GET', $url, [Constants::HEADER_REFRESH => '1']);
+            }
+        };
 
-        foreach ($concurrentIterator as $url) {
-            $count++;
-            try {
-                $request = $this->createRequest($url);
-                $response = $client->request($request);
+        $pool = new Pool($client, $requests(), [
+            'concurrency' => $this->concurrentRequests,
+            'fulfilled' => function(ResponseInterface $response) use (&$count, $total, $setProgressHandler) {
+                $count++;
 
-                if ($response->getStatus() === 200) {
+                if ($response->getStatusCode() === 200) {
                     $this->generated++;
                 }
 
                 if (is_callable($setProgressHandler)) {
                     $this->callProgressHandler($setProgressHandler, $count, $total);
                 }
-            } catch (HttpException $exception) {
-                Craft::error("Failed generating URL {$url}. " . $exception->getMessage());
-            }
-        }
-    }
-    protected function createRequest(string $url): Request
-    {
-        $request = new Request($url);
-        $request->setHeader(Constants::HEADER_REFRESH, '1');
-        $request->setTcpConnectTimeout($this->requestTimeout);
-        $request->setTlsHandshakeTimeout($this->requestTimeout);
-        $request->setTransferTimeout($this->requestTimeout);
-        $request->setInactivityTimeout($this->requestTimeout);
+            },
+            'rejected' => function(RequestException $exception) use (&$count, $total, $setProgressHandler) {
+                $count++;
+                Craft::error("Failed generating URL. " . $exception->getMessage());
 
-        return $request;
+                if (is_callable($setProgressHandler)) {
+                    $this->callProgressHandler($setProgressHandler, $count, $total);
+                }
+            },
+        ]);
+
+        $pool->promise()->wait();
     }
 
     /**

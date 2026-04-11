@@ -5,9 +5,11 @@ namespace samuelreichor\llmify\services;
 use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\elements\Entry;
+use craft\errors\InvalidFieldException;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\Page;
+use yii\db\Exception;
 
 class FrontMatterService extends Component
 {
@@ -69,11 +71,9 @@ class FrontMatterService extends Component
      */
     public function getAvailableBuiltInFields(): array
     {
-        $fields = [];
-        foreach ($this->builtInFields as $handle => $config) {
-            $fields[$handle] = $config['label'];
-        }
-        return $fields;
+        return array_map(function($config) {
+            return $config['label'];
+        }, $this->builtInFields);
     }
 
     /**
@@ -81,6 +81,9 @@ class FrontMatterService extends Component
      *
      * @param ElementInterface $element
      * @return array
+     * @throws InvalidFieldException
+     * @throws Exception
+     * @throws \yii\base\Exception
      */
     public function resolveFrontMatterFields(ElementInterface $element): array
     {
@@ -116,6 +119,11 @@ class FrontMatterService extends Component
         return $fields;
     }
 
+    /**
+     * @throws \yii\base\Exception
+     * @throws InvalidFieldException
+     * @throws Exception
+     */
     public function generateFrontMatter(Page $page, ?ElementInterface $element): string
     {
         // If no element, we cannot resolve fields with inheritance
@@ -154,6 +162,12 @@ class FrontMatterService extends Component
                     if ($value !== '' && $value !== null) {
                         $data[$label] = $value;
                     }
+                }
+            } elseif (str_starts_with($handle, 'seomatic:')) {
+                [, $seoKey] = explode(':', $handle, 2);
+                $value = FieldDiscoveryService::resolveSeoValue($element, $seoKey);
+                if ($value !== '') {
+                    $data[$label] = $value;
                 }
             } elseif (str_starts_with($handle, 'field:')) {
                 $fieldHandle = substr($handle, 6); // Remove 'field:' prefix

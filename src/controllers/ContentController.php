@@ -80,8 +80,8 @@ class ContentController extends Controller
 
         $elementType = Craft::$app->getRequest()->getQueryParam('elementType', Entry::class);
         $contentSettings = Llmify::getInstance()->settings;
-        $helperService = Llmify::getInstance()->helper;
-        $currentSiteId = $helperService->getCurrentCpSiteId();
+        $currentSiteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
+        $fieldDiscovery = Llmify::getInstance()->fieldDiscovery;
 
         $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId, $elementType);
 
@@ -92,13 +92,13 @@ class ContentController extends Controller
         if ($elementType === Entry::class) {
             $section = Craft::$app->entries->getSectionById($sectionId);
             $groupName = $section ? $section->name : '';
-            $textFieldOptions = $section ? $helperService->getTextFieldsForSection($section) : [];
-            $frontMatterFieldOptions = $section ? $helperService->getFrontMatterFieldOptions($section) : [];
+            $textFieldOptions = $section ? $fieldDiscovery->getSourceOptions($section) : [];
+            $frontMatterFieldOptions = $section ? $fieldDiscovery->getFrontMatterOptions($section) : [];
         } elseif (HelperService::isCommerceInstalled() && $elementType === \craft\commerce\elements\Product::class) {
             $productType = \craft\commerce\Plugin::getInstance()->getProductTypes()->getProductTypeById($sectionId);
             $groupName = $productType ? $productType->name : '';
-            $textFieldOptions = $productType ? $helperService->getTextFieldsForProductType($productType) : [];
-            $frontMatterFieldOptions = $productType ? $helperService->getFrontMatterFieldOptions(null, null, $productType) : [];
+            $textFieldOptions = $productType ? $fieldDiscovery->getSourceOptions($productType) : [];
+            $frontMatterFieldOptions = $productType ? $fieldDiscovery->getFrontMatterOptions(null, null, $productType) : [];
         }
 
         // Get inherited front matter fields from site settings

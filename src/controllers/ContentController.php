@@ -7,6 +7,7 @@ use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\services\HelperService;
@@ -163,8 +164,12 @@ class ContentController extends Controller
 
     public function actionRedirect(): Response
     {
-        // As there is no dashboard we simply redirect to content
-        $targetUrl = UrlHelper::cpUrl('llmify/content');
-        return $this->redirect($targetUrl);
+        $currentUser = Craft::$app->getUser()->getIdentity();
+
+        if ($currentUser->can(Constants::PERMISSION_VIEW_DASHBOARD)) {
+            return $this->redirect(UrlHelper::cpUrl('llmify/dashboard'));
+        }
+
+        return $this->redirect(UrlHelper::cpUrl('llmify/content'));
     }
 }

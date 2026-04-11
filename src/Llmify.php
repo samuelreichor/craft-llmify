@@ -33,6 +33,7 @@ use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\BotDetectionService;
+use samuelreichor\llmify\services\DashboardService;
 use samuelreichor\llmify\services\FieldDiscoveryService;
 use samuelreichor\llmify\services\FrontMatterService;
 use samuelreichor\llmify\services\HelperService;
@@ -66,6 +67,7 @@ use yii\log\FileTarget;
  * @property-read RequestService $request
  * @property-read FrontMatterService $frontMatter
  * @property-read BotDetectionService $botDetection
+ * @property-read DashboardService $dashboard
  */
 class Llmify extends Plugin
 {
@@ -89,6 +91,7 @@ class Llmify extends Plugin
                 'request' => RequestService::class,
                 'frontMatter' => FrontMatterService::class,
                 'botDetection' => BotDetectionService::class,
+                'dashboard' => DashboardService::class,
             ],
         ];
     }
@@ -136,6 +139,10 @@ class Llmify extends Plugin
         $subNavs = [];
         $item = parent::getCpNavItem();
         $currentUser = Craft::$app->getUser()->getIdentity();
+
+        if ($currentUser->can(Constants::PERMISSION_VIEW_DASHBOARD)) {
+            $subNavs['dashboard'] = ['label' => 'Dashboard', 'url' => 'llmify/dashboard'];
+        }
 
         if ($currentUser->can(Constants::PERMISSION_EDIT_CONTENT)) {
             $subNavs['content'] = ['label' => 'Content', 'url' => 'llmify/content'];
@@ -289,6 +296,7 @@ class Llmify extends Plugin
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
                 $event->rules['llmify'] = 'llmify/content/redirect';
+                $event->rules['llmify/dashboard'] = 'llmify/dashboard/index';
                 $event->rules['llmify/content'] = 'llmify/content/index';
                 $event->rules['llmify/content/<sectionId:\d+>'] = 'llmify/content/edit-section';
                 $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
@@ -525,17 +533,20 @@ class Llmify extends Plugin
                 $event->permissions[] = [
                     'heading' => 'LLMify',
                     'permissions' => [
-                        Constants::PERMISSION_GENERATE => [
-                            'label' => 'Generate Markdown',
-                        ],
-                        Constants::PERMISSION_CLEAR => [
-                            'label' => 'Clear Markdown',
+                        Constants::PERMISSION_VIEW_DASHBOARD => [
+                            'label' => 'View Dashboard',
                         ],
                         Constants::PERMISSION_EDIT_CONTENT => [
                             'label' => 'Edit Content Settings',
                         ],
                         Constants::PERMISSION_EDIT_SITE => [
                             'label' => 'Edit Site Settings',
+                        ],
+                        Constants::PERMISSION_GENERATE => [
+                            'label' => 'Generate Markdown',
+                        ],
+                        Constants::PERMISSION_CLEAR => [
+                            'label' => 'Clear Markdown',
                         ],
                         Constants::PERMISSION_VIEW_SIDEBAR_PANEL => [
                             'label' => 'View sidebar panel on element edit pages',

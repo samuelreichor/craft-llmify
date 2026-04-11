@@ -1,0 +1,27 @@
+{#
+  Circular progress indicator.
+  Pass `percent` (0–100).
+#}
+{% set percent = percent|default(0)|round %}
+{% set radius = 20 %}
+{% set circumference = 2 * 3.14159 * radius %}
+{% set offset = circumference - (percent / 100) * circumference %}
+
+{% if percent >= 80 %}
+    {% set colorClass = 'green' %}
+{% elseif percent >= 50 %}
+    {% set colorClass = 'orange' %}
+{% else %}
+    {% set colorClass = 'red' %}
+{% endif %}
+
+<div class="llmify-circle-progress">
+    <svg viewBox="0 0 48 48">
+        <circle class="llmify-circle-bg" cx="24" cy="24" r="{{ radius }}"/>
+        <circle class="llmify-circle-fill {{ colorClass }}"
+                cx="24" cy="24" r="{{ radius }}"
+                stroke-dasharray="{{ circumference }}"
+                stroke-dashoffset="{{ offset }}"/>
+    </svg>
+    <span class="llmify-circle-label">{{ percent }}%</span>
+</div>

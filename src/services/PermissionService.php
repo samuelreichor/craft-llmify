@@ -38,6 +38,19 @@ class PermissionService
     /**
      * @throws Throwable
      */
+    public static function requireViewDashboard(): bool
+    {
+        $user = Craft::$app->getUser()->getIdentity();
+        if (!$user->can(Constants::PERMISSION_VIEW_DASHBOARD)) {
+            throw new ForbiddenHttpException();
+        }
+
+        return true;
+    }
+
+    /**
+     * @throws Throwable
+     */
     public static function canGenerate(): bool
     {
         $user = Craft::$app->getUser()->getIdentity();

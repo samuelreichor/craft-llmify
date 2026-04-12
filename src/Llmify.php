@@ -13,6 +13,7 @@ use craft\events\ElementEvent;
 use craft\events\MoveElementEvent;
 use craft\events\MultiElementActionEvent;
 use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterPreviewTargetsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\events\SectionEvent;
@@ -124,6 +125,7 @@ class Llmify extends Plugin
         if (Craft::$app->request->getIsCpRequest()) {
             $this->registerSettingEvents();
             $this->registerGeneralCpEvents();
+            $this->registerPreviewTargets();
 
             if (Craft::$app->edition === CmsEdition::Pro) {
                 $this->registerUserPermissionEvents();
@@ -326,6 +328,40 @@ class Llmify extends Plugin
                     $product = $event->sender;
                     $event->html .= $this->refresh->getSidebarHtml($product);
                 },
+            );
+        }
+    }
+
+    private function registerPreviewTargets(): void
+    {
+        Event::on(
+            Entry::class,
+            Element::EVENT_REGISTER_PREVIEW_TARGETS,
+            static function(RegisterPreviewTargetsEvent $event) {
+                /** @var Entry $entry */
+                $entry = $event->sender;
+                if ($entry->uri !== null) {
+                    $event->previewTargets[] = [
+                        'label' => '📄 ' . Craft::t('llmify', 'Markdown Preview'),
+                        'url' => HelperService::getMarkdownUrl($entry->uri, $entry->siteId),
+                    ];
+                }
+            }
+        );
+
+        if (HelperService::isCommerceInstalled()) {
+            Event::on(
+                \craft\commerce\elements\Product::class,
+                Element::EVENT_REGISTER_PREVIEW_TARGETS,
+                static function(RegisterPreviewTargetsEvent $event) {
+                    $product = $event->sender;
+                    if ($product->uri !== null) {
+                        $event->previewTargets[] = [
+                            'label' => '📄 ' . Craft::t('llmify', 'Markdown Preview'),
+                            'url' => HelperService::getMarkdownUrl($product->uri, $product->siteId),
+                        ];
+                    }
+                }
             );
         }
     }

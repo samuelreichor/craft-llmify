@@ -233,8 +233,17 @@ class MarkdownService extends Component
 
         $markdownRaw = $converter->convert($html);
 
-        // Remove empty links left behind after image/node removal (e.g. [](url) or [ ](url))
-        $markdownRaw = preg_replace('/\[\s*]\([^)]*\)/', '', $markdownRaw);
+        // Clean up markdown links: strip leftover HTML tags and normalize whitespace
+        $markdownRaw = preg_replace_callback('/\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^)]+)\)/', function($match) {
+            $text = trim(preg_replace('/\s+/', ' ', strip_tags($match[1])));
+            if ($text === '') {
+                return '';
+            }
+            return "[{$text}]({$match[2]})";
+        }, $markdownRaw);
+
+        // Remove empty list items left behind after node removal
+        $markdownRaw = preg_replace('/^[ \t]*-[ \t]*$/m', '', $markdownRaw);
 
         // Decode HTML entities (e.g. &amp; → &, &nbsp; → space)
         $markdownRaw = html_entity_decode($markdownRaw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -250,13 +259,19 @@ class MarkdownService extends Component
      */
     private function removeTags(string $html): string
     {
+        // Fix malformed HTML where attributes are glued together without spaces
+        // (e.g. class="foo"src="bar") — PHPHtmlParser breaks on these, outputting
+        // partial attribute values as text nodes
+        $html = preg_replace('/"([a-zA-Z-]+=)/', '" $1', $html);
+
         $dom = new Dom();
         $dom->loadStr($html);
         $excludedClass = $this->getExcludeClass();
-        $nodesToRemove = $dom->find($excludedClass);
 
-        foreach ($nodesToRemove as $node) {
-            $node->delete();
+        if ($excludedClass !== '') {
+            foreach ($dom->find($excludedClass) as $node) {
+                $node->delete();
+            }
         }
 
         return $dom;

@@ -15,7 +15,7 @@ class PluginSettings extends Model
     public array $markdownConfig = [
         'strip_tags' => true,
         'header_style' => 'atx',
-        'remove_nodes' => 'img picture style form button input select option svg script nav noscript',
+        'remove_nodes' => 'img picture style form button input select option svg script nav noscript video audio source',
     ];
     public array $excludeClasses = [
         [

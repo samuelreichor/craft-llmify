@@ -2,7 +2,6 @@
 
 namespace samuelreichor\llmify\services;
 
-use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\elements\Entry;
@@ -159,11 +158,12 @@ class FieldDiscoveryService extends Component
     private function getTextFieldsFromLayout(FieldLayout $layout): array
     {
         $textFields = [];
-        foreach ($layout->getCustomFields() as $field) {
+        foreach ($layout->getCustomFieldElements() as $layoutElement) {
+            $field = $layoutElement->getField();
             if ($this->isTextField($field)) {
                 $textFields[] = [
-                    'label' => $field->name,
-                    'value' => $field->handle,
+                    'label' => $layoutElement->label(),
+                    'value' => $layoutElement->attribute(),
                 ];
             }
         }
@@ -181,23 +181,31 @@ class FieldDiscoveryService extends Component
             return [];
         }
 
-        $allFieldHandles = [];
+        $allFieldsByHandle = [];
         foreach ($entryTypes as $entryType) {
-            $textFields = array_filter($entryType->getCustomFields(), fn($field) => $this->isTextField($field));
-            $allFieldHandles[] = array_map(fn($field) => $field->handle, $textFields);
+            $fieldsInType = [];
+            foreach ($entryType->getFieldLayout()->getCustomFieldElements() as $layoutElement) {
+                $field = $layoutElement->getField();
+                if ($this->isTextField($field)) {
+                    $handle = $layoutElement->attribute();
+                    $fieldsInType[$handle] = [
+                        'label' => $layoutElement->label(),
+                        'value' => $handle,
+                    ];
+                }
+            }
+            $allFieldsByHandle[] = $fieldsInType;
         }
 
-        $commonHandles = array_intersect(...$allFieldHandles);
-        $result = [];
+        if (count($allFieldsByHandle) === 1) {
+            return array_values($allFieldsByHandle[0]);
+        }
 
-        foreach ($commonHandles as $handle) {
-            $field = Craft::$app->fields->getFieldByHandle($handle);
-            if ($field) {
-                $result[] = [
-                    'label' => $field->name,
-                    'value' => $field->handle,
-                ];
-            }
+        $commonKeys = array_keys(array_intersect_key(...$allFieldsByHandle));
+
+        $result = [];
+        foreach ($commonKeys as $handle) {
+            $result[] = $allFieldsByHandle[0][$handle];
         }
 
         return $result;
@@ -218,17 +226,23 @@ class FieldDiscoveryService extends Component
         foreach ($entryTypes as $entryType) {
             $contentBlockFieldsInType = [];
 
-            foreach ($entryType->getCustomFields() as $field) {
+            foreach ($entryType->getFieldLayout()->getCustomFieldElements() as $layoutElement) {
+                $field = $layoutElement->getField();
                 if (!$field instanceof ContentBlock) {
                     continue;
                 }
 
-                foreach ($field->getFieldLayout()->getCustomFields() as $nestedField) {
+                $cbHandle = $layoutElement->attribute();
+                $cbLabel = $layoutElement->label();
+
+                foreach ($field->getFieldLayout()->getCustomFieldElements() as $nestedLayoutElement) {
+                    $nestedField = $nestedLayoutElement->getField();
                     if ($this->isTextField($nestedField)) {
-                        $key = $field->handle . '.' . $nestedField->handle;
+                        $nestedHandle = $nestedLayoutElement->attribute();
+                        $key = $cbHandle . '.' . $nestedHandle;
                         $contentBlockFieldsInType[$key] = [
-                            'contentBlockName' => $field->name,
-                            'fieldName' => $nestedField->name,
+                            'contentBlockName' => $cbLabel,
+                            'fieldName' => $nestedLayoutElement->label(),
                         ];
                     }
                 }

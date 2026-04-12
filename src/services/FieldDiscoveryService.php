@@ -299,6 +299,8 @@ class FieldDiscoveryService extends Component
 
         /** @var \nystudio107\seomatic\Seomatic $seomatic */
         $seomatic = \nystudio107\seomatic\Seomatic::$plugin;
+        // Reset preview flag so SEOmatic reloads containers for each element
+        \nystudio107\seomatic\Seomatic::$previewingMetaContainers = false;
         $seomatic->metaContainers->previewMetaContainers($uri, (int)$element->siteId, true, true, $element);
         $seomatic->metaContainers->parseGlobalVars();
 

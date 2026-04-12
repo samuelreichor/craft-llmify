@@ -126,6 +126,15 @@ class LlmsService extends Component
         $markdownService = Llmify::getInstance()->markdown;
         $allSettings = $settingsService->getContentSettingsBySiteId($this->currentSiteId);
 
+        // Index existing pages by elementId for fast lookup
+        $groupedPages = $markdownService->getGroupedPagesForSite($this->currentSiteId);
+        $pagesByElementId = [];
+        foreach ($groupedPages as $pages) {
+            foreach ($pages as $page) {
+                $pagesByElementId[$page->elementId] = $page;
+            }
+        }
+
         foreach ($allSettings as $contentSetting) {
             if (!$markdownService->isGroupServable($contentSetting->groupId, $this->currentSiteId, $contentSetting->elementType)) {
                 continue;
@@ -144,16 +153,47 @@ class LlmsService extends Component
                     continue;
                 }
 
-                $metadata = new MetadataService($element);
-                $title = $metadata->getLlmTitle();
-                $description = $metadata->getLlmDescription();
-                $url = $shouldUseRealUrls ? $element->getUrl() : HelperService::getMarkdownUrl($element->uri);
+                // Use stored page data if available, otherwise resolve live
+                $page = $pagesByElementId[$element->id] ?? null;
+                if ($page) {
+                    $title = $page->title;
+                    $description = $page->description;
+                } else {
+                    $metadata = new MetadataService($element);
+                    $title = $metadata->getLlmTitle();
+                    $description = $metadata->getLlmDescription();
+                }
 
+                $url = $shouldUseRealUrls ? $element->getUrl() : HelperService::getMarkdownUrl($element->uri);
                 $content .= $this->constructUrl($title, $url, $description);
             }
         }
 
         return $content;
+    }
+
+    /**
+     * Find elements for a given content setting.
+     *
+     * @return array
+     */
+    private function findElementsForContentSetting(ContentSettings $contentSetting): array
+    {
+        if ($contentSetting->elementType === Entry::class) {
+            return Entry::find()
+                ->sectionId($contentSetting->groupId)
+                ->siteId($this->currentSiteId)
+                ->all();
+        }
+
+        if (HelperService::isCommerceInstalled() && $contentSetting->elementType === \craft\commerce\elements\Product::class) {
+            return \craft\commerce\elements\Product::find()
+                ->typeId($contentSetting->groupId)
+                ->siteId($this->currentSiteId)
+                ->all();
+        }
+
+        return [];
     }
 
     private function constructSectionHeader(ContentSettings $metaData): string
@@ -225,29 +265,5 @@ class LlmsService extends Component
         }
 
         return $content;
-    }
-
-    /**
-     * Find elements for a given content setting
-     *
-     * @return array
-     */
-    private function findElementsForContentSetting(ContentSettings $contentSetting): array
-    {
-        if ($contentSetting->elementType === Entry::class) {
-            return Entry::find()
-                ->sectionId($contentSetting->groupId)
-                ->siteId($this->currentSiteId)
-                ->all();
-        }
-
-        if (HelperService::isCommerceInstalled() && $contentSetting->elementType === \craft\commerce\elements\Product::class) {
-            return \craft\commerce\elements\Product::find()
-                ->typeId($contentSetting->groupId)
-                ->siteId($this->currentSiteId)
-                ->all();
-        }
-
-        return [];
     }
 }

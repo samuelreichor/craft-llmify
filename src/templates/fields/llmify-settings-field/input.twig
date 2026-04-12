@@ -115,7 +115,7 @@
       name: name ~ '[frontMatterFields]',
       id: frontMatterFieldsId,
       cols: frontMatterFieldsCols,
-      rows: value.frontMatterFields ?? defaultFrontMatterFields,
+      rows: isOverrideFrontMatterActive and value.frontMatterFields ? value.frontMatterFields : defaultFrontMatterFields,
       addRowLabel: "Add a field",
       allowAdd: true,
       allowDelete: true,

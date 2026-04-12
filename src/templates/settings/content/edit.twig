@@ -140,7 +140,7 @@
         }
       } %}
 
-    {% set displayedFrontMatterFields = settings.frontMatterFields|length ? settings.frontMatterFields : inheritedFrontMatterFields %}
+    {% set displayedFrontMatterFields = (settings.overrideFrontMatter ?? false) and settings.frontMatterFields|length ? settings.frontMatterFields : inheritedFrontMatterFields %}
 
     <div id="frontMatterFieldsWrapper" class="{% if not (settings.overrideFrontMatter ?? false) %}fields-disabled{% endif %}">
         {{ forms.editableTableField({

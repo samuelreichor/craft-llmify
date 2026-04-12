@@ -47,7 +47,12 @@
     {{ hiddenInput('siteId', siteId) }}
     {{ hiddenInput('elementType', elementType) }}
 
-    <h2 style="margin-top:0">Section Settings</h2>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0; margin-bottom: 24px;">
+        <h2 style="margin: 0;">Section Settings</h2>
+        {% if currentUser.can('llmify:edit-site') %}
+            <a href="{{ cpUrl('llmify/globals', { site: selectedSite.handle }) }}" class="go" style="font-size: 13px;">Site Settings</a>
+        {% endif %}
+    </div>
     {{ forms.lightswitchField({
         label: 'Enable for Section',
         instructions: 'Activates or deactivates LLM processing for all elements within this group for the current site. If turned off, no content from this group will be processed.',

@@ -15,6 +15,8 @@
 
 {% set enabledSwitchId = name ~ 'enabled' %}
 
+<div class="llmify-settings-field">
+
 {# Enable/Disable Section #}
 {{ forms.lightswitchField({
   label: 'Include in LLMify',
@@ -123,6 +125,8 @@
     }) }}
 </div>
 
+</div>
+
 {% js %}
 (function() {
     // Use vanilla JS with proper selectors
@@ -215,12 +219,19 @@
 {% endjs %}
 
 {% css %}
+    .llmify-settings-field {
+        border: 1px solid var(--gray-200);
+        border-radius: var(--large-border-radius);
+        padding: var(--xl);
+    }
+
     .fields-disabled {
         pointer-events: none;
         opacity: 0.5;
     }
 {% endcss %}
 
+{% if currentUser.can('llmify:edit-content') %}
 {% js %}
 (function() {
     // Add section settings link to the field heading
@@ -240,8 +251,13 @@
             var flexGrow = heading.querySelector(':scope > .flex-grow');
             if (flexGrow) {
                 flexGrow.before(link);
+            } else {
+                heading.style.display = 'flex';
+                heading.style.alignItems = 'center';
+                heading.appendChild(link);
             }
         }
     }
 })();
 {% endjs %}
+{% endif %}

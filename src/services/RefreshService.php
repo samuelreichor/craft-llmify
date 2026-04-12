@@ -239,19 +239,90 @@ class RefreshService extends Component
             return '';
         }
 
-        if (!$this->isRefreshableElement($element)) {
+        // Main plugin switch — hide sidebar completely
+        if (!HelperService::isMarkdownCreationEnabled()) {
             return '';
         }
 
-        $uri = $element->uri;
-        if ($uri === null) {
+        // Structural checks — element must be entry/product, not draft, not owned, have URI
+        if (!($element instanceof Entry) && !$this->isCommerceProduct($element)) {
             return '';
         }
+
+        if (ElementHelper::isDraftOrRevision($element)) {
+            return '';
+        }
+
+        if ($element instanceof Entry && $element->getOwnerId()) {
+            return '';
+        }
+
+        if ($element->uri === null) {
+            return '';
+        }
+
+        $disabledReason = $this->getDisabledReason($element);
 
         return Html::beginTag('fieldset', ['class' => 'llmify-sidebar']) .
             Html::tag('legend', 'Llmify', ['class' => 'h6']) .
-            Html::tag('div', self::sidebarHtml($element), ['class' => 'meta']) .
+            Html::tag('div', $disabledReason !== null
+                ? self::disabledSidebarHtml($disabledReason)
+                : self::sidebarHtml($element), ['class' => 'meta']) .
             Html::endTag('fieldset');
+    }
+
+    /**
+     * Returns the reason LLMify is disabled for this element, or null if it's active.
+     *
+     * @throws \yii\base\Exception
+     */
+    private function getDisabledReason(ElementInterface $element): ?string
+    {
+        $settingsService = Llmify::getInstance()->settings;
+        $groupId = HelperService::getGroupIdForElement($element);
+
+        if ($groupId === null) {
+            return null;
+        }
+
+        $globalSettings = $settingsService->getGlobalSetting($element->siteId);
+
+        if (!$globalSettings->enabled) {
+            $currentUser = Craft::$app->getUser()->getIdentity();
+            if ($currentUser && $currentUser->can(Constants::PERMISSION_EDIT_SITE)) {
+                $site = Craft::$app->getSites()->getSiteById($element->siteId);
+                $url = UrlHelper::cpUrl('llmify/globals', $site ? ['site' => $site->handle] : []);
+                $label = Html::a('Site Settings', $url);
+            } else {
+                $label = 'Site Settings';
+            }
+            return 'LLMify disabled through ' . $label;
+        }
+
+        $elementType = HelperService::getElementTypeForElement($element);
+        $contentSettings = $settingsService->getContentSetting($groupId, $element->siteId, $elementType);
+
+        if (!$contentSettings->enabled) {
+            $currentUser = Craft::$app->getUser()->getIdentity();
+            if ($currentUser && $currentUser->can(Constants::PERMISSION_EDIT_CONTENT)) {
+                $url = UrlHelper::cpUrl('llmify/content/' . $groupId, ['elementType' => $elementType]);
+                $label = Html::a('Content Settings', $url);
+            } else {
+                $label = 'Content Settings';
+            }
+            return 'LLMify disabled through ' . $label;
+        }
+
+        if (HelperService::isElementExcluded($element)) {
+            return 'LLMify disabled through Entry Settings';
+        }
+
+        return null;
+    }
+
+    private static function disabledSidebarHtml(string $reason): string
+    {
+        return '<p style="padding-block: var(--s); margin: 0; color: var(--gray-500);">' . $reason . '</p>';
     }
 
     /**
@@ -266,6 +337,7 @@ class RefreshService extends Component
         ->select([
             'dateUpdated',
             'id',
+            'content',
         ])
         ->from([Constants::TABLE_PAGES])
         ->where(['elementId' => $element->id, 'siteId' => $element->siteId])
@@ -274,7 +346,8 @@ class RefreshService extends Component
         return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
             'isRefreshable' => true,
             'page' => $page,
-            'isEnabled' => HelperService::isMarkdownCreationEnabled(),
+            'canGenerate' => PermissionService::canGenerate(),
+            'canClear' => PermissionService::canClear(),
             'markdownUrl' => HelperService::getMarkdownUrl($element->uri, $element->siteId),
             'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page?elementId=' . $element->id . '&siteId=' . $element->siteId),
             'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page?elementId=' . $element->id . '&siteId=' . $element->siteId),

@@ -1,10 +1,10 @@
 {% import '_includes/forms' as forms %}
 
 {% set markdownExists = page != null %}
+{% set markdownEmpty = markdownExists and (page.content is empty) %}
 <div class="data">
   <div class="heading">Status</div>
   <div class="value statusMsg" style="justify-content: space-between">
-    {% if isEnabled %}
     <p>
       {% if markdownExists %}
         <a href="{{ markdownUrl }}" target="_blank" rel="noopener">Generated</a>
@@ -12,32 +12,41 @@
         Not generated
       {% endif %}
     </p>
-    {% else %}
-      <p>Plugin disabled</p>
-    {% endif %}
   </div>
+  {% if markdownEmpty %}
+    <div class="heading"></div>
+    <div class="value">
+      <p class="warning with-icon" style="margin: 0;">
+        Markdown empty. Check your <a href="https://samuelreichor.at/libraries/craft-llmify/usage/content-control" target="_blank" rel="noopener">template setup</a> for more information.
+      </p>
+    </div>
+  {% endif %}
   {% if markdownExists %}
     <div class="heading status-update">Last Updated</div>
     <div class="value status-update">{{ page.dateUpdated|datetime('short') }}</div>
   {% endif %}
-  {% if isEnabled %}
-    <div class="llmify-btn-group">
-      {{ tag('button', {
-        text: 'Update',
-        class: 'btn primary generate',
-        data: {
-          action: generateActionUrl,
-        },
-      }) }}
+  {% if canGenerate or canClear %}
+  <div class="llmify-btn-group">
+    {% if canGenerate %}
+    {{ tag('button', {
+      text: 'Update',
+      class: 'btn primary generate',
+      data: {
+        action: generateActionUrl,
+      },
+    }) }}
+    {% endif %}
 
-      {{ tag('button', {
-        text: 'Clear',
-        class: 'btn secondary clear',
-        data: {
-          action: clearActionUrl,
-        },
-      }) }}
-    </div>
+    {% if canClear %}
+    {{ tag('button', {
+      text: 'Clear',
+      class: 'btn secondary clear',
+      data: {
+        action: clearActionUrl,
+      },
+    }) }}
+    {% endif %}
+  </div>
   {% endif %}
 </div>
 
@@ -91,17 +100,21 @@
           }
         })
   }
-  generateBtn.addEventListener('click', (e) => {
-    e.preventDefault()
-    const actionUrl = generateBtn.dataset.action;
-    sendActionRequest(actionUrl, 'Updated')
-  })
+  if (generateBtn) {
+    generateBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      const actionUrl = generateBtn.dataset.action;
+      sendActionRequest(actionUrl, 'Updated')
+    })
+  }
 
-  clearBtn.addEventListener('click', (e) => {
-    e.preventDefault()
-    const actionUrl = clearBtn.dataset.action;
-    sendActionRequest(actionUrl, 'Cleared')
-  })
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      const actionUrl = clearBtn.dataset.action;
+      sendActionRequest(actionUrl, 'Cleared')
+    })
+  }
 </script>
 
 

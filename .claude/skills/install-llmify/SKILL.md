@@ -7,11 +7,6 @@ description: Install and configure the LLMify Craft CMS plugin step by step
 
 This guide tells an AI agent how to install and set up the LLMify plugin in a Craft CMS 5 project.
 
-## Prerequisites
-
-- Craft CMS 5 or later
-- PHP 8.2 or later
-
 ## Step 1: Install the Plugin
 
 Run the following commands in the Craft project root:

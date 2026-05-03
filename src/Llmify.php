@@ -31,6 +31,8 @@ use craft\web\UrlManager;
 use craft\web\View;
 use putyourlightson\blitz\services\CacheRequestService;
 use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
+use samuelreichor\llmify\enums\LlmRequestType;
+use samuelreichor\llmify\events\LlmRequestEvent;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\BotDetectionService;
@@ -72,6 +74,14 @@ use yii\log\FileTarget;
  */
 class Llmify extends Plugin
 {
+    /**
+     * Fired when the plugin serves any LLM-targeted response: a `.md` page,
+     * `llms.txt`, `llms-full.txt`, or a content-negotiated markdown response.
+     *
+     * @event LlmRequestEvent
+     */
+    public const EVENT_LLM_REQUEST = 'llmRequest';
+
     public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
     public bool $hasReadOnlyCpSettings = true;
@@ -215,6 +225,73 @@ class Llmify extends Plugin
     public function getSettingsResponse(): mixed
     {
         return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/settings'));
+    }
+
+    /**
+     * Fires `EVENT_LLM_REQUEST`. Skips listenerless calls so the request path
+     * stays free when no consumer (e.g. Insights) is wired up.
+     */
+    public function fireLlmRequest(
+        LlmRequestType $requestType,
+        ?int $siteId = null,
+        ?int $elementId = null,
+        ?string $elementType = null,
+        ?string $url = null,
+        ?string $uri = null,
+    ): void {
+        if (!$this->hasEventHandlers(self::EVENT_LLM_REQUEST)) {
+            return;
+        }
+
+        $request = Craft::$app->getRequest();
+        if ($request->getIsConsoleRequest()) {
+            return;
+        }
+
+        $userAgent = (string)$request->getHeaders()->get('User-Agent', '');
+        $botName = $userAgent !== '' ? $this->botDetection->getDetectedBotName($userAgent) : null;
+        $resolvedSiteId = $siteId ?? Craft::$app->getSites()->getCurrentSite()->id;
+
+        $event = new LlmRequestEvent();
+        $event->requestType = $requestType;
+        $event->url = $url ?? $request->getAbsoluteUrl();
+        $event->markdownPath = $this->resolveMarkdownPath($requestType, $uri, $resolvedSiteId);
+        $event->userAgent = $userAgent;
+        $event->botName = $botName;
+        $event->isBot = $botName !== null;
+        $event->siteId = $resolvedSiteId;
+        $event->elementId = $elementId;
+        $event->elementType = $elementType;
+        $event->timestamp = new \DateTime();
+
+        $this->trigger(self::EVENT_LLM_REQUEST, $event);
+    }
+
+    /**
+     * Direct requests already hit the markdown URL (e.g. `/llms.txt`,
+     * `/raw/news/news-1-2.md`) — use the request path. Negotiated requests
+     * hit the canonical page URL, so we have to derive the markdown path
+     * from the element URI via `HelperService::getMarkdownPath()`.
+     *
+     * Returns null when negotiated context is incomplete; consumers should
+     * fall back to `$event->url`.
+     */
+    private function resolveMarkdownPath(LlmRequestType $requestType, ?string $uri, int $siteId): ?string
+    {
+        if ($requestType === LlmRequestType::Direct) {
+            return '/' . ltrim(Craft::$app->getRequest()->getPathInfo(), '/');
+        }
+
+        if ($uri === null) {
+            return null;
+        }
+
+        try {
+            return HelperService::getMarkdownPath($uri, $siteId);
+        } catch (\Throwable $e) {
+            Craft::warning('Failed to resolve markdownPath: ' . $e->getMessage(), 'llmify');
+            return null;
+        }
     }
 
     private function registerSettingEvents(): void
@@ -403,6 +480,14 @@ class Llmify extends Plugin
                         $response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
                         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
                         $response->headers->set('Vary', 'Accept, User-Agent');
+
+                        $element = Craft::$app->getUrlManager()->getMatchedElement();
+                        $this->fireLlmRequest(
+                            LlmRequestType::Negotiated,
+                            elementId: $element ? $element->id : null,
+                            elementType: $element ? get_class($element) : null,
+                            uri: $element ? $element->uri : null,
+                        );
                     }
                 }
 

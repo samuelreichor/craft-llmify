@@ -184,4 +184,16 @@ class HelperService extends Component
 
         return UrlHelper::siteUrl("{$uri}.md", null, null, $siteId);
     }
+
+    /**
+     * Path-only counterpart to `getMarkdownUrl()` — returns `/raw/news/news-1-2.md`
+     * rather than an absolute URL. Useful for consumers (e.g. analytics) that
+     * key off paths and don't want to re-parse a site URL.
+     *
+     * @throws Exception
+     */
+    public static function getMarkdownPath(string $uri, ?int $siteId = null): string
+    {
+        return (string)parse_url(self::getMarkdownUrl($uri, $siteId), PHP_URL_PATH);
+    }
 }

@@ -22,6 +22,9 @@
     "craftcms/ecs": "dev-main",
     "craftcms/phpstan": "dev-main"
   },
+  "suggest": {
+    "samuelreichor/craft-insights": "Adds an LLM-bot analytics dashboard (consumes the EVENT_LLM_REQUEST event)."
+  },
   "autoload": {
     "psr-4": {
       "samuelreichor\\llmify\\": "src/"

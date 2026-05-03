@@ -31,6 +31,8 @@ use craft\web\UrlManager;
 use craft\web\View;
 use putyourlightson\blitz\services\CacheRequestService;
 use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
+use samuelreichor\llmify\enums\LlmRequestType;
+use samuelreichor\llmify\events\LlmRequestEvent;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\models\PluginSettings;
 use samuelreichor\llmify\services\BotDetectionService;
@@ -72,6 +74,14 @@ use yii\log\FileTarget;
  */
 class Llmify extends Plugin
 {
+    /**
+     * Fired when the plugin serves any LLM-targeted response: a `.md` page,
+     * `llms.txt`, `llms-full.txt`, or a content-negotiated markdown response.
+     *
+     * @event LlmRequestEvent
+     */
+    public const EVENT_LLM_REQUEST = 'llmRequest';
+
     public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = true;
     public bool $hasReadOnlyCpSettings = true;
@@ -215,6 +225,43 @@ class Llmify extends Plugin
     public function getSettingsResponse(): mixed
     {
         return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/settings'));
+    }
+
+    /**
+     * Fires `EVENT_LLM_REQUEST`. Skips listenerless calls so the request path
+     * stays free when no consumer (e.g. Insights) is wired up.
+     */
+    public function fireLlmRequest(
+        LlmRequestType $requestType,
+        ?int $siteId = null,
+        ?int $elementId = null,
+        ?string $elementType = null,
+        ?string $url = null,
+    ): void {
+        if (!$this->hasEventHandlers(self::EVENT_LLM_REQUEST)) {
+            return;
+        }
+
+        $request = Craft::$app->getRequest();
+        if ($request->getIsConsoleRequest()) {
+            return;
+        }
+
+        $userAgent = (string)$request->getHeaders()->get('User-Agent', '');
+        $botName = $userAgent !== '' ? $this->botDetection->getDetectedBotName($userAgent) : null;
+
+        $event = new LlmRequestEvent();
+        $event->requestType = $requestType;
+        $event->url = $url ?? $request->getAbsoluteUrl();
+        $event->userAgent = $userAgent;
+        $event->botName = $botName;
+        $event->isBot = $botName !== null;
+        $event->siteId = $siteId ?? Craft::$app->getSites()->getCurrentSite()->id;
+        $event->elementId = $elementId;
+        $event->elementType = $elementType;
+        $event->timestamp = new \DateTime();
+
+        $this->trigger(self::EVENT_LLM_REQUEST, $event);
     }
 
     private function registerSettingEvents(): void
@@ -399,6 +446,13 @@ class Llmify extends Plugin
                         $response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
                         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
                         $response->headers->set('Vary', 'Accept, User-Agent');
+
+                        $element = Craft::$app->getUrlManager()->getMatchedElement();
+                        $this->fireLlmRequest(
+                            LlmRequestType::Negotiated,
+                            elementId: $element ? $element->id : null,
+                            elementType: $element ? get_class($element) : null,
+                        );
                     }
                 }
 

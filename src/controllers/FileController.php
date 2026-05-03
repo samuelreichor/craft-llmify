@@ -6,6 +6,7 @@ use Craft;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
+use samuelreichor\llmify\enums\LlmRequestType;
 use samuelreichor\llmify\Llmify;
 use yii\base\Exception;
 use yii\web\NotFoundHttpException;
@@ -43,6 +44,8 @@ class FileController extends Controller
 
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
 
+        Llmify::getInstance()->fireLlmRequest(LlmRequestType::Direct);
+
         return $this->asRaw($fileContent);
     }
 
@@ -62,6 +65,8 @@ class FileController extends Controller
         }
 
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
+
+        Llmify::getInstance()->fireLlmRequest(LlmRequestType::Direct);
 
         return $this->asRaw($fileContent);
     }
@@ -83,6 +88,17 @@ class FileController extends Controller
         $canonicalUrl = UrlHelper::siteUrl($uri);
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
         Craft::$app->response->headers->set('Link', '<' . $canonicalUrl . '>; rel="canonical"');
+
+        // Resolve the element so we can store its canonical front-end URL —
+        // otherwise `/raw/__home__.md` and `/` would land in different rows
+        // for the same logical page.
+        $element = Craft::$app->getElements()->getElementByUri($uri, Craft::$app->getSites()->getCurrentSite()->id);
+        Llmify::getInstance()->fireLlmRequest(
+            LlmRequestType::Direct,
+            elementId: $element?->id,
+            elementType: $element ? get_class($element) : null,
+            url: $element?->getUrl(),
+        );
 
         return $this->asRaw($fileContent);
     }

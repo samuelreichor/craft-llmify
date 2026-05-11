@@ -149,6 +149,10 @@ class LlmsService extends Component
             $content .= $this->constructSectionHeader($contentSetting);
 
             foreach ($elements as $element) {
+                if ($element->uri === null) {
+                    continue;
+                }
+
                 if (HelperService::isElementExcluded($element)) {
                     continue;
                 }
@@ -165,6 +169,10 @@ class LlmsService extends Component
                 }
 
                 $url = $shouldUseRealUrls ? $element->getUrl() : HelperService::getMarkdownUrl($element->uri);
+                if ($url === null) {
+                    continue;
+                }
+
                 $content .= $this->constructUrl($title, $url, $description);
             }
         }

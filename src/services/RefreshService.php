@@ -166,6 +166,11 @@ class RefreshService extends Component
             return false;
         }
 
+        // Skip elements without a URI (e.g. section has no URL template in this site)
+        if ($element->uri === null || $element->getUrl() === null) {
+            return false;
+        }
+
         if (!$this->canRefreshElement($element)) {
             return false;
         }

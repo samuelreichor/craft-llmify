@@ -74,6 +74,27 @@ class HelperService extends Component
         return $element::class;
     }
 
+    /**
+     * Whether the group (section or product type) referenced by a content setting
+     * still has URLs in the given site. Returns false if the group was deleted
+     * or no longer has URLs in that site — in which case its content settings
+     * should be hidden from the CP, but the DB row is kept.
+     */
+    public static function groupHasUrlsInSite(int $groupId, int $siteId, string $elementType): bool
+    {
+        if ($elementType === Entry::class) {
+            $section = Craft::$app->entries->getSectionById($groupId);
+            return ($section?->getSiteSettings()[$siteId] ?? null)?->hasUrls ?? false;
+        }
+
+        if (self::isCommerceInstalled() && $elementType === \craft\commerce\elements\Product::class) {
+            $productType = \craft\commerce\Plugin::getInstance()->getProductTypes()->getProductTypeById($groupId);
+            return ($productType?->getSiteSettings()[$siteId] ?? null)?->hasUrls ?? false;
+        }
+
+        return false;
+    }
+
     public function getFieldOfTypeFromElement(ElementInterface $element, string $fieldClass): ?FieldInterface
     {
         $layout = $element->getFieldLayout();

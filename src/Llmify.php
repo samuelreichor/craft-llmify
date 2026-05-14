@@ -225,10 +225,11 @@ class Llmify extends Plugin
             Entries::EVENT_AFTER_SAVE_SECTION,
             function(SectionEvent $event) {
                 $section = $event->section;
-                $sectionId = $section->id;
-                $siteIds = $section->getSiteIds();
-                foreach ($siteIds as $siteId) {
-                    $this->settings->setContentSetting($sectionId, $siteId, Entry::class);
+                foreach ($section->getSiteSettings() as $siteId => $siteSetting) {
+                    if (!$siteSetting->hasUrls) {
+                        continue;
+                    }
+                    $this->settings->setContentSetting($section->id, $siteId, Entry::class);
                 }
             }
         );
@@ -254,8 +255,10 @@ class Llmify extends Plugin
                 \craft\commerce\services\ProductTypes::EVENT_AFTER_SAVE_PRODUCTTYPE,
                 function($event) {
                     $productType = $event->productType;
-                    $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
-                    foreach ($allSiteIds as $siteId) {
+                    foreach ($productType->getSiteSettings() as $siteId => $siteSetting) {
+                        if (!$siteSetting->hasUrls) {
+                            continue;
+                        }
                         $this->settings->setContentSetting($productType->id, $siteId, \craft\commerce\elements\Product::class);
                     }
                 }

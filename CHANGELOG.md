@@ -1,5 +1,20 @@
 # Release Notes for LLMify
 
+## 1.5.0 - 2026-04-14
+
+### Added
+- Sections can now have a custom order in the llms.txt and llms-full.txt via Content Settings.
+- Add template support for all plain text fields in site, content and llm field settings.
+
+### Improved
+- Improve AI bot detection by using https://raw.githubusercontent.com/ai-robots-txt/ai.robots.txt/main/robots.json.
+- Removes prerequirements in AI skill.
+
+### Fixed
+- Sections with no URLs won't show up anymore in the content settings and dashboard.
+- Fix 500 error if LLMify tries to generate markdown for an element without a URL.
+- Disable "Add a field" button when override front matter is false.
+
 ## 1.4.0 - 2026-04-11
 
 ### Added

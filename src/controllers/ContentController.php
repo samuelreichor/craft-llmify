@@ -5,6 +5,7 @@ namespace samuelreichor\llmify\controllers;
 use Craft;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
+use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\Constants;
@@ -59,6 +60,7 @@ class ContentController extends Controller
 
             if ($groupName) {
                 $settings[] = [
+                    'id' => $setting->id,
                     'status' => $setting->enabled,
                     'url' => UrlHelper::cpUrl("llmify/content/{$setting->groupId}", ['elementType' => $setting->elementType]),
                     'title' => $groupName,
@@ -164,6 +166,28 @@ class ContentController extends Controller
 
         $this->setSuccessFlash(Craft::t('app', 'Content Setting saved.'));
         return $this->redirectToPostedUrl();
+    }
+
+    /**
+     * @throws BadRequestHttpException
+     * @throws SiteNotFoundException
+     * @throws Throwable
+     */
+    public function actionReorder(): Response
+    {
+        PermissionService::requireEditContentSettings();
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+
+        $ids = Json::decode($this->request->getRequiredBodyParam('ids'));
+        if (!is_array($ids)) {
+            throw new BadRequestHttpException('Invalid reorder payload.');
+        }
+
+        $siteId = Llmify::getInstance()->helper->getCurrentCpSiteId();
+        Llmify::getInstance()->settings->reorderContentSettings($ids, $siteId);
+
+        return $this->asSuccess();
     }
 
     public function actionRedirect(): Response

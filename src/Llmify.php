@@ -72,7 +72,7 @@ use yii\log\FileTarget;
  */
 class Llmify extends Plugin
 {
-    public string $schemaVersion = '1.1.0';
+    public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
     public bool $hasReadOnlyCpSettings = true;
     public bool $hasCpSection = true;
@@ -303,6 +303,7 @@ class Llmify extends Plugin
                 $event->rules['llmify'] = 'llmify/content/redirect';
                 $event->rules['llmify/dashboard'] = 'llmify/dashboard/index';
                 $event->rules['llmify/content'] = 'llmify/content/index';
+                $event->rules['llmify/content/reorder'] = 'llmify/content/reorder';
                 $event->rules['llmify/content/<sectionId:\d+>'] = 'llmify/content/edit-section';
                 $event->rules['llmify/content/save-section-settings'] = 'llmify/content/save-section-settings';
                 $event->rules['llmify/globals'] = 'llmify/globals/index';

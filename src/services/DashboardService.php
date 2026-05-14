@@ -100,6 +100,10 @@ class DashboardService extends Component
             $groupType = null;
             $elementCount = 0;
 
+            if (!HelperService::groupHasUrlsInSite($setting->groupId, $siteId, $setting->elementType)) {
+                continue;
+            }
+
             if ($setting->elementType === Entry::class) {
                 $section = Craft::$app->entries->getSectionById($setting->groupId);
                 if ($section) {
@@ -181,6 +185,10 @@ class DashboardService extends Component
         $totalElements = 0;
         foreach ($contentSettings as $setting) {
             if (!$setting->enabled) {
+                continue;
+            }
+
+            if (!HelperService::groupHasUrlsInSite($setting->groupId, $siteId, $setting->elementType)) {
                 continue;
             }
 

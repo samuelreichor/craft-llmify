@@ -37,6 +37,10 @@ class ContentController extends Controller
             $groupType = null;
             $elementCount = 0;
 
+            if (!HelperService::groupHasUrlsInSite($setting->groupId, $currentSiteId, $setting->elementType)) {
+                continue;
+            }
+
             if ($setting->elementType === Entry::class) {
                 $section = Craft::$app->entries->getSectionById($setting->groupId);
                 if ($section) {

@@ -39,7 +39,7 @@
 
 {{ forms.selectField({
   label: 'LLM Title Source',
-  instructions: 'Choose a field to dynamically source the title, or select "Custom" to enter one manually.',
+  instructions: 'Field to use as the title, or `Custom` for a manual value.',
   id: llmTitleSourceId,
   name: name ~ '[llmTitleSource]',
   options: textFieldOptions,
@@ -48,7 +48,7 @@
 
 {{ forms.textField({
   label: 'LLM Title',
-  instructions: "Enter the static title for this entry. This field is only used if 'Custom' is selected in the source dropdown above.",
+  instructions: "Used when source is `Custom`. Supports Twig, e.g. `{title}` or `{author.fullName}`.",
   id: llmTitleFieldId,
   name: name ~ '[llmTitle]',
   value: value.llmTitle ?? '',
@@ -67,7 +67,7 @@
 
 {{ forms.selectField({
   label: 'LLM Description Source',
-  instructions: 'Choose a field to dynamically source the description, or select "Custom" to enter one manually.',
+  instructions: 'Field to use as the description, or `Custom` for a manual value.',
   id: llmDescriptionSourceId,
   name: name ~ '[llmDescriptionSource]',
   options: textFieldOptions,
@@ -76,7 +76,7 @@
 
 {{ forms.textField({
   label: 'LLM Description',
-  instructions: "Enter the static description for this entry. This field is only used if 'Custom' is selected in the source dropdown above.",
+  instructions: "Used when source is `Custom`. Supports Twig, e.g. `{title}` or `{author.fullName}`.",
   id: llmDescriptionFieldId,
   name: name ~ '[llmDescription]',
   value: value.llmDescription ?? '',

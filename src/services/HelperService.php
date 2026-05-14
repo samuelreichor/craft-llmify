@@ -77,7 +77,7 @@ class HelperService extends Component
     /**
      * Whether the group (section or product type) referenced by a content setting
      * still has URLs in the given site. Returns false if the group was deleted
-     * or no longer has URLs in that site — in which case its content settings
+     * or no longer has URLs in that site, in which case its content settings
      * should be hidden from the CP, but the DB row is kept.
      */
     public static function groupHasUrlsInSite(int $groupId, int $siteId, string $elementType): bool
@@ -141,6 +141,35 @@ class HelperService extends Component
         }
 
         return empty($fieldData['enabled']);
+    }
+
+    /**
+     * Render a user-supplied string as a Twig object template. Supports the
+     * shorthand `{name}` syntax that Craft uses for URI/title formats and
+     * Generated Fields. Plain strings without `{` skip Twig but still pass
+     * through the strip/trim sanitisation when `$stripTags` is true.
+     *
+     * Failures are logged and the original template is returned so a broken
+     * snippet in a CP setting can never crash the public llms.txt output.
+     */
+    public static function renderTwig(?string $template, mixed $object = null, bool $stripTags = true): string
+    {
+        if ($template === null || $template === '') {
+            return '';
+        }
+
+        if (!str_contains($template, '{')) {
+            return $stripTags ? trim(strip_tags($template)) : $template;
+        }
+
+        try {
+            $rendered = Craft::$app->getView()->renderObjectTemplate($template, $object ?? new \stdClass());
+        } catch (\Throwable $e) {
+            Craft::warning('LLMify Twig render failed: ' . $e->getMessage(), 'llmify');
+            $rendered = $template;
+        }
+
+        return $stripTags ? trim(strip_tags($rendered)) : $rendered;
     }
 
     /**

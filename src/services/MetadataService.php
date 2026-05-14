@@ -83,7 +83,7 @@ class MetadataService extends Component
         }
 
         if ($sourceHandle === 'custom') {
-            return $customValue ?? '';
+            return HelperService::renderTwig($customValue, $this->element);
         }
 
         if ($sourceHandle) {
@@ -117,7 +117,7 @@ class MetadataService extends Component
         }
 
         if ($sourceHandle === 'custom') {
-            return $customValue ?? '';
+            return HelperService::renderTwig($customValue, $this->element);
         }
 
         if ($sourceHandle) {

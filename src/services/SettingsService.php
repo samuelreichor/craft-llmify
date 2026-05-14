@@ -60,6 +60,15 @@ class SettingsService extends Component
         $contentRecord->groupId = $contentSettings->groupId;
         $contentRecord->elementType = $contentSettings->elementType;
 
+        if ($isNewsSetting && $contentSettings->sortOrder === null) {
+            $maxSortOrder = (int)(new DbQuery())
+                ->from(Constants::TABLE_META)
+                ->where(['siteId' => $contentSettings->siteId])
+                ->max('sortOrder');
+            $contentSettings->sortOrder = $maxSortOrder + 1;
+        }
+        $contentRecord->sortOrder = $contentSettings->sortOrder;
+
         $contentRecord->save();
 
         // on installation no refresh is needed
@@ -177,6 +186,40 @@ class SettingsService extends Component
     public function setContentSetting(int $groupId, int $siteId, string $elementType = Entry::class, bool $triggerRefresh = true): void
     {
         $this->getContentSetting($groupId, $siteId, $elementType, $triggerRefresh);
+    }
+
+    /**
+     * Reorder content settings within a site. Only IDs belonging to the given
+     * site are updated; unknown IDs are skipped silently.
+     *
+     * @param int[] $ids Content setting IDs in the desired order.
+     * @throws Exception
+     */
+    public function reorderContentSettings(array $ids, int $siteId): void
+    {
+        $db = Craft::$app->db;
+        $transaction = $db->beginTransaction();
+        try {
+            $sortOrder = 1;
+            foreach ($ids as $id) {
+                $db->createCommand()
+                    ->update(
+                        Constants::TABLE_META,
+                        ['sortOrder' => $sortOrder],
+                        ['id' => (int)$id, 'siteId' => $siteId]
+                    )
+                    ->execute();
+                $sortOrder++;
+            }
+            $transaction->commit();
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+            throw $e;
+        }
+
+        // Drop cache so next read returns new order
+        unset($this->contentSettingsBySiteId[$siteId]);
+        $this->allEnabledContentSettings = [];
     }
 
     /**
@@ -352,8 +395,10 @@ class SettingsService extends Component
                 'groupId',
                 'elementType',
                 'siteId',
+                'sortOrder',
             ])
-            ->from([Constants::TABLE_META]);
+            ->from([Constants::TABLE_META])
+            ->orderBy(['sortOrder' => SORT_ASC, 'id' => SORT_ASC]);
     }
 
     private function _createGlobalSettingsQuery(): DbQuery

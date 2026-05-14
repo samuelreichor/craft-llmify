@@ -21,6 +21,7 @@ use samuelreichor\llmify\Constants;
  * @property int $entryTypeId
  * @property int $siteId
  * @property bool $enabled
+ * @property int|null $sortOrder
  */
 class ContentSettingRecord extends ActiveRecord
 {

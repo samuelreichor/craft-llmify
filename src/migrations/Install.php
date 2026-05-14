@@ -86,6 +86,7 @@ class Install extends Migration
                     'id' => $this->primaryKey(),
                     'enabled' => $this->boolean()->notNull(),
                     'siteId' => $this->integer(),
+                    'sortOrder' => $this->smallInteger()->unsigned()->null(),
                     'groupId' => $this->integer(),
                     'elementType' => $this->string()->notNull()->defaultValue('craft\\elements\\Entry'),
                     'entryTypeId' => $this->integer(),

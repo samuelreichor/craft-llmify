@@ -73,6 +73,7 @@
         columns: columns,
         container: '#content-vue-admin-table',
         emptyMessage: 'No content settings exist yet.',
+        reorderAction: 'llmify/content/reorder',
         tableData: {{ settings|json_encode|raw }}
     });
 {% endjs %}

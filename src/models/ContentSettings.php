@@ -66,6 +66,10 @@ class ContentSettings extends Model
      * @var bool If section is enabled
      */
     public bool $enabled = false;
+    /**
+     * @var int|null Sort order within the site
+     */
+    public ?int $sortOrder = null;
 
     public function defineRules(): array
     {
@@ -80,6 +84,7 @@ class ContentSettings extends Model
                     'llmSectionDescription',
                 ], 'string',
             ],
+            ['sortOrder', 'integer'],
         ];
     }
 

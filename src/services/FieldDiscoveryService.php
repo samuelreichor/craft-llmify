@@ -17,7 +17,7 @@ class FieldDiscoveryService extends Component
 
     private const SOURCE_OPTION_BASE = [
         [
-            'label' => 'Custom Text',
+            'label' => 'Custom',
             'value' => 'custom',
         ],
         [

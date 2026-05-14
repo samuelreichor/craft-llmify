@@ -53,7 +53,7 @@
 
     {{ forms.textField({
         label: 'LLM Title',
-        instructions: "Define the main title for this site. This will be used as the primary heading in the generated llms.txt and full-llms.txt files to identify the content source.",
+        instructions: "Primary heading in `llms.txt`. Supports Twig, e.g. `{name}` for the site name.",
         id: 'llmTitle',
         name: 'llmTitle',
         value: settings.llmTitle,
@@ -61,7 +61,7 @@
 
     {{ forms.textField({
         label: 'LLM Description',
-        instructions: "Provide a high-level summary of this site's purpose. This description will appear below the main title in the generated text files, giving the LLM context about the content.",
+        instructions: "Short site description shown below the title. Supports Twig, e.g. `{name}`.",
         id: 'llmDescription',
         name: 'llmDescription',
         value: settings.llmDescription,
@@ -69,7 +69,7 @@
 
     {{ forms.textField({
         label: 'LLM Note',
-        instructions: "Add a small note or disclaimer that will be appended to the bottom of the llms.txt file. Useful for versioning or providing brief instructions to the LLM.",
+        instructions: "Optional footer note appended to `llms.txt`. Supports Twig.",
         id: 'llmNote',
         name: 'llmNote',
         value: settings.llmNote,

@@ -64,7 +64,7 @@
 
     {{ forms.textField({
         label: 'Section Title',
-        instructions: "Provide a descriptive title for the entire section. This title helps the LLM understand the general context of the elements contained within it (e.g., 'Company Blog Posts' or 'Product Documentation').",
+        instructions: "Section heading in `llms.txt`. Supports Twig, e.g. `{name}` for the section name.",
         id: 'llmSectionTitle',
         name: 'llmSectionTitle',
         value: settings.llmSectionTitle ?? ''
@@ -72,7 +72,7 @@
 
     {{ forms.textField({
         label: 'Section Description',
-        instructions: "Write a brief summary of this section's purpose. This gives the LLM a high-level understanding of the content's overall theme (e.g., 'Technical articles about modern web development').",
+        instructions: "Short section description. Supports Twig, e.g. `{name}`.",
         id: 'llmSectionDescription',
         name: 'llmSectionDescription',
         value: settings.llmSectionDescription ?? ''
@@ -84,7 +84,7 @@
 
     {{ forms.selectField({
         label: 'Default Title Source',
-        instructions: "Choose the source for each element's default title. Select an existing field (like the element's own 'Title') to use its content dynamically, or choose 'Custom' to define a static title in the field below.",
+        instructions: "Field to use as the element title, or `Custom` for a manual value.",
         id: 'llmTitleSource',
         name: 'llmTitleSource',
         options: textFieldOptions,
@@ -93,7 +93,7 @@
 
     {{ forms.textField({
         label: 'Default Title',
-        instructions: "Enter the static default title to be used for elements. This field is only used if 'Custom' is selected as the source above.",
+        instructions: "Used when source is `Custom`. Supports Twig, e.g. `{title}` or `{author.fullName}`.",
         id: 'llmTitle',
         name: 'llmTitle',
         value: settings.llmTitle ?? ''
@@ -101,7 +101,7 @@
 
     {{ forms.selectField({
         label: 'Default Description Source',
-        instructions: "Choose the source for each element's default description. You can map this to an existing text field (like a 'Summary' or 'Meta Description') or select 'Custom' to enter a manual default below.",
+        instructions: "Field to use as the element description, or `Custom` for a manual value.",
         id: 'llmDescriptionSource',
         name: 'llmDescriptionSource',
         options: textFieldOptions,
@@ -110,7 +110,7 @@
 
     {{ forms.textField({
         label: 'Default Description',
-        instructions: "Enter the static default description for elements. This field is only used if 'Custom' is selected in the source dropdown above.",
+        instructions: "Used when source is `Custom`. Supports Twig, e.g. `{title}` or `{author.fullName}`.",
         id: 'llmDescription',
         name: 'llmDescription',
         value: settings.llmDescription ?? '',

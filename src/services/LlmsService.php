@@ -63,8 +63,9 @@ class LlmsService extends Component
     public function constructIntro(): string
     {
         $markdown = '';
-        $llmTitle = $this->globalSettings->llmTitle;
-        $llmDescription = $this->globalSettings->llmDescription;
+        $site = Craft::$app->getSites()->getSiteById($this->currentSiteId);
+        $llmTitle = HelperService::renderTwig($this->globalSettings->llmTitle, $site);
+        $llmDescription = HelperService::renderTwig($this->globalSettings->llmDescription, $site);
 
         if ($llmTitle) {
             $markdown .= "# {$llmTitle}\n\n";
@@ -207,15 +208,40 @@ class LlmsService extends Component
     private function constructSectionHeader(ContentSettings $metaData): string
     {
         $content = '';
-        if ($metaData->llmSectionTitle) {
-            $content .= "\n## $metaData->llmSectionTitle\n\n";
+        $context = $this->resolveSectionContext($metaData);
+        $llmSectionTitle = HelperService::renderTwig($metaData->llmSectionTitle, $context);
+        $llmSectionDescription = HelperService::renderTwig($metaData->llmSectionDescription, $context);
+
+        if ($llmSectionTitle) {
+            $content .= "\n## {$llmSectionTitle}\n\n";
         }
 
-        if ($metaData->llmSectionDescription) {
-            $content .= "$metaData->llmSectionDescription\n\n";
+        if ($llmSectionDescription) {
+            $content .= "{$llmSectionDescription}\n\n";
         }
 
         return $content;
+    }
+
+    /**
+     * Resolves the Twig render context for a section-level content setting.
+     * Returns the section / product type if available, falling back to the site.
+     */
+    private function resolveSectionContext(ContentSettings $metaData): mixed
+    {
+        if ($metaData->elementType === Entry::class) {
+            $section = Craft::$app->entries->getSectionById($metaData->groupId);
+            if ($section) {
+                return $section;
+            }
+        } elseif (HelperService::isCommerceInstalled() && $metaData->elementType === \craft\commerce\elements\Product::class) {
+            $productType = \craft\commerce\Plugin::getInstance()->getProductTypes()->getProductTypeById($metaData->groupId);
+            if ($productType) {
+                return $productType;
+            }
+        }
+
+        return Craft::$app->getSites()->getSiteById($this->currentSiteId);
     }
 
     private function constructUrl(string $title, string $url, string $description): string
@@ -232,12 +258,13 @@ class LlmsService extends Component
 
     private function constructFooter(): string
     {
-        $llmNote = $this->globalSettings->llmNote;
+        $site = Craft::$app->getSites()->getSiteById($this->currentSiteId);
+        $llmNote = HelperService::renderTwig($this->globalSettings->llmNote, $site);
 
         $content = '';
         if ($llmNote) {
             $content .= "\n## Notes\n\n";
-            $content .= "$llmNote";
+            $content .= $llmNote;
         }
 
         return $content;

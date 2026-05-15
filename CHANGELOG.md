@@ -1,6 +1,17 @@
 # Release Notes for LLMify
 
-## 1.5.0 - 2026-04-14
+## 1.6.0 - 2026-05-16
+
+### Added
+- Add `EVENT_LLM_REQUEST` to allow [Insights](https://plugins.craftcms.com/insights) to collect data.
+- Add `getMarkdownPath()` helper
+- Add `LlmRequestType` enum
+
+### Improved
+- Change description db columns from string to text
+- Change field description of bot settings to be more descriptive
+
+## 1.5.0 - 2026-05-14
 
 ### Added
 - Sections can now have a custom order in the llms.txt and llms-full.txt via Content Settings.

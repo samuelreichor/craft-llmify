@@ -88,7 +88,7 @@
 
 {{ forms.editableTableField({
   label: "Additional Bot User Agents",
-  instructions: 'Add custom bot identifiers to detect in addition to the built-in list: GPTBot, ClaudeBot, ChatGPT-User, Amazonbot, Bytespider, CCBot, Google-Extended, FacebookBot, PerplexityBot, Applebot-Extended, cohere-ai, OAI-SearchBot, Claude-Web.',
+  instructions: 'Add custom bot identifiers to detect in addition to the built-in list. The built-in list is bundled from [ai-robots-txt](https://github.com/ai-robots-txt/ai.robots.txt) and can be refreshed with `php craft llmify/bots/sync`.',
   name: 'additionalBotUserAgents',
   id: 'additionalBotUserAgents',
   cols: botCols,

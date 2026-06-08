@@ -73,7 +73,7 @@ class RefreshService extends Component
         }
 
         $this->llmifyRefreshData->addSiteId($element->siteId);
-        $this->llmifyRefreshData->addUrl($element->getUrl());
+        $this->llmifyRefreshData->addUrl($element->getUrl(), $element->id, $element->siteId);
         $this->llmifyRefreshData->addElementId($element->id, $element::class);
     }
 

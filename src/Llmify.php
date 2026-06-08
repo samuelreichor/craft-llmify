@@ -115,12 +115,22 @@ class Llmify extends Plugin
         $this->registerTwigExtension();
 
         if (HelperService::isMarkdownCreationEnabled()) {
-            $this->registerGeneralEvents();
+            $isHeadless = $this->getSettings()->headlessMode;
+
+            // The Twig render save side-effect, auto-serve and the discovery tag
+            // all depend on Craft rendering the front end. In headless mode it
+            // does not, so markdown is generated from fetched bodies instead.
+            if (!$isHeadless) {
+                $this->registerGeneralEvents();
+            }
 
             if (Craft::$app->request->getIsSiteRequest()) {
                 $this->registerSiteEvents();
-                $this->registerAutoServeEvent();
-                $this->registerDiscoveryLinkTag();
+
+                if (!$isHeadless) {
+                    $this->registerAutoServeEvent();
+                    $this->registerDiscoveryLinkTag();
+                }
             }
 
             if (Craft::$app->request->getIsCpRequest()) {

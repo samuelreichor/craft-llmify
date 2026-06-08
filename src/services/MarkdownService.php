@@ -38,6 +38,26 @@ class MarkdownService extends Component
         $this->saveMarkdown($markdown, $entryId ?? $this->entryId, $siteId ?? $this->siteId);
     }
 
+    /**
+     * Converts a full HTML document (e.g. a fetched front-end page in headless mode)
+     * into markdown. Scopes to the `<body>` to drop `<head>` noise, removes excluded
+     * CSS classes, then runs the standard HTML-to-markdown conversion. Unlike
+     * `process()`, this does not persist anything — the caller decides what to do
+     * with the result.
+     *
+     * @throws ChildNotFoundException
+     * @throws NotLoadedException
+     * @throws CircularException
+     * @throws StrictException
+     */
+    public function convertHtml(string $html): string
+    {
+        $bodyHtml = $this->extractBody($html);
+        $cleaned = (string)$this->removeTags($bodyHtml);
+
+        return $this->htmlToMarkdown($cleaned);
+    }
+
     public function addContentBlock(string $html, int $entryId, int $siteId): void
     {
         $this->contentBlocks[] = $html;
@@ -275,6 +295,27 @@ class MarkdownService extends Component
         }
 
         return $dom;
+    }
+
+    /**
+     * Returns the inner HTML of the document's `<body>`, falling back to the
+     * original string if no body can be parsed (e.g. an HTML fragment).
+     */
+    private function extractBody(string $html): string
+    {
+        try {
+            $dom = new Dom();
+            $dom->loadStr($html);
+            $body = $dom->find('body', 0);
+
+            if ($body !== null) {
+                return $body->innerHtml();
+            }
+        } catch (Exception) {
+            // Fall through and convert the document as-is.
+        }
+
+        return $html;
     }
 
     private function getExcludeClass(): string

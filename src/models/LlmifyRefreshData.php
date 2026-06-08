@@ -12,7 +12,7 @@ class LlmifyRefreshData
      *  elements: array<string, array{
      *      elementIds: array<int, bool>
      *  }>,
-     *  urls: array<string, bool>
+     *  urls: array<string, array{elementId: int|null, siteId: int|null}>
      * }
      */
     public array $data = [
@@ -43,15 +43,40 @@ class LlmifyRefreshData
         return $this->getKeysAsValues(['sites', 'siteIds']);
     }
 
-    public function addUrl(string $url): void
+    public function addUrl(string $url, ?int $elementId = null, ?int $siteId = null): void
     {
         // query string here to bypass blitz caching
-        $this->data['urls'][$url . '?llmify=true'] = true;
+        $this->data['urls'][$url . '?llmify=true'] = [
+            'elementId' => $elementId,
+            'siteId' => $siteId,
+        ];
     }
 
     public function getUrls(): array
     {
         return $this->getKeysAsValues(['urls']);
+    }
+
+    /**
+     * Returns the queued URLs as a list of items carrying their element context.
+     * Headless generation needs the element/site to associate the fetched body
+     * with the right page (Twig mode resolves this server-side during render).
+     *
+     * @return array<int, array{url: string, elementId: int|null, siteId: int|null}>
+     */
+    public function getUrlItems(): array
+    {
+        $items = [];
+
+        foreach ($this->data['urls'] as $url => $meta) {
+            $items[] = [
+                'url' => $url,
+                'elementId' => $meta['elementId'] ?? null,
+                'siteId' => $meta['siteId'] ?? null,
+            ];
+        }
+
+        return $items;
     }
 
     private function getKeysAsValues(array $indexes): array

@@ -101,6 +101,12 @@ class LlmsService extends Component
             return $markdown;
         }
 
+        // Headless mode never generates on-the-fly via a Twig render; it relies
+        // on pre-generation (or the convert endpoint).
+        if (Llmify::getInstance()->getSettings()->headlessMode) {
+            return '';
+        }
+
         if ($element && $element->getUrl()) {
             try {
                 Llmify::getInstance()->request->generateUrl($element->getUrl());

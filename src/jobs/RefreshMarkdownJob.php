@@ -39,7 +39,7 @@ class RefreshMarkdownJob extends BaseBatchedJob
 
     protected function loadData(): SiteUrlBatcher
     {
-        return new SiteUrlBatcher($this->data->getUrls());
+        return new SiteUrlBatcher($this->data->getUrlItems());
     }
 
     protected function processItem(mixed $item): void

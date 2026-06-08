@@ -9,6 +9,7 @@ use Amp\Pipeline\Pipeline;
 use Craft;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
+use Throwable;
 use yii\base\Component;
 
 /**
@@ -44,6 +45,25 @@ class RequestService extends Component
         return $response->getStatus() === 200;
     }
 
+    /**
+     * Fetches a single URL and converts its rendered HTML body to markdown,
+     * without persisting it. Used by the headless convert endpoint. Returns
+     * null when the URL does not respond with a 200.
+     *
+     * @throws Throwable
+     */
+    public function fetchAndConvert(string $url): ?string
+    {
+        $client = HttpClientBuilder::buildDefault();
+        $response = $client->request($this->createRequest($url));
+
+        if ($response->getStatus() !== 200) {
+            return null;
+        }
+
+        return Llmify::getInstance()->markdown->convertHtml($response->getBody()->buffer());
+    }
+
     public function generateUrlsWithProgress(array $urls, callable $setProgressHandler = null): void
     {
         $this->generateWithProgress($urls, $setProgressHandler, 0, count($urls));
@@ -52,17 +72,26 @@ class RequestService extends Component
     public function generateWithProgress(array $urls, callable $setProgressHandler, int $count, int $total): void
     {
         $client = HttpClientBuilder::buildDefault();
+        $isHeadless = Llmify::getInstance()->getSettings()->headlessMode;
 
         $concurrentIterator = Pipeline::fromIterable($urls)
             ->concurrent($this->concurrentRequests);
 
-        foreach ($concurrentIterator as $url) {
+        foreach ($concurrentIterator as $item) {
             $count++;
+            $url = is_array($item) ? $item['url'] : $item;
             try {
                 $request = $this->createRequest($url);
                 $response = $client->request($request);
 
                 if ($response->getStatus() === 200) {
+                    // In headless mode Craft never renders the front end, so the
+                    // Twig save side-effect does not run. Read the fetched body
+                    // and convert it here instead.
+                    if ($isHeadless && is_array($item) && $item['elementId'] !== null) {
+                        $this->saveFromBody($response->getBody()->buffer(), $item['elementId'], $item['siteId']);
+                    }
+
                     $this->generated++;
                 }
 
@@ -71,8 +100,21 @@ class RequestService extends Component
                 }
             } catch (HttpException $exception) {
                 Craft::error("Failed generating URL {$url}. " . $exception->getMessage());
+            } catch (Throwable $exception) {
+                Craft::error("Failed converting markdown for URL {$url}. " . $exception->getMessage());
             }
         }
+    }
+
+    /**
+     * Converts a fetched HTML body to markdown and stores it for the given element.
+     *
+     * @throws Throwable
+     */
+    protected function saveFromBody(string $html, int $elementId, int $siteId): void
+    {
+        $markdownService = Llmify::getInstance()->markdown;
+        $markdownService->saveMarkdown($markdownService->convertHtml($html), $elementId, $siteId);
     }
     protected function createRequest(string $url): Request
     {

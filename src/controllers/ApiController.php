@@ -8,8 +8,11 @@ use craft\web\Controller;
 use samuelreichor\llmify\enums\LlmRequestType;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\services\LlmsService;
+use Throwable;
 use yii\base\Exception;
 use yii\web\BadRequestHttpException;
+use yii\web\ForbiddenHttpException;
+use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -25,6 +28,11 @@ use yii\web\Response;
 class ApiController extends Controller
 {
     protected array|bool|int $allowAnonymous = true;
+
+    /**
+     * @inheritdoc
+     */
+    public $enableCsrfValidation = false;
 
     /**
      * @inheritdoc
@@ -68,6 +76,73 @@ class ApiController extends Controller
         $this->resolveSite();
 
         return $this->respondWithMarkdown((new LlmsService())->getLlmsFullContent(), 'llms-full.txt');
+    }
+
+    /**
+     * Fetches a front-end URL and returns its converted markdown without
+     * persisting it. Lets a headless front end render individual `.md` pages
+     * on demand.
+     *
+     * The target URL must belong to one of the configured site Base URL hosts
+     * (SSRF guard), so this cannot be used to fetch arbitrary internal hosts.
+     *
+     * @throws MethodNotAllowedHttpException
+     * @throws BadRequestHttpException
+     * @throws ForbiddenHttpException
+     * @throws NotFoundHttpException
+     * @throws Throwable
+     */
+    public function actionConvert(): Response
+    {
+        $this->requirePostRequest();
+
+        $url = (string)$this->request->getRequiredBodyParam('url');
+        $this->assertAllowedHost($url);
+
+        $markdown = Llmify::getInstance()->request->fetchAndConvert($url);
+
+        if ($markdown === null) {
+            throw new NotFoundHttpException("URL could not be fetched: {$url}");
+        }
+
+        Craft::$app->getResponse()->getHeaders()->set('Content-Type', 'text/markdown; charset=UTF-8');
+
+        return $this->asRaw($markdown);
+    }
+
+    /**
+     * Ensures the given URL uses http(s) and targets a host that belongs to one
+     * of the configured site Base URLs. Prevents the convert endpoint from being
+     * used as a server-side request forgery vector.
+     *
+     * @throws BadRequestHttpException
+     * @throws ForbiddenHttpException
+     */
+    private function assertAllowedHost(string $url): void
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (!in_array($scheme, ['http', 'https'], true) || !is_string($host) || $host === '') {
+            throw new BadRequestHttpException('A valid http(s) URL is required.');
+        }
+
+        $allowedHosts = [];
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            $baseUrl = $site->getBaseUrl();
+            if ($baseUrl === null) {
+                continue;
+            }
+
+            $baseHost = parse_url($baseUrl, PHP_URL_HOST);
+            if (is_string($baseHost) && $baseHost !== '') {
+                $allowedHosts[] = strtolower($baseHost);
+            }
+        }
+
+        if (!in_array(strtolower($host), $allowedHosts, true)) {
+            throw new ForbiddenHttpException("URL host is not an allowed site host: {$host}");
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ class PluginSettings extends Model
 {
     public bool $isEnabled = true;
     public bool $headlessMode = false;
+    public ?string $apiToken = null;
     public bool $isRealUrlLlm = false;
     public bool $autoServeMarkdown = true;
     public string $markdownUrlPrefix = 'raw';

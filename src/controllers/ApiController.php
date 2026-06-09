@@ -10,6 +10,7 @@ use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\services\LlmsService;
 use Throwable;
 use yii\base\Exception;
+use yii\base\InvalidConfigException;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\MethodNotAllowedHttpException;
@@ -76,6 +77,28 @@ class ApiController extends Controller
         $this->resolveSite();
 
         return $this->respondWithMarkdown((new LlmsService())->getLlmsFullContent(), 'llms-full.txt');
+    }
+
+    /**
+     * Returns the stored markdown for a single page, identified by its `uri`
+     * within the requested site. Includes front matter and only serves pages
+     * whose section is enabled — letting a headless front end serve the
+     * pre-generated `.md` files without re-converting on every request.
+     *
+     * @throws SiteNotFoundException
+     * @throws BadRequestHttpException
+     * @throws NotFoundHttpException
+     * @throws InvalidConfigException
+     */
+    public function actionPage(): Response
+    {
+        $this->resolveSite();
+
+        $uri = (string)$this->request->getRequiredParam('uri');
+        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
+        $markdown = Llmify::getInstance()->markdown->getRenderedMarkdown($uri, $siteId);
+
+        return $this->respondWithMarkdown($markdown ?? '', "Markdown for {$uri}");
     }
 
     /**

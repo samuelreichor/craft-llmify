@@ -4,7 +4,9 @@ namespace samuelreichor\llmify\controllers;
 
 use Craft;
 use craft\errors\SiteNotFoundException;
+use craft\helpers\App;
 use craft\web\Controller;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\enums\LlmRequestType;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\services\LlmsService;
@@ -37,6 +39,8 @@ class ApiController extends Controller
 
     /**
      * @inheritdoc
+     *
+     * @throws ForbiddenHttpException
      */
     public function beforeAction($action): bool
     {
@@ -44,9 +48,40 @@ class ApiController extends Controller
             return false;
         }
 
+        $this->requireApiAccess();
+
         Craft::$app->getResponse()->getHeaders()->set('X-Robots-Tag', 'noindex, nofollow');
 
         return true;
+    }
+
+    /**
+     * Guards the headless API. The endpoints are only available when headless
+     * mode is enabled. If an API token is configured (in the plugin settings or
+     * via an environment variable), requests must send it in the
+     * `X-Llmify-Token` header; if no token is configured the endpoints are
+     * reachable without one.
+     *
+     * @throws ForbiddenHttpException
+     */
+    private function requireApiAccess(): void
+    {
+        if (!Llmify::getInstance()->getSettings()->headlessMode) {
+            throw new ForbiddenHttpException('The LLMify API is only available in headless mode.');
+        }
+
+        $token = trim((string)App::parseEnv(Llmify::getInstance()->getSettings()->apiToken));
+
+        // No token configured — the endpoints are unprotected.
+        if ($token === '') {
+            return;
+        }
+
+        $provided = (string)$this->request->getHeaders()->get(Constants::HEADER_API_TOKEN, '');
+
+        if (!hash_equals($token, $provided)) {
+            throw new ForbiddenHttpException('Invalid or missing LLMify API token.');
+        }
     }
 
     /**

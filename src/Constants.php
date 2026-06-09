@@ -19,4 +19,5 @@ class Constants
 
     // Random
     public const HEADER_REFRESH = 'X-Llmify-Refresh-Request';
+    public const HEADER_API_TOKEN = 'X-Llmify-Token';
 }

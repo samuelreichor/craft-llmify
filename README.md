@@ -61,6 +61,14 @@ Combined with Craft Commerce compatibility, granular control over your Markdowns
 - **SEOmatic Integration**: Automatically populate front matter from SEOmatic fields.
 - **Craft Commerce Support**: Full support for Commerce Products alongside Entries.
 
+### Headless
+- **Headless Mode**: For sites where Craft does not render the front end (e.g. a separate Nuxt/Next/Astro app). Instead of relying on Twig rendering, LLMify fetches your front-end URLs (the site's Base URL) and converts the returned HTML to Markdown. Sections excluded from output are controlled via the configured exclude classes.
+- **Content API**: Pull the generated files cross-domain so your front end can re-serve them under its own domain:
+  - `GET /actions/llmify/api/llms-txt?site=<handle|id>`
+  - `GET /actions/llmify/api/llms-full-txt?site=<handle|id>`
+  - `GET /actions/llmify/api/page?uri=<uri>&site=<handle|id>` — a single page's stored Markdown, including front matter.
+- **On-Demand Convert**: `POST /actions/llmify/api/convert` with `{ "url": "<front-end URL>" }` returns the Markdown for a single page, converted live. The URL must resolve to one of your configured site Base URL hosts.
+
 ## Requirements
 
 This plugin requires Craft CMS 5.0.0 or later, and PHP 8.2 or later.

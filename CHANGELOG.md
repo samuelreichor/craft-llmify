@@ -1,5 +1,10 @@
 # Release Notes for LLMify
 
+## 1.8.0 - 2026-06-13
+
+### Added
+- Add a "Copy settings from" menu to the Site and Content settings pages to load another site's settings into the form.
+
 ## 1.7.0 - 2026-06-09
 
 ### Added

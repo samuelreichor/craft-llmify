@@ -37,6 +37,21 @@
     { label: 'LLMify', url: cpUrl('llmify') },
 ] %}
 
+{% set otherSites = selectableSites|filter(s => s.id != siteId) %}
+
+{% block actionButton %}
+    <div class="flex">
+        {% if otherSites|length %}
+            {% include 'llmify/settings/_copy/menu' with {
+                sites: otherSites,
+                path: 'llmify/globals',
+                params: { site: selectedSite.handle },
+            } only %}
+        {% endif %}
+        {{ parent() }}
+    </div>
+{% endblock %}
+
 {% block content %}
     {{ actionInput('llmify/globals/save-settings') }}
     {{ redirectInput('llmify/globals') }}

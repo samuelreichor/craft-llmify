@@ -92,6 +92,12 @@ class ContentController extends Controller
 
         $sectionSettings = $contentSettings->getContentSetting($sectionId, $currentSiteId, $elementType);
 
+        $copyFromSiteId = (int)$this->request->getQueryParam('copyFrom');
+        if ($copyFromSiteId && in_array($copyFromSiteId, Craft::$app->getSites()->getEditableSiteIds(), true)) {
+            $sectionSettings = $contentSettings->getContentSetting($sectionId, $copyFromSiteId, $elementType, false);
+            Craft::$app->getSession()->setNotice(Craft::t('app', 'Settings copied. Review and save to apply.'));
+        }
+
         $groupName = '';
         $textFieldOptions = [];
         $frontMatterFieldOptions = [];

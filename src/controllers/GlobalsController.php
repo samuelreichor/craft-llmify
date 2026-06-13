@@ -29,6 +29,12 @@ class GlobalsController extends Controller
         $settings = $globalSettings->getGlobalSetting($currentSiteId);
         $frontMatterFieldOptions = Llmify::getInstance()->fieldDiscovery->getFrontMatterOptions();
 
+        $copyFromSiteId = (int)$this->request->getQueryParam('copyFrom');
+        if ($copyFromSiteId && in_array($copyFromSiteId, Craft::$app->getSites()->getEditableSiteIds(), true)) {
+            $settings = $globalSettings->getGlobalSetting($copyFromSiteId);
+            Craft::$app->getSession()->setNotice(Craft::t('app', 'Settings copied. Review and save to apply.'));
+        }
+
         return $this->renderTemplate('llmify/settings/globals/index', [
             'settings' => $settings,
             'siteId' => $currentSiteId,

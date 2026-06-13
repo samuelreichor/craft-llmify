@@ -1,0 +1,30 @@
+{# =========================================================================
+   Copy Settings — Menu
+   Shared "Copy settings from" header menu for the site (globals) and section
+   (content) settings forms. Each item links back to the current page with a
+   `copyFrom` param; the controller then loads that site's values into the form
+   (without saving) and the user reviews and saves. No client behaviour beyond
+   initialising the menu button.
+
+   Params:
+     sites  - the selectable sites to copy from (current site excluded)
+     path   - CP path of the current page (e.g. 'llmify/globals')
+     params - query params to preserve (e.g. the target site handle)
+   ========================================================================= #}
+<button type="button" id="llmify-copy-from-btn" class="btn menubtn" data-icon="settings">{{ 'Copy settings from'|t('app') }}</button>
+<div class="menu">
+    <ul>
+        {% for site in sites %}
+            <li><a href="{{ cpUrl(path, params|merge({ copyFrom: site.id })) }}">{{ site.name|t('site') }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% js %}
+    (function() {
+        const button = document.getElementById('llmify-copy-from-btn');
+        if (button && typeof $ !== 'undefined' && !$(button).data('menubtn')) {
+            $(button).menubtn();
+        }
+    })();
+{% endjs %}

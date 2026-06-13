@@ -38,6 +38,21 @@
     { label: 'Content', url: cpUrl('llmify/content') },
 ] %}
 
+{% set otherSites = selectableSites|filter(s => s.id != siteId) %}
+
+{% block actionButton %}
+    <div class="flex">
+        {% if otherSites|length %}
+            {% include 'llmify/settings/_copy/menu' with {
+                sites: otherSites,
+                path: 'llmify/content/' ~ settings.groupId,
+                params: { elementType: elementType, site: selectedSite.handle },
+            } only %}
+        {% endif %}
+        {{ parent() }}
+    </div>
+{% endblock %}
+
 {% block content %}
     {{ actionInput('llmify/content/save-section-settings') }}
     {{ redirectInput('llmify/content/') }}

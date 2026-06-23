@@ -49,6 +49,20 @@
 
 <hr>
 
+<h2>AI Agents</h2>
+
+{{ forms.lightswitchField({
+  label: 'WebMCP',
+  instructions: 'Expose your content to in-browser AI agents (e.g. Gemini in Chrome) via the experimental [WebMCP](https://github.com/webmachinelearning/webmcp) standard. Injects a small script that registers read-only tools (search content, fetch a page, list sections, navigate) backed by your enabled content.',
+  warning: 'WebMCP is an experimental, pre-standard browser API (Chrome only). Enabling this publishes a public, machine-callable search/content API over your already-public content.',
+  id: 'enableWebMcp',
+  name: 'enableWebMcp',
+  on: settings.enableWebMcp,
+  disabled: readOnly,
+}) }}
+
+<hr>
+
 <h2>Output</h2>
 
 {{ forms.lightswitchField({

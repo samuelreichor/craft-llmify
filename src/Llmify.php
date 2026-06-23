@@ -46,6 +46,7 @@ use samuelreichor\llmify\services\MetadataService;
 use samuelreichor\llmify\services\RefreshService;
 use samuelreichor\llmify\services\RequestService;
 use samuelreichor\llmify\services\SettingsService;
+use samuelreichor\llmify\services\WebMcpService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
 use Throwable;
@@ -71,6 +72,7 @@ use yii\log\FileTarget;
  * @property-read FrontMatterService $frontMatter
  * @property-read BotDetectionService $botDetection
  * @property-read DashboardService $dashboard
+ * @property-read WebMcpService $webMcp
  */
 class Llmify extends Plugin
 {
@@ -103,6 +105,7 @@ class Llmify extends Plugin
                 'frontMatter' => FrontMatterService::class,
                 'botDetection' => BotDetectionService::class,
                 'dashboard' => DashboardService::class,
+                'webMcp' => WebMcpService::class,
             ],
         ];
     }
@@ -130,6 +133,7 @@ class Llmify extends Plugin
                 if (!$isHeadless) {
                     $this->registerAutoServeEvent();
                     $this->registerDiscoveryLinkTag();
+                    $this->registerWebMcpScriptTag();
                 }
             }
 
@@ -612,6 +616,42 @@ class Llmify extends Plugin
                 $mdPrefix = $this->getSettings()->markdownUrlPrefix;
                 $mdRoute = $mdPrefix !== '' ? $mdPrefix . '/<slug:.*\.md>' : '<slug:.*\.md>';
                 $event->rules[$mdRoute] = 'llmify/file/generate-page-md';
+
+                if ($this->getSettings()->enableWebMcp) {
+                    $event->rules['webmcp.js'] = 'llmify/web-mcp/script';
+                }
+            }
+        );
+    }
+
+    /**
+     * Injects the WebMCP script onto rendered front-end pages so the in-browser
+     * agent can discover and call the tools. Registered once per request and
+     * only when WebMCP is enabled.
+     */
+    private function registerWebMcpScriptTag(): void
+    {
+        if (!$this->getSettings()->enableWebMcp) {
+            return;
+        }
+
+        $registered = false;
+
+        Event::on(
+            View::class,
+            View::EVENT_BEFORE_RENDER_TEMPLATE,
+            function(TemplateEvent $event) use (&$registered) {
+                if ($registered || $event->templateMode !== 'site') {
+                    return;
+                }
+
+                $registered = true;
+
+                Craft::$app->view->registerJsFile(
+                    UrlHelper::siteUrl('webmcp.js'),
+                    ['type' => 'module'],
+                    'llmify-webmcp',
+                );
             }
         );
     }

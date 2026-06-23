@@ -78,9 +78,14 @@ class LlmsService extends Component
     }
 
     /**
+     * Returns the stored markdown for a URI, or an empty string when none is
+     * available. When `$allowOnDemand` is false, a cache miss returns an empty
+     * string instead of triggering a blocking on-the-fly render — used by
+     * unauthenticated callers that must not be able to drive server-side work.
+     *
      * @throws SiteNotFoundException
      */
-    public function getMarkdownForUri(string $uri): string
+    public function getMarkdownForUri(string $uri, bool $allowOnDemand = true): string
     {
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
         $markdownService = Llmify::getInstance()->markdown;
@@ -99,6 +104,10 @@ class LlmsService extends Component
 
         if ($markdown !== null) {
             return $markdown;
+        }
+
+        if (!$allowOnDemand) {
+            return '';
         }
 
         // Headless mode never generates on-the-fly via a Twig render; it relies

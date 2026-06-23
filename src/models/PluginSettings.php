@@ -25,6 +25,7 @@ class PluginSettings extends Model
         ],
     ];
     public bool $autoInjectDiscoveryTag = true;
+    public bool $enableWebMcp = false;
     public bool $enableBotDetection = true;
     public array $additionalBotUserAgents = [];
     public bool $frontMatterInFullTxt = false;

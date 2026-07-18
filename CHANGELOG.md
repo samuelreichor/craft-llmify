@@ -1,5 +1,15 @@
 # Release Notes for LLMify
 
+## 1.9.0 - 2026-07-18
+
+### Added
+- Add WebMCP support: the new `enableWebMcp` setting exposes your enabled content to in-browser AI agents (e.g. Gemini in Chrome) via the experimental [WebMCP](https://github.com/webmachinelearning/webmcp) standard. A script served at `/webmcp.js` registers read-only `search_content`, `get_page`, `list_sections`, and `navigate_to` tools backed by the same content gating as the public markdown routes.
+- Add `WebMcpService::EVENT_REGISTER_TOOLS` so modules and plugins can register custom WebMCP tools or modify and remove the built-in ones.
+- Add `mdUrl()`, `chatGptUrl()`, and `claudeUrl()` Twig functions that return the markdown URL of an element and prompt links for opening it in ChatGPT or Claude.
+
+### Changed
+- `enableBotDetection` now defaults to `false` for new installs. Serving markdown based on the user agent is an explicit opt-in.
+
 ## 1.8.0 - 2026-06-13
 
 ### Added

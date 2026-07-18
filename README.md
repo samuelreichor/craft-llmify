@@ -38,7 +38,7 @@ Combined with Craft Commerce compatibility, granular control over your Markdowns
 ### Content Generation
 - **Pre-Generated Markdown**: Async batch processing with [amphp](https://amphp.org/) stores Markdown in a dedicated database table for instant delivery at any scale.
 - **On-Demand Fallback**: Automatically generates Markdown on first request if not yet pre-generated.
-- **Template-Level Control**: Use `{% llmify %}` and `{% excludellmify %}` Twig tags for precise control over what content is included in your Markdown output.
+- **Template-Level Control**: Use `{% llmify %}` and `{% excludeLlmify %}` Twig tags for precise control over what content is included in your Markdown output.
 - **CSS Class Exclusion**: Define classes to exclude entire sections from the HTML-to-Markdown conversion.
 - **YAML Front Matter**: Configurable metadata with hierarchical inheritance (Site > Section > Entry).
 - **Console Commands**: `llmify/markdown/generate` and `llmify/markdown/clear` for CI/CD and deployment workflows.

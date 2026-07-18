@@ -47,9 +47,9 @@ To exclude specific parts within an llmify block:
 ```twig
 {% llmify %}
   <h1>{{ entry.title }}</h1>
-  {% excludellmify %}
+  {% excludeLlmify %}
     <nav>...</nav>
-  {% endexcludellmify %}
+  {% endexcludeLlmify %}
   <div>{{ entry.bodyContent }}</div>
 {% endllmify %}
 ```

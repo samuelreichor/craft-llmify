@@ -187,10 +187,15 @@ class RefreshService extends Component
     }
 
     /**
+     * Whether the element is currently servable as markdown (group enabled and
+     * the element not excluded). Pass `$triggerRefresh = false` from read-only
+     * callers (e.g. Twig functions on a front-end render) so the gating check
+     * can't enqueue a refresh as a side effect of backfilling missing settings.
+     *
      * @throws Exception
      * @throws \yii\base\Exception
      */
-    public function canRefreshElement(ElementInterface $element): bool
+    public function canRefreshElement(ElementInterface $element, bool $triggerRefresh = true): bool
     {
         $settingsService = Llmify::getInstance()->settings;
         $groupId = HelperService::getGroupIdForElement($element);
@@ -204,7 +209,7 @@ class RefreshService extends Component
 
         $result = false;
         if ($globalSettings->enabled) {
-            $contentSettings = $settingsService->getContentSetting($groupId, $element->siteId, $elementType);
+            $contentSettings = $settingsService->getContentSetting($groupId, $element->siteId, $elementType, $triggerRefresh);
             $result = $contentSettings->enabled;
         }
 

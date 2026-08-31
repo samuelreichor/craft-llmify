@@ -37,17 +37,105 @@ class HelperService extends Component
     }
 
     /**
-     * Checks if Craft Commerce is installed and enabled
+     * Checks if a plugin is installed
+     *
+     * @param string $pluginHandle
+     * @return bool
      */
-    public static function isCommerceInstalled(): bool
+    public static function isPluginInstalledAndEnabled(string $pluginHandle): bool
     {
-        $plugin = Craft::$app->plugins->getPlugin('commerce');
+        $plugin = Craft::$app->plugins->getPlugin($pluginHandle);
 
         if ($plugin !== null && $plugin->isInstalled) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Checks if Craft Commerce is installed and enabled
+     */
+    public static function isCommerceInstalled(): bool
+    {
+        return self::isPluginInstalledAndEnabled('commerce');
+    }
+
+    /**
+     * Returns SEOmatic's "Same As URLs" for a site as rows of
+     * `['siteName' => ..., 'url' => ...]`, skipping entries without a URL.
+     * Empty array when SEOmatic is not installed.
+     */
+    public static function getSeomaticSocialLinks(int $siteId): array
+    {
+        if (!self::isPluginInstalledAndEnabled('seomatic')) {
+            return [];
+        }
+
+        $sameAsLinks = [];
+        try {
+            $metaBundle = \nystudio107\seomatic\Seomatic::$plugin->metaBundles->getGlobalMetaBundle($siteId);
+            $sameAsLinks = $metaBundle?->metaSiteVars->sameAsLinks ?? [];
+        } catch (\Throwable $e) {
+            Craft::warning('Could not load SEOmatic sameAs links: ' . $e->getMessage(), 'llmify');
+        }
+
+        // SEOmatic stores an empty string when the "Same As URLs" table has no rows.
+        if (!is_array($sameAsLinks)) {
+            $sameAsLinks = [];
+        }
+
+        $links = [];
+        foreach ($sameAsLinks as $link) {
+            if (!is_array($link)) {
+                continue;
+            }
+
+            $siteName = trim((string)($link['siteName'] ?? ''));
+            $url = trim((string)($link['url'] ?? ''));
+
+            if ($url === '') {
+                continue;
+            }
+
+            $links[] = ['siteName' => $siteName, 'url' => $url];
+        }
+
+        return $links;
+    }
+
+    /**
+     * Normalizes posted social links rows. Returns an empty array when the
+     * rows still match SEOmatic's "Same As URLs" preset, so the table keeps
+     * following SEOmatic until the user actually changes something.
+     */
+    public static function normalizeSocialLinks(mixed $rows, int $siteId): array
+    {
+        if (!is_array($rows)) {
+            $rows = [];
+        }
+
+        $links = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $siteName = trim($row['siteName'] ?? '');
+            $url = trim($row['url'] ?? '');
+
+            if ($siteName === '' && $url === '') {
+                continue;
+            }
+
+            $links[] = ['siteName' => $siteName, 'url' => $url];
+        }
+
+        if ($links === self::getSeomaticSocialLinks($siteId)) {
+            return [];
+        }
+
+        return $links;
     }
 
     /**

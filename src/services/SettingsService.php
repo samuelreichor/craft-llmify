@@ -287,6 +287,10 @@ class SettingsService extends Component
         $globalRecord->llmTitle = $globalSettings->llmTitle;
         $globalRecord->llmDescription = $globalSettings->llmDescription;
         $globalRecord->llmNote = $globalSettings->llmNote;
+        $globalRecord->includeSocialLinks = $globalSettings->includeSocialLinks;
+        $globalRecord->socialLinks = !empty($globalSettings->socialLinks)
+            ? Json::encode($globalSettings->socialLinks)
+            : null;
         $globalRecord->frontMatterFields = !empty($globalSettings->frontMatterFields)
             ? Json::encode($globalSettings->frontMatterFields)
             : null;
@@ -411,6 +415,8 @@ class SettingsService extends Component
                 'llmTitle',
                 'llmDescription',
                 'llmNote',
+                'includeSocialLinks',
+                'socialLinks',
                 'frontMatterFields',
                 'enabled',
                 'enableLlmsTxt',
@@ -450,6 +456,12 @@ class SettingsService extends Component
         } else {
             // Remove from result so the model uses its default value
             unset($result['frontMatterFields']);
+        }
+
+        if (isset($result['socialLinks']) && is_string($result['socialLinks']) && $result['socialLinks'] !== '') {
+            $result['socialLinks'] = Json::decode($result['socialLinks']) ?? [];
+        } else {
+            unset($result['socialLinks']);
         }
 
         return $result;

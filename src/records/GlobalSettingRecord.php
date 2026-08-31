@@ -14,6 +14,8 @@ use samuelreichor\llmify\Constants;
  * @property string $llmTitle
  * @property string $llmDescription
  * @property string $llmNote
+ * @property bool $includeSocialLinks
+ * @property string|null $socialLinks
  * @property string|null $frontMatterFields
  */
 class GlobalSettingRecord extends ActiveRecord

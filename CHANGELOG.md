@@ -1,5 +1,10 @@
 # Release Notes for LLMify
 
+## Unreleased
+
+### Added
+- Add `Enable llms.txt` and `Enable llms-full.txt` site settings to disable the aggregated files per site while keeping the markdown pages available. ([#24](https://github.com/samuelreichor/craft-llmify/issues/24))
+
 ## 1.9.0 - 2026-07-18
 
 ### Added

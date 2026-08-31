@@ -282,6 +282,8 @@ class SettingsService extends Component
         $globalRecord = GlobalSettingRecord::findOne($globalSettings->siteId) ?: new GlobalSettingRecord();
         $globalRecord->siteId = $globalSettings->siteId;
         $globalRecord->enabled = $globalSettings->enabled;
+        $globalRecord->enableLlmsTxt = $globalSettings->enableLlmsTxt;
+        $globalRecord->enableLlmsFullTxt = $globalSettings->enableLlmsFullTxt;
         $globalRecord->llmTitle = $globalSettings->llmTitle;
         $globalRecord->llmDescription = $globalSettings->llmDescription;
         $globalRecord->llmNote = $globalSettings->llmNote;
@@ -411,6 +413,8 @@ class SettingsService extends Component
                 'llmNote',
                 'frontMatterFields',
                 'enabled',
+                'enableLlmsTxt',
+                'enableLlmsFullTxt',
             ])
             ->from([Constants::TABLE_GLOBALS]);
     }

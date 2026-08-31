@@ -33,7 +33,7 @@ class LlmsService extends Component
      */
     public function getLlmsTxtContent(): string
     {
-        if (!$this->globalSettings->isEnabled()) {
+        if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsTxt) {
             return '';
         }
         $markdown = $this->constructIntro();
@@ -49,7 +49,7 @@ class LlmsService extends Component
      */
     public function getLlmsFullContent(): string
     {
-        if (!$this->globalSettings->isEnabled()) {
+        if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsFullTxt) {
             return '';
         }
 

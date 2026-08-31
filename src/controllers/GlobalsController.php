@@ -58,6 +58,8 @@ class GlobalsController extends Controller
         $globalSetting = $settingService->getGlobalSetting($siteId);
 
         $globalSetting->enabled = $this->request->getBodyParam('enabled');
+        $globalSetting->enableLlmsTxt = (bool)$this->request->getBodyParam('enableLlmsTxt');
+        $globalSetting->enableLlmsFullTxt = (bool)$this->request->getBodyParam('enableLlmsFullTxt');
         $globalSetting->llmTitle = $this->request->getBodyParam('llmTitle');
         $globalSetting->llmDescription = $this->request->getBodyParam('llmDescription');
         $globalSetting->llmNote = $this->request->getBodyParam('llmNote');

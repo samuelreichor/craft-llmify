@@ -66,6 +66,28 @@
         first: true,
     }) }}
 
+    <hr>
+
+    <div class="flex-fields">
+        {{ forms.lightswitchField({
+            label: 'Enable llms.txt',
+            instructions: "Serves the `llms.txt` file for this site. If disabled, requests to `llms.txt` return a 404 while markdown pages stay available.",
+            id: 'enableLlmsTxt',
+            name: 'enableLlmsTxt',
+            on: settings.enableLlmsTxt,
+            fieldClass: 'width-50',
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Enable llms-full.txt',
+            instructions: "Serves the `llms-full.txt` file for this site. If disabled, requests to `llms-full.txt` return a 404 while markdown pages stay available.",
+            id: 'enableLlmsFullTxt',
+            name: 'enableLlmsFullTxt',
+            on: settings.enableLlmsFullTxt,
+            fieldClass: 'width-50',
+        }) }}
+    </div>
+
     {{ forms.textField({
         label: 'LLM Title',
         instructions: "Primary heading in `llms.txt`. Supports Twig, e.g. `{name}` for the site name.",

@@ -112,6 +112,8 @@ class Install extends Migration
                 [
                     'siteId' => $this->integer()->notNull(),
                     'enabled' => $this->boolean()->notNull(),
+                    'enableLlmsTxt' => $this->boolean()->notNull()->defaultValue(true),
+                    'enableLlmsFullTxt' => $this->boolean()->notNull()->defaultValue(true),
                     'llmTitle' => $this->string(),
                     'llmDescription' => $this->text(),
                     'llmNote' => $this->text(),

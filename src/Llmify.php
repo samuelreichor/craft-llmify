@@ -84,7 +84,7 @@ class Llmify extends Plugin
      */
     public const EVENT_LLM_REQUEST = 'llmRequest';
 
-    public string $schemaVersion = '1.2.1';
+    public string $schemaVersion = '1.3.0';
     public bool $hasCpSettings = true;
     public bool $hasReadOnlyCpSettings = true;
     public bool $hasCpSection = true;

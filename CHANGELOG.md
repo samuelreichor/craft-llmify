@@ -6,6 +6,9 @@
 - Add `Enable llms.txt` and `Enable llms-full.txt` site settings to disable the aggregated files per site while keeping the markdown pages available. ([#24](https://github.com/samuelreichor/craft-llmify/issues/24))
 - Add an `Include Social Links` site setting with an editable `Social Links` table that adds a `## Social` section to `llms.txt` and `llms-full.txt`. The table follows SEOmatic's "Same As URLs" until changes are saved that differ from it; social links can also be maintained without SEOmatic. ([#24](https://github.com/samuelreichor/craft-llmify/issues/24))
 
+### Changed
+- Markdown page lookups now resolve through an indexed `uri` column instead of an unindexed JSON expression, speeding up `.md` URL serving on sites with many pages.
+
 ## 1.9.0 - 2026-07-18
 
 ### Added

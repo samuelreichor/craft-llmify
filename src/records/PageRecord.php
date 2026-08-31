@@ -12,6 +12,7 @@ use yii\db\Expression;
  *
  * @property int $elementId
  * @property string $elementType
+ * @property string|null $uri
  * @property int $siteId
  * @property int $groupId
  * @property int $metadataId

@@ -64,6 +64,7 @@ class Install extends Migration
                     'id' => $this->primaryKey(),
                     'elementId' => $this->integer()->notNull(),
                     'elementType' => $this->string()->notNull()->defaultValue('craft\\elements\\Entry'),
+                    'uri' => $this->string(),
                     'siteId' => $this->integer(),
                     'groupId' => $this->integer(),
                     'elementMeta' => $this->json(),
@@ -75,6 +76,7 @@ class Install extends Migration
                     'dateUpdated' => $this->dateTime()->notNull(),
                 ]
             );
+            $this->createIndex(null, Constants::TABLE_PAGES, ['siteId', 'uri']);
         }
 
         $tableMeta = Craft::$app->db->schema->getTableSchema(Constants::TABLE_META);

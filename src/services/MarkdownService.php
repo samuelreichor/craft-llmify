@@ -131,6 +131,7 @@ class MarkdownService extends Component
         $pageEntry->title = $metaDataService->getLlmTitle();
         $pageEntry->description = $metaDataService->getLlmDescription();
         $pageEntry->content = $markdown;
+        $pageEntry->uri = $element->uri;
         $pageEntry->dateUpdated = new Expression('NOW()');
         $pageEntry->elementMeta = [
             "fullUrl" => $element->getUrl(),
@@ -142,8 +143,7 @@ class MarkdownService extends Component
     public function getMarkdown(string $uri, int $siteId): ?Page
     {
         $result = $this->_createPageQuery()
-            ->where(['siteId' => $siteId])
-            ->andWhere("JSON_UNQUOTE(JSON_EXTRACT(elementMeta, '$.uri')) = :uri", [':uri' => $uri])
+            ->where(['siteId' => $siteId, 'uri' => $uri])
             ->one();
 
         return $result ? new Page($result) : null;

@@ -9,3 +9,6 @@ parameters:
         -
             message: '#craft\\commerce\\#'
             reportUnmatched: false
+        -
+            message: '#nystudio107\\seomatic\\#'
+            reportUnmatched: false

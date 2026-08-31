@@ -16,6 +16,8 @@ class GlobalSettings extends Model
     public string $llmTitle = '';
     public string $llmDescription = '';
     public string $llmNote = '';
+    public bool $includeSocialLinks = false;
+    public array $socialLinks = [];
     public array $frontMatterFields = [
         ['handle' => 'builtin:title', 'enabled' => false, 'label' => 'title'],
         ['handle' => 'builtin:description', 'enabled' => false, 'label' => 'description'],

@@ -38,6 +38,7 @@ class LlmsService extends Component
         }
         $markdown = $this->constructIntro();
         $markdown .= $this->constructAllUrls();
+        $markdown .= $this->constructSocialSection();
         $markdown .= $this->constructFooter();
 
         return $markdown;
@@ -55,6 +56,7 @@ class LlmsService extends Component
 
         $markdown = $this->constructIntro();
         $markdown .= $this->constructAllPages();
+        $markdown .= $this->constructSocialSection();
         $markdown .= $this->constructFooter();
 
         return $markdown;
@@ -269,6 +271,42 @@ class LlmsService extends Component
         $descriptionPart = $description ? ": {$description}" : '';
 
         return "- {$markdownUrl}{$descriptionPart}\n";
+    }
+
+    /**
+     * Builds a `## Social` section from the social links configured in the site
+     * settings. While no custom links are stored, SEOmatic's "Same As URLs" are
+     * used. Returns an empty string when the setting is disabled or no usable
+     * links are configured.
+     */
+    private function constructSocialSection(): string
+    {
+        if (!$this->globalSettings->includeSocialLinks) {
+            return '';
+        }
+
+        $links = $this->globalSettings->socialLinks;
+        if (empty($links)) {
+            $links = HelperService::getSeomaticSocialLinks($this->currentSiteId);
+        }
+
+        $content = '';
+        foreach ($links as $link) {
+            $siteName = trim((string)($link['siteName'] ?? ''));
+            $url = trim((string)($link['url'] ?? ''));
+
+            if ($siteName === '' || $url === '') {
+                continue;
+            }
+
+            $content .= "- [{$siteName}]({$url})\n";
+        }
+
+        if ($content === '') {
+            return '';
+        }
+
+        return "\n## Social\n\n{$content}";
     }
 
     private function constructFooter(): string

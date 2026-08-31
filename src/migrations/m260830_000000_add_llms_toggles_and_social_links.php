@@ -31,6 +31,14 @@ class m260830_000000_add_llms_toggles_and_social_links extends Migration
             );
         }
 
+        if (!$this->db->columnExists(Constants::TABLE_GLOBALS, 'includeSocialLinks')) {
+            $this->addColumn(
+                Constants::TABLE_GLOBALS,
+                'includeSocialLinks',
+                $this->boolean()->notNull()->defaultValue(false)->after('llmNote')
+            );
+        }
+
         return true;
     }
 
@@ -39,6 +47,10 @@ class m260830_000000_add_llms_toggles_and_social_links extends Migration
      */
     public function safeDown(): bool
     {
+        if ($this->db->columnExists(Constants::TABLE_GLOBALS, 'includeSocialLinks')) {
+            $this->dropColumn(Constants::TABLE_GLOBALS, 'includeSocialLinks');
+        }
+
         if ($this->db->columnExists(Constants::TABLE_GLOBALS, 'enableLlmsFullTxt')) {
             $this->dropColumn(Constants::TABLE_GLOBALS, 'enableLlmsFullTxt');
         }

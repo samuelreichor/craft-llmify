@@ -117,6 +117,8 @@ class Install extends Migration
                     'llmTitle' => $this->string(),
                     'llmDescription' => $this->text(),
                     'llmNote' => $this->text(),
+                    'includeSocialLinks' => $this->boolean()->notNull()->defaultValue(false),
+                    'socialLinks' => $this->text(),
                     'frontMatterFields' => $this->text(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),

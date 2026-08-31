@@ -104,6 +104,40 @@
         value: settings.llmDescription,
     }) }}
 
+    {{ forms.lightswitchField({
+        label: 'Include Social Links',
+        instructions: "Adds a `## Social` section to `llms.txt` and `llms-full.txt` with the links below.",
+        id: 'includeSocialLinks',
+        name: 'includeSocialLinks',
+        on: settings.includeSocialLinks,
+        toggle: 'social-links-field',
+    }) }}
+
+    <div id="social-links-field" class="{{ not settings.includeSocialLinks ? 'hidden' }}">
+        {{ forms.editableTableField({
+            label: 'Social Links',
+            instructions: "The table follows SEOmatic's \"Same As URLs\" until you save changes that differ from it. From then on, your entries are used instead.",
+            name: 'socialLinks',
+            id: 'socialLinks',
+            cols: {
+                siteName: {
+                    type: 'singleline',
+                    heading: 'Site Name',
+                    width: '25%',
+                },
+                url: {
+                    type: 'singleline',
+                    heading: 'URL',
+                },
+            },
+            rows: settings.socialLinks,
+            addRowLabel: 'Add a link',
+            allowAdd: true,
+            allowDelete: true,
+            allowReorder: true,
+        }) }}
+    </div>
+
     {{ forms.textField({
         label: 'LLM Note',
         instructions: "Optional footer note appended to `llms.txt`. Supports Twig.",

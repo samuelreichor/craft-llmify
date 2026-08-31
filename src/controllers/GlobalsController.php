@@ -6,6 +6,7 @@ use Craft;
 use craft\errors\SiteNotFoundException;
 use craft\web\Controller;
 use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\PermissionService;
 use Throwable;
 use yii\db\Exception;
@@ -33,6 +34,12 @@ class GlobalsController extends Controller
         if ($copyFromSiteId && in_array($copyFromSiteId, Craft::$app->getSites()->getEditableSiteIds(), true)) {
             $settings = $globalSettings->getGlobalSetting($copyFromSiteId);
             Craft::$app->getSession()->setNotice(Craft::t('app', 'Settings copied. Review and save to apply.'));
+        }
+
+        // While no custom links are stored, the table follows SEOmatic's
+        // "Same As URLs".
+        if (empty($settings->socialLinks)) {
+            $settings->socialLinks = HelperService::getSeomaticSocialLinks($currentSiteId);
         }
 
         return $this->renderTemplate('llmify/settings/globals/index', [
@@ -63,6 +70,8 @@ class GlobalsController extends Controller
         $globalSetting->llmTitle = $this->request->getBodyParam('llmTitle');
         $globalSetting->llmDescription = $this->request->getBodyParam('llmDescription');
         $globalSetting->llmNote = $this->request->getBodyParam('llmNote');
+        $globalSetting->includeSocialLinks = (bool)$this->request->getBodyParam('includeSocialLinks', $globalSetting->includeSocialLinks);
+        $globalSetting->socialLinks = HelperService::normalizeSocialLinks($this->request->getBodyParam('socialLinks'), (int)$siteId);
         $globalSetting->frontMatterFields = $this->request->getBodyParam('frontMatterFields') ?? [];
 
         if (!$settingService->saveGlobalSettings($globalSetting)) {

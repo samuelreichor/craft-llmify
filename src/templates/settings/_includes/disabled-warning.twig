@@ -1,0 +1,10 @@
+{# Shown on every LLMify CP page while the plugin's main switch is off, so
+   editors don't assume markdown is being generated when it isn't. #}
+{% if not craft.app.plugins.getPlugin('llmify').getSettings().isEnabled %}
+    <p class="warning with-icon" style="margin-bottom: 24px;">
+        LLMify is disabled. No markdown, llms.txt or llms-full.txt will be generated or served until it is enabled.
+        {% if currentUser.admin and craft.app.config.general.allowAdminChanges %}
+            <a href="{{ cpUrl('llmify/settings') }}">Enable it in the plugin settings.</a>
+        {% endif %}
+    </p>
+{% endif %}

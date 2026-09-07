@@ -4,6 +4,7 @@
 
 ### Added
 - Add `Basic Auth Username` and `Basic Auth Password` settings so markdown generation also works on sites protected with HTTP Basic Auth (e.g. staging). The credentials are sent with the plugin's internal page requests.
+- Show a warning on all LLMify control panel pages and in the LLMify Settings field while the plugin is disabled, so editors can see that no markdown is being generated or served.
 
 ### Fixed
 - Markdown generation now works on offline sites (`isSystemLive: false`). The plugin's internal page requests carry a Craft site token, which Craft accepts while the system is offline.

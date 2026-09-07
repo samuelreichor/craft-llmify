@@ -53,6 +53,8 @@
 {% endblock %}
 
 {% block content %}
+    {% include 'llmify/settings/_includes/disabled-warning' %}
+
     {{ actionInput('llmify/globals/save-settings') }}
     {{ redirectInput('llmify/globals') }}
     {{ hiddenInput('siteId', siteId) }}

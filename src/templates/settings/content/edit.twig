@@ -54,6 +54,8 @@
 {% endblock %}
 
 {% block content %}
+    {% include 'llmify/settings/_includes/disabled-warning' %}
+
     {{ actionInput('llmify/content/save-section-settings') }}
     {{ redirectInput('llmify/content/') }}
 

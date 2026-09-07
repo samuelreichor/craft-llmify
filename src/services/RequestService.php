@@ -7,6 +7,7 @@ use Amp\Http\Client\HttpException;
 use Amp\Http\Client\Request;
 use Amp\Pipeline\Pipeline;
 use Craft;
+use craft\helpers\App;
 use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use Throwable;
@@ -36,13 +37,18 @@ class RequestService extends Component
         $this->requestTimeout = $settings->requestTimeout;
     }
 
-    public function generateUrl(string $url): bool
+    public function generateUrl(string $url, ?int $siteId = null): bool
     {
         $client = HttpClientBuilder::buildDefault();
-        $request = $this->createRequest($url);
+        $request = $this->createRequest($url, $siteId);
         $response = $client->request($request);
+        $status = $response->getStatus();
 
-        return $response->getStatus() === 200;
+        if ($status !== 200) {
+            $this->logUnexpectedStatus($url, $status);
+        }
+
+        return $status === 200;
     }
 
     /**
@@ -56,8 +62,10 @@ class RequestService extends Component
     {
         $client = HttpClientBuilder::buildDefault();
         $response = $client->request($this->createRequest($url));
+        $status = $response->getStatus();
 
-        if ($response->getStatus() !== 200) {
+        if ($status !== 200) {
+            $this->logUnexpectedStatus($url, $status);
             return null;
         }
 
@@ -80,11 +88,13 @@ class RequestService extends Component
         foreach ($concurrentIterator as $item) {
             $count++;
             $url = is_array($item) ? $item['url'] : $item;
+            $siteId = is_array($item) ? $item['siteId'] : null;
             try {
-                $request = $this->createRequest($url);
+                $request = $this->createRequest($url, $siteId);
                 $response = $client->request($request);
+                $status = $response->getStatus();
 
-                if ($response->getStatus() === 200) {
+                if ($status === 200) {
                     // In headless mode Craft never renders the front end, so the
                     // Twig save side-effect does not run. Read the fetched body
                     // and convert it here instead.
@@ -93,6 +103,8 @@ class RequestService extends Component
                     }
 
                     $this->generated++;
+                } else {
+                    $this->logUnexpectedStatus($url, $status);
                 }
 
                 if (is_callable($setProgressHandler)) {
@@ -116,16 +128,50 @@ class RequestService extends Component
         $markdownService = Llmify::getInstance()->markdown;
         $markdownService->saveMarkdown($markdownService->convertHtml($html), $elementId, $siteId);
     }
-    protected function createRequest(string $url): Request
+
+    /**
+     * Builds the internal request used to render a front-end URL. Besides the
+     * refresh marker it carries what the site needs to let the request through:
+     * a Craft site token so offline (`isSystemLive: false`) staging sites still
+     * render, and HTTP Basic Auth credentials when the site is protected that way.
+     */
+    protected function createRequest(string $url, ?int $siteId = null): Request
     {
         $request = new Request($url);
         $request->setHeader(Constants::HEADER_REFRESH, '1');
+
+        if ($siteId !== null) {
+            $request->setHeader('X-Craft-Site-Token', Craft::$app->getSecurity()->hashData((string)$siteId));
+        }
+
+        $settings = Llmify::getInstance()->getSettings();
+        $username = (string)App::parseEnv($settings->basicAuthUsername);
+        if ($username !== '') {
+            $password = (string)App::parseEnv($settings->basicAuthPassword);
+            $request->setHeader('Authorization', 'Basic ' . base64_encode("{$username}:{$password}"));
+        }
+
         $request->setTcpConnectTimeout($this->requestTimeout);
         $request->setTlsHandshakeTimeout($this->requestTimeout);
         $request->setTransferTimeout($this->requestTimeout);
         $request->setInactivityTimeout($this->requestTimeout);
 
         return $request;
+    }
+
+    /**
+     * A non-200 response means the page was skipped. Log it so a protected or
+     * offline site does not fail silently.
+     */
+    protected function logUnexpectedStatus(string $url, int $status): void
+    {
+        $hint = match ($status) {
+            401 => 'The site requires HTTP Basic Auth. Set the credentials in the LLMify plugin settings.',
+            503 => 'The site is offline or unavailable.',
+            default => '',
+        };
+
+        Craft::warning(trim("Skipped markdown generation for {$url}: the site responded with HTTP {$status}. {$hint}"), 'llmify');
     }
 
     /**

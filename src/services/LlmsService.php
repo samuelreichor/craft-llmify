@@ -120,7 +120,7 @@ class LlmsService extends Component
 
         if ($element && $element->getUrl()) {
             try {
-                Llmify::getInstance()->request->generateUrl($element->getUrl());
+                Llmify::getInstance()->request->generateUrl($element->getUrl(), $element->siteId);
             } catch (\Throwable $e) {
                 Craft::warning("On-the-fly markdown generation failed for URI: {$uri}. " . $e->getMessage(), 'llmify');
                 return '';

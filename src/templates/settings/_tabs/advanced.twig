@@ -45,36 +45,68 @@
     </div>
 </div>
 
-{{ forms.textField({
-  label: 'Concurrent Requests',
-  instructions: 'The max number of concurrent requests to use when generating the markdown.',
-  id: 'concurrentRequests',
-  name: 'concurrentRequests',
-  value: settings.concurrentRequests,
-  type: 'number',
-  min: 1,
-  max: 100,
-  errors: settings.getErrors('concurrentRequests'),
-  required: true,
-  unit: 'Concurrent Requests',
-  placeholder: 3,
-  disabled: readOnly,
-}) }}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; margin-top: 24px;">
+    <div>
+        {{ forms.textField({
+          label: 'Concurrent Requests',
+          instructions: 'The max number of concurrent requests to use when generating the markdown.',
+          id: 'concurrentRequests',
+          name: 'concurrentRequests',
+          value: settings.concurrentRequests,
+          type: 'number',
+          min: 1,
+          max: 100,
+          errors: settings.getErrors('concurrentRequests'),
+          required: true,
+          unit: 'Concurrent Requests',
+          placeholder: 3,
+          disabled: readOnly,
+        }) }}
+    </div>
 
-{{ forms.textField({
-  label: 'Request Timeout',
-  instructions: 'The max amount of seconds requests can take.',
-  id: 'requestTimeout',
-  name: 'requestTimeout',
-  value: settings.requestTimeout,
-  type: 'number',
-  min: 1,
-  errors: settings.getErrors('requestTimeout'),
-  required: true,
-  unit: 'Seconds',
-  placeholder: 100,
-  disabled: readOnly,
-}) }}
+    <div>
+        {{ forms.textField({
+          label: 'Request Timeout',
+          instructions: 'The max amount of seconds requests can take.',
+          id: 'requestTimeout',
+          name: 'requestTimeout',
+          value: settings.requestTimeout,
+          type: 'number',
+          min: 1,
+          errors: settings.getErrors('requestTimeout'),
+          required: true,
+          unit: 'Seconds',
+          placeholder: 100,
+          disabled: readOnly,
+        }) }}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; margin-top: 24px;">
+    <div>
+        {{ forms.autosuggestField({
+          label: 'Basic Auth Username',
+          instructions: 'Sent with the internal page requests when the site is protected with HTTP Basic Auth (e.g. on staging).',
+          id: 'basicAuthUsername',
+          name: 'basicAuthUsername',
+          value: settings.basicAuthUsername,
+          suggestEnvVars: true,
+          disabled: readOnly,
+        }) }}
+    </div>
+
+    <div>
+        {{ forms.autosuggestField({
+          label: 'Basic Auth Password',
+          instructions: 'Use an environment variable so the password is not stored in project config.',
+          id: 'basicAuthPassword',
+          name: 'basicAuthPassword',
+          value: settings.basicAuthPassword,
+          suggestEnvVars: true,
+          disabled: readOnly,
+        }) }}
+    </div>
+</div>
 
 <hr>
 

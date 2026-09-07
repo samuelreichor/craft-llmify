@@ -7,6 +7,7 @@
 - Show a warning on all LLMify control panel pages and in the LLMify Settings field while the plugin is disabled, so editors can see that no markdown is being generated or served.
 
 ### Fixed
+- The plugin settings are now shown read-only when `allowAdminChanges` is disabled, instead of an empty settings page. The Settings link in the LLMify navigation is also available in that case.
 - Markdown generation now works on offline sites (`isSystemLive: false`). The plugin's internal page requests carry a Craft site token, which Craft accepts while the system is offline.
 - Internal page requests that do not return a 200 are now logged as warnings instead of being skipped silently.
 

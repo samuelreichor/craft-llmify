@@ -178,7 +178,7 @@ class Llmify extends Plugin
             $subNavs['globals'] = ['label' => 'Site', 'url' => 'llmify/globals'];
         }
 
-        if ($currentUser->admin && Craft::$app->getConfig()->getGeneral()->allowAdminChanges) {
+        if ($currentUser->admin) {
             $subNavs['settings'] = ['label' => 'Settings', 'url' => 'llmify/settings'];
         }
 
@@ -239,6 +239,15 @@ class Llmify extends Plugin
     public function getSettingsResponse(): mixed
     {
         return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('llmify/settings'));
+    }
+
+    /**
+     * Craft calls this instead of `getSettingsResponse()` when `allowAdminChanges`
+     * is off. The settings page renders itself read-only in that case.
+     */
+    public function getReadOnlySettingsResponse(): mixed
+    {
+        return $this->getSettingsResponse();
     }
 
     /**

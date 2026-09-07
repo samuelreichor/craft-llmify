@@ -13,7 +13,7 @@ class SettingsController extends Controller
 
     public function actionIndex(): Response
     {
-        $this->requireAdmin();
+        $this->requireAdmin(false);
 
         return $this->renderTemplate('llmify/settings/index', [
             'plugin' => Llmify::getInstance(),

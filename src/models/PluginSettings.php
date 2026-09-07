@@ -14,6 +14,8 @@ class PluginSettings extends Model
     public string $markdownUrlPrefix = 'raw';
     public int $concurrentRequests = 3;
     public int $requestTimeout = 100;
+    public ?string $basicAuthUsername = null;
+    public ?string $basicAuthPassword = null;
     public array $markdownConfig = [
         'strip_tags' => true,
         'header_style' => 'atx',

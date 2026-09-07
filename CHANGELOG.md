@@ -1,6 +1,6 @@
 # Release Notes for LLMify
 
-## Unreleased
+## 1.11.0 - 2026-09-07
 
 ### Added
 - Add `Basic Auth Username` and `Basic Auth Password` settings so markdown generation also works on sites protected with HTTP Basic Auth (e.g. staging). The credentials are sent with the plugin's internal page requests.

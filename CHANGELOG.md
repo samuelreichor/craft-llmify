@@ -4,6 +4,7 @@
 
 ### Added
 - Add `rel="describedby"` discovery for the [llms.txt spec v2](https://llmstxt.org/): the discovery tag now also injects `<link rel="describedby" href="/llms.txt">`, and `.md` responses (direct and content-negotiated) send a `Link` header pointing to `llms.txt` (`rel="describedby"`) and, for negotiated responses, to the `.md` URL (`rel="alternate"; type="text/markdown"`).
+- Show a warning on the dashboard while a `Markdown URL Prefix` is set, since the spec expects markdown at the original URL with `.md` appended.
 
 ### Changed
 - The homepage markdown is now served at `/index.md` instead of `/__home__.md`, as the spec requires for URLs without a file name. Generated links, the discovery tag and `llms.txt` use the new URL; `__home__.md` keeps working.

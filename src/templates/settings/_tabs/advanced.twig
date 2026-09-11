@@ -4,12 +4,11 @@
 
 {{ forms.textField({
   label: 'Markdown URL Prefix',
-  instructions: 'This prefix is used to generate links for the markdowns (eg. https://example.com/raw/__home__.md). Leave empty to append `.md` to the original URL (eg. https://example.com/about.md).',
+  instructions: 'Leave empty to serve markdown at the original URL with `.md` appended (eg. https://example.com/about.md, https://example.com/index.md), as the llms.txt spec expects. Set a prefix only if `.md` URLs conflict with existing routes (eg. `raw` results in https://example.com/raw/about.md).',
   id: 'markdownUrlPrefix',
   name: 'markdownUrlPrefix',
   value: settings.markdownUrlPrefix,
   errors: settings.getErrors('markdownUrlPrefix'),
-  placeholder: 'raw',
   first: true,
   disabled: readOnly,
 }) }}

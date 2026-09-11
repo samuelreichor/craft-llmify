@@ -7,6 +7,7 @@
 
 ### Changed
 - The homepage markdown is now served at `/index.md` instead of `/__home__.md`, as the spec requires for URLs without a file name. Generated links, the discovery tag and `llms.txt` use the new URL; `__home__.md` keeps working.
+- `Markdown URL Prefix` now defaults to an empty string for new installs, so `.md` URLs match the spec. Existing installs that never saved the setting keep `raw` via a migration.
 
 ## 1.11.0 - 2026-09-07
 

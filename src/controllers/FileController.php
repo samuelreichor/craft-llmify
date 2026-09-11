@@ -3,6 +3,7 @@
 namespace samuelreichor\llmify\controllers;
 
 use Craft;
+use craft\base\Element;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
@@ -79,18 +80,21 @@ class FileController extends Controller
     public function actionGeneratePageMd(string $slug): Response
     {
         $uri = preg_replace('/\.md$/', '', $slug);
+        if ($uri === 'index') {
+            $uri = Element::HOMEPAGE_URI;
+        }
         $fileContent = Llmify::getInstance()->llms->getMarkdownForUri($uri);
 
         if (!$fileContent) {
             throw new NotFoundHttpException('Markdown not found for URI: ' . $uri);
         }
 
-        $canonicalUrl = UrlHelper::siteUrl($uri);
+        $canonicalUrl = UrlHelper::siteUrl($uri === Element::HOMEPAGE_URI ? '' : $uri);
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
         Craft::$app->response->headers->set('Link', '<' . $canonicalUrl . '>; rel="canonical"');
 
         // Resolve the element so we can store its canonical front-end URL —
-        // otherwise `/raw/__home__.md` and `/` would land in different rows
+        // otherwise `/index.md` and `/` would land in different rows
         // for the same logical page.
         $element = Craft::$app->getElements()->getElementByUri($uri, Craft::$app->getSites()->getCurrentSite()->id);
         Llmify::getInstance()->fireLlmRequest(

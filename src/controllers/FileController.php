@@ -9,6 +9,7 @@ use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use samuelreichor\llmify\enums\LlmRequestType;
 use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\services\HelperService;
 use yii\base\Exception;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -89,14 +90,21 @@ class FileController extends Controller
             throw new NotFoundHttpException('Markdown not found for URI: ' . $uri);
         }
 
+        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
         $canonicalUrl = UrlHelper::siteUrl($uri === Element::HOMEPAGE_URI ? '' : $uri);
+        $linkHeader = ['<' . $canonicalUrl . '>; rel="canonical"'];
+        $llmsTxtUrl = HelperService::getLlmsTxtUrl($siteId);
+        if ($llmsTxtUrl) {
+            $linkHeader[] = '<' . $llmsTxtUrl . '>; rel="describedby"';
+        }
+
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
-        Craft::$app->response->headers->set('Link', '<' . $canonicalUrl . '>; rel="canonical"');
+        Craft::$app->response->headers->set('Link', implode(', ', $linkHeader));
 
         // Resolve the element so we can store its canonical front-end URL —
         // otherwise `/index.md` and `/` would land in different rows
         // for the same logical page.
-        $element = Craft::$app->getElements()->getElementByUri($uri, Craft::$app->getSites()->getCurrentSite()->id);
+        $element = Craft::$app->getElements()->getElementByUri($uri, $siteId);
         Llmify::getInstance()->fireLlmRequest(
             LlmRequestType::Direct,
             elementId: $element?->id,

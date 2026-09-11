@@ -505,6 +505,19 @@ class Llmify extends Plugin
                         $response->headers->set('Vary', 'Accept, User-Agent');
 
                         $element = Craft::$app->getUrlManager()->getMatchedElement();
+
+                        $linkHeader = [];
+                        if ($element && $element->uri) {
+                            $linkHeader[] = '<' . HelperService::getMarkdownUrl($element->uri, $element->siteId) . '>; rel="alternate"; type="text/markdown"';
+                        }
+                        $llmsTxtUrl = HelperService::getLlmsTxtUrl(Craft::$app->getSites()->getCurrentSite()->id);
+                        if ($llmsTxtUrl) {
+                            $linkHeader[] = '<' . $llmsTxtUrl . '>; rel="describedby"';
+                        }
+                        if ($linkHeader) {
+                            $response->headers->set('Link', implode(', ', $linkHeader));
+                        }
+
                         $this->fireLlmRequest(
                             LlmRequestType::Negotiated,
                             elementId: $element ? $element->id : null,

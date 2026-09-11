@@ -683,6 +683,15 @@ class Llmify extends Plugin
 
                 $registered = true;
 
+                // Points every page of the site to the llms.txt that covers it.
+                $llmsTxtUrl = HelperService::getLlmsTxtUrl(Craft::$app->getSites()->getCurrentSite()->id);
+                if ($llmsTxtUrl) {
+                    Craft::$app->view->registerLinkTag([
+                        'rel' => 'describedby',
+                        'href' => $llmsTxtUrl,
+                    ], 'llmify-describedby');
+                }
+
                 /** @var UrlManager $urlManager */
                 $urlManager = Craft::$app->getUrlManager();
                 $element = $urlManager->getMatchedElement();

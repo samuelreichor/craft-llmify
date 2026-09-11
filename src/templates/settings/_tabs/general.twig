@@ -40,7 +40,7 @@
 
 {{ forms.lightswitchField({
   label: 'Discovery Link Tag',
-  instructions: 'Inject a `<link rel="alternate" type="text/markdown">` tag into the HTML head of pages that have markdown available.',
+  instructions: 'Inject discovery links into the HTML head: `<link rel="describedby">` pointing to `llms.txt` on every page (when `llms.txt` is enabled), and `<link rel="alternate" type="text/markdown">` on pages that have markdown available.',
   id: 'autoInjectDiscoveryTag',
   name: 'autoInjectDiscoveryTag',
   on: settings.autoInjectDiscoveryTag,

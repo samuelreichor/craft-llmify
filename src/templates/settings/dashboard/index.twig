@@ -39,6 +39,15 @@
 {% block content %}
     {% include 'llmify/settings/_includes/disabled-warning' %}
 
+    {% if pluginChecks.markdownUrlPrefix != '' %}
+        <p class="warning with-icon" style="margin-bottom: 24px;">
+            The Markdown URL Prefix is set to <code>{{ pluginChecks.markdownUrlPrefix }}</code>. The llms.txt spec expects the markdown version of a page at the same URL with <code>.md</code> appended (eg. <code>/about.md</code>). Leave the prefix empty to follow the spec.
+            {% if currentUser.admin and craft.app.config.general.allowAdminChanges %}
+                <a href="{{ cpUrl('llmify/settings') }}">Change it in the plugin settings.</a>
+            {% endif %}
+        </p>
+    {% endif %}
+
     {# Plugin Settings Quick Bar #}
     <div class="llmify-quickbar">
         <div class="llmify-quickbar-items">

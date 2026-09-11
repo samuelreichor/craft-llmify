@@ -290,4 +290,20 @@ class HelperService extends Component
     {
         return (string)parse_url(self::getMarkdownUrl($uri, $siteId), PHP_URL_PATH);
     }
+
+    /**
+     * URL of the llms.txt file covering the given site, or null when the file
+     * is disabled for that site. Used for `rel="describedby"` discovery links.
+     *
+     * @throws Exception
+     */
+    public static function getLlmsTxtUrl(int $siteId): ?string
+    {
+        $globalSettings = Llmify::getInstance()->settings->getGlobalSetting($siteId);
+        if (!$globalSettings->isEnabled() || !$globalSettings->enableLlmsTxt) {
+            return null;
+        }
+
+        return UrlHelper::siteUrl('llms.txt', null, null, $siteId);
+    }
 }

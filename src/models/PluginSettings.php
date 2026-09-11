@@ -11,7 +11,7 @@ class PluginSettings extends Model
     public ?string $apiToken = null;
     public bool $isRealUrlLlm = false;
     public bool $autoServeMarkdown = true;
-    public string $markdownUrlPrefix = 'raw';
+    public string $markdownUrlPrefix = '';
     public int $concurrentRequests = 3;
     public int $requestTimeout = 100;
     public ?string $basicAuthUsername = null;

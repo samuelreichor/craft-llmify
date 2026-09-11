@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
+use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\base\FieldInterface;
 use craft\elements\Entry;
@@ -265,6 +266,11 @@ class HelperService extends Component
      */
     public static function getMarkdownUrl(string $uri, ?int $siteId = null): string
     {
+        // The llms.txt spec expects URLs without a file name to use `index.md`.
+        if ($uri === Element::HOMEPAGE_URI) {
+            $uri = 'index';
+        }
+
         $mdPrefix = Llmify::getInstance()->getSettings()->markdownUrlPrefix;
         if ($mdPrefix !== '') {
             return UrlHelper::siteUrl("{$mdPrefix}/{$uri}.md", null, null, $siteId);

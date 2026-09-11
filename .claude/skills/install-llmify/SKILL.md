@@ -87,7 +87,7 @@ After generating markdown, verify these URLs are accessible:
 - `/llms.txt` — Summary file listing all enabled entries
 - `/llms-full.txt` — Full content of all entries
 - `/.well-known/llms.txt` — RFC 8615 compliant discovery endpoint
-- `/raw/{entry-uri}.md` — Individual markdown page (if `markdownUrlPrefix` is set)
+- `/{entry-uri}.md` — Individual markdown page, homepage at `/index.md` (prefixed with `markdownUrlPrefix` if set, e.g. `/raw/{entry-uri}.md`)
 
 Test auto-serve markdown with:
 

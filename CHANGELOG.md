@@ -1,6 +1,6 @@
 # Release Notes for LLMify
 
-## Unreleased
+## 1.12.0 - 2026-09-23
 
 ### Added
 - Add `rel="describedby"` discovery for the [llms.txt spec v2](https://llmstxt.org/): the discovery tag now also injects `<link rel="describedby" href="/llms.txt">`, and `.md` responses (direct and content-negotiated) send a `Link` header pointing to `llms.txt` (`rel="describedby"`) and, for negotiated responses, to the `.md` URL (`rel="alternate"; type="text/markdown"`).

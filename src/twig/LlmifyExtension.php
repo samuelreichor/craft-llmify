@@ -47,9 +47,7 @@ class LlmifyExtension extends AbstractExtension
             return null;
         }
 
-        // Read-only gating: pass triggerRefresh false so rendering a page that
-        // uses these functions never enqueues a refresh as a side effect.
-        if (!Llmify::getInstance()->refresh->canRefreshElement($element, false)) {
+        if (!Llmify::getInstance()->markdown->isServable($element)) {
             return null;
         }
 

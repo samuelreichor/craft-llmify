@@ -3,12 +3,10 @@
 namespace samuelreichor\llmify\services;
 
 use Amp\Http\Client\HttpClientBuilder;
-use Amp\Http\Client\HttpException;
 use Amp\Http\Client\Request;
 use Amp\Pipeline\Pipeline;
 use Craft;
 use craft\helpers\App;
-use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use Throwable;
 use yii\base\Component;
@@ -27,7 +25,6 @@ class RequestService extends Component
      * @var int The timeout for requests in seconds.
      */
     public int $requestTimeout;
-    private int $generated = 0;
 
     public function __construct()
     {
@@ -37,24 +34,10 @@ class RequestService extends Component
         $this->requestTimeout = $settings->requestTimeout;
     }
 
-    public function generateUrl(string $url, ?int $siteId = null): bool
-    {
-        $client = HttpClientBuilder::buildDefault();
-        $request = $this->createRequest($url, $siteId);
-        $response = $client->request($request);
-        $status = $response->getStatus();
-
-        if ($status !== 200) {
-            $this->logUnexpectedStatus($url, $status);
-        }
-
-        return $status === 200;
-    }
-
     /**
-     * Fetches a single URL and converts its rendered HTML body to markdown,
-     * without persisting it. Used by the headless convert endpoint. Returns
-     * null when the URL does not respond with a 200.
+     * Fetches a single URL and converts its rendered HTML body to markdown.
+     * Used in headless mode. Returns null when the URL does not respond with
+     * a 200.
      *
      * @throws Throwable
      */
@@ -72,75 +55,49 @@ class RequestService extends Component
         return Llmify::getInstance()->markdown->convertHtml($response->getBody()->buffer());
     }
 
-    public function generateUrlsWithProgress(array $urls, callable $setProgressHandler = null): void
-    {
-        $this->generateWithProgress($urls, $setProgressHandler, 0, count($urls));
-    }
-
-    public function generateWithProgress(array $urls, callable $setProgressHandler, int $count, int $total): void
+    /**
+     * Fetches the URLs concurrently and returns their bodies, keyed by URL.
+     * A URL that fails or does not respond with a 200 maps to null.
+     *
+     * @param string[] $urls
+     * @return array<string, string|null>
+     */
+    public function fetchAll(array $urls, int $siteId): array
     {
         $client = HttpClientBuilder::buildDefault();
-        $isHeadless = Llmify::getInstance()->getSettings()->headlessMode;
 
-        $concurrentIterator = Pipeline::fromIterable($urls)
-            ->concurrent($this->concurrentRequests);
+        $results = Pipeline::fromIterable($urls)
+            ->concurrent($this->concurrentRequests)
+            ->map(function(string $url) use ($client, $siteId) {
+                try {
+                    $response = $client->request($this->createRequest($url, $siteId));
+                    $status = $response->getStatus();
 
-        foreach ($concurrentIterator as $item) {
-            $count++;
-            $url = is_array($item) ? $item['url'] : $item;
-            $siteId = is_array($item) ? $item['siteId'] : null;
-            try {
-                $request = $this->createRequest($url, $siteId);
-                $response = $client->request($request);
-                $status = $response->getStatus();
-
-                if ($status === 200) {
-                    // In headless mode Craft never renders the front end, so the
-                    // Twig save side-effect does not run. Read the fetched body
-                    // and convert it here instead.
-                    if ($isHeadless && is_array($item) && $item['elementId'] !== null) {
-                        $this->saveFromBody($response->getBody()->buffer(), $item['elementId'], $item['siteId']);
+                    if ($status !== 200) {
+                        $this->logUnexpectedStatus($url, $status);
+                        return [$url, null];
                     }
 
-                    $this->generated++;
-                } else {
-                    $this->logUnexpectedStatus($url, $status);
+                    return [$url, $response->getBody()->buffer()];
+                } catch (Throwable $e) {
+                    Craft::warning("Failed fetching {$url}. " . $e->getMessage(), 'llmify');
+                    return [$url, null];
                 }
+            })
+            ->toArray();
 
-                if (is_callable($setProgressHandler)) {
-                    $this->callProgressHandler($setProgressHandler, $count, $total);
-                }
-            } catch (HttpException $exception) {
-                Craft::error("Failed generating URL {$url}. " . $exception->getMessage());
-            } catch (Throwable $exception) {
-                Craft::error("Failed converting markdown for URL {$url}. " . $exception->getMessage());
-            }
-        }
+        return array_column($results, 1, 0);
     }
 
     /**
-     * Converts a fetched HTML body to markdown and stores it for the given element.
-     *
-     * @throws Throwable
-     */
-    protected function saveFromBody(string $html, int $elementId, int $siteId): void
-    {
-        $markdownService = Llmify::getInstance()->markdown;
-        $markdownService->saveMarkdown($markdownService->convertHtml($html), $elementId, $siteId);
-    }
-
-    /**
-     * Builds the internal request used to render a front-end URL. Besides the
-     * refresh marker it carries what the site needs to let the request through:
-     * a Craft site token so offline (`isSystemLive: false`) staging sites still
-     * render, and HTTP Basic Auth credentials when the site is protected that way.
-     * The site token is only sent while the system is offline, since Craft
-     * appends it to every URL in the response.
+     * Builds the request used to fetch a page. It carries what the site needs
+     * to let the request through: a Craft site token so offline
+     * (`isSystemLive: false`) staging sites still respond, and HTTP Basic Auth
+     * credentials when the site is protected that way.
      */
     protected function createRequest(string $url, ?int $siteId = null): Request
     {
         $request = new Request($url);
-        $request->setHeader(Constants::HEADER_REFRESH, '1');
 
         if ($siteId !== null && !Craft::$app->getIsLive()) {
             $request->setHeader('X-Craft-Site-Token', Craft::$app->getSecurity()->hashData((string)$siteId));
@@ -173,19 +130,6 @@ class RequestService extends Component
             default => '',
         };
 
-        Craft::warning(trim("Skipped markdown generation for {$url}: the site responded with HTTP {$status}. {$hint}"), 'llmify');
-    }
-
-    /**
-     * Calls the provided progress handles.
-     */
-    protected function callProgressHandler(callable $setProgressHandler, int $count, int $total): void
-    {
-        $progressLabel = Craft::t('llmify', 'Generating {count} of {total} markdowns', [
-            'count' => $count,
-            'total' => $total,
-        ]);
-
-        call_user_func($setProgressHandler, $count, $total, $progressLabel);
+        Craft::warning(trim("Skipped {$url}: the site responded with HTTP {$status}. {$hint}"), 'llmify');
     }
 }

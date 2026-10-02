@@ -5,8 +5,8 @@ namespace samuelreichor\llmify\utilities;
 use Craft;
 use craft\base\Utility;
 use samuelreichor\llmify\Llmify;
-use samuelreichor\llmify\records\PageRecord;
 use samuelreichor\llmify\services\HelperService;
+use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\PermissionService;
 use Throwable;
 use Twig\Error\LoaderError;
@@ -50,21 +50,20 @@ class Utils extends Utility
     public static function contentHtml(): string
     {
         $activeSiteIds = Llmify::getInstance()->settings->getAllActiveGlobalSettingsIds();
-        $markdownTable = [];
+        $llmsFullTable = [];
         foreach ($activeSiteIds as $siteId) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $pageCount = PageRecord::find()->where(['siteId' => $siteId])->count();
-                $markdownTable[] = [
+                $llmsFullTable[] = [
                     'name' => $site->name,
-                    'pageCount' => $pageCount,
+                    'enabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
+                    'dateGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
                 ];
             }
         }
         return Craft::$app->getView()->renderTemplate('llmify/utilities/actions.twig', [
-            'markdownTable' => $markdownTable,
+            'llmsFullTable' => $llmsFullTable,
             'isEnabled' => HelperService::isMarkdownCreationEnabled(),
-            'canGenerate' => PermissionService::canGenerate(),
             'canClear' => PermissionService::canClear(),
         ]);
     }

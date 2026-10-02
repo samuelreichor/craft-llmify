@@ -12,7 +12,7 @@ class GlobalSettings extends Model
     public int $siteId;
     public bool $enabled = true;
     public bool $enableLlmsTxt = true;
-    public bool $enableLlmsFullTxt = true;
+    public bool $enableLlmsFullTxt = false;
     public string $llmTitle = '';
     public string $llmDescription = '';
     public string $llmNote = '';

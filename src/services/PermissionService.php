@@ -51,19 +51,6 @@ class PermissionService
     /**
      * @throws Throwable
      */
-    public static function canGenerate(): bool
-    {
-        $user = Craft::$app->getUser()->getIdentity();
-        if ($user->can(Constants::PERMISSION_GENERATE)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @throws Throwable
-     */
     public static function canClear(): bool
     {
         $user = Craft::$app->getUser()->getIdentity();

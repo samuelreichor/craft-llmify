@@ -2,12 +2,11 @@
 
 namespace samuelreichor\llmify\controllers;
 
-use Craft;
-use craft\errors\ElementNotFoundException;
 use craft\web\Controller;
-use samuelreichor\llmify\Llmify;
-use yii\db\Exception;
+use samuelreichor\llmify\Constants;
+use samuelreichor\llmify\services\HelperService;
 use yii\web\BadRequestHttpException;
+use yii\web\ForbiddenHttpException;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\Response;
 
@@ -16,83 +15,16 @@ class MarkdownController extends Controller
     /**
      * @throws MethodNotAllowedHttpException
      * @throws BadRequestHttpException
-     * @throws Exception
-     * @throws \yii\base\Exception
+     * @throws ForbiddenHttpException
      */
-    public function actionGenerate(): Response
+    public function actionClearCaches(): Response
     {
         $this->requirePostRequest();
+        $this->requirePermission(Constants::PERMISSION_CLEAR);
 
-        Llmify::getInstance()->refresh->refreshAll();
-        $this->setSuccessFlash('Markdown generation started. Jobs have been added to the queue.');
-        return $this->redirectToPostedUrl();
-    }
-
-    /**
-     * @throws MethodNotAllowedHttpException
-     * @throws BadRequestHttpException
-     * @throws Exception
-     */
-    public function actionClear(): Response
-    {
-        $this->requirePostRequest();
-
-        Llmify::getInstance()->refresh->clearAll();
-        $this->setSuccessFlash('All markdowns successfully removed.');
+        HelperService::invalidateCaches();
+        $this->setSuccessFlash('Markdown caches cleared.');
 
         return $this->redirectToPostedUrl();
-    }
-
-    /**
-     * @throws MethodNotAllowedHttpException
-     * @throws ElementNotFoundException
-     */
-    public function actionGeneratePage(int $elementId, int $siteId): Response
-    {
-        $this->requirePostRequest();
-        $element = Craft::$app->elements->getElementById($elementId, null, $siteId);
-
-        if (!$element) {
-            throw new ElementNotFoundException();
-        }
-
-        try {
-            Llmify::getInstance()->refresh->addElement($element);
-        } catch (Exception|\yii\base\Exception $e) {
-            Craft::error($e->getMessage(), 'llmify');
-            return $this->asJson(['success' => false, 'message' => 'An error occurred while updating the Markdown.']);
-        }
-
-        return $this->asJson([
-            'success' => true,
-            'message' => 'Markdown successfully updated.',
-        ]);
-    }
-
-
-    /**
-     * @throws MethodNotAllowedHttpException
-     * @throws ElementNotFoundException
-     */
-    public function actionClearPage(int $elementId, int $siteId): Response
-    {
-        $this->requirePostRequest();
-        $element = Craft::$app->elements->getElementById($elementId, null, $siteId);
-
-        if (!$element) {
-            throw new ElementNotFoundException();
-        }
-
-        try {
-            Llmify::getInstance()->refresh->deleteElement($element);
-        } catch (Exception $e) {
-            Craft::error($e->getMessage(), 'llmify');
-            return $this->asJson(['success' => false, 'message' => 'An error occurred while clearing the Markdown.']);
-        }
-
-        return $this->asJson([
-            'success' => true,
-            'message' => 'Markdown successfully cleared.',
-        ]);
     }
 }

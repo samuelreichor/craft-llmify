@@ -5,8 +5,8 @@ namespace samuelreichor\llmify\services;
 use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
-use craft\db\Query as DbQuery;
 use craft\elements\Entry;
+use craft\web\View;
 use Exception;
 use League\HTMLToMarkdown\HtmlConverter;
 use PHPHtmlParser\Dom;
@@ -14,12 +14,8 @@ use PHPHtmlParser\Exceptions\ChildNotFoundException;
 use PHPHtmlParser\Exceptions\CircularException;
 use PHPHtmlParser\Exceptions\NotLoadedException;
 use PHPHtmlParser\Exceptions\StrictException;
-use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\Page;
-use samuelreichor\llmify\records\PageRecord;
-use yii\base\InvalidConfigException;
-use yii\db\Expression;
 
 class MarkdownService extends Component
 {
@@ -29,21 +25,15 @@ class MarkdownService extends Component
     public ?int $siteId = null;
 
     /**
-     * @throws InvalidConfigException
-     * @throws Exception
+     * True while the route of an element is resolved for rendering its
+     * markdown, so auto-serve does not reroute that lookup to itself.
      */
-    public function process(string $html, int $entryId = null, int $siteId = null): void
-    {
-        $markdown = $this->htmlToMarkdown($html);
-        $this->saveMarkdown($markdown, $entryId ?? $this->entryId, $siteId ?? $this->siteId);
-    }
+    public bool $isResolvingRoute = false;
 
     /**
      * Converts a full HTML document (e.g. a fetched front-end page in headless mode)
      * into markdown. Scopes to the `<body>` to drop `<head>` noise, removes excluded
-     * CSS classes, then runs the standard HTML-to-markdown conversion. Unlike
-     * `process()`, this does not persist anything — the caller decides what to do
-     * with the result.
+     * CSS classes, then runs the standard HTML-to-markdown conversion.
      *
      * @throws ChildNotFoundException
      * @throws NotLoadedException
@@ -103,91 +93,64 @@ class MarkdownService extends Component
     }
 
     /**
+     * Finds the live entry or product with the given URI. In a preview request
+     * this returns the previewed draft.
+     */
+    public function findElementByUri(string $uri, int $siteId): ?ElementInterface
+    {
+        $element = Entry::find()->uri($uri)->siteId($siteId)->one();
+
+        if (!$element && HelperService::isCommerceInstalled()) {
+            $element = \craft\commerce\elements\Product::find()->uri($uri)->siteId($siteId)->one();
+        }
+
+        return $element;
+    }
+
+    /**
+     * Returns the markdown of an element as its `.md` page is served, front
+     * matter included. Empty when the element is not servable or has no
+     * markdown content.
+     *
      * @throws Exception
      */
-    public function saveMarkdown(string $markdown, int $elementId, int $siteId): void
+    public function getPageMarkdown(ElementInterface $element): string
     {
-        $element = Craft::$app->elements->getElementById($elementId, null, $siteId);
+        if (!$this->isServable($element)) {
+            return '';
+        }
 
-        if (!$element) {
-            throw new Exception('Element not found, unable to save markdown for element ' . $elementId);
+        return HelperService::cached(
+            ['llmify', 'page', $element->id, $element->siteId],
+            fn() => $this->buildPageMarkdown($element),
+        );
+    }
+
+    /**
+     * Whether the element can be served as markdown: an entry or product with
+     * a URI, in an enabled group and site, and not excluded.
+     *
+     * @throws Exception
+     */
+    public function isServable(ElementInterface $element): bool
+    {
+        $isProduct = HelperService::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product;
+
+        if (!($element instanceof Entry) && !$isProduct) {
+            return false;
+        }
+
+        if ($element->uri === null) {
+            return false;
         }
 
         $groupId = HelperService::getGroupIdForElement($element);
-        $elementType = HelperService::getElementTypeForElement($element);
 
-        $pageEntry = PageRecord::findOne(['elementId' => $elementId, 'siteId' => $siteId]);
-        $metaDataService = new MetadataService($element);
-
-        if (!$pageEntry) {
-            $pageEntry = new PageRecord();
-            $pageEntry->elementId = $element->id;
-            $pageEntry->elementType = $elementType;
-            $pageEntry->groupId = $groupId;
-            $pageEntry->metadataId = $metaDataService->getMetaContentId();
-            $pageEntry->siteId = $element->getSite()->id;
+        if ($groupId === null || !$this->isGroupServable($groupId, $element->siteId, $element::class)) {
+            return false;
         }
 
-        $pageEntry->title = $metaDataService->getLlmTitle();
-        $pageEntry->description = $metaDataService->getLlmDescription();
-        $pageEntry->content = $markdown;
-        $pageEntry->uri = $element->uri;
-        $pageEntry->dateUpdated = new Expression('NOW()');
-        $pageEntry->elementMeta = [
-            "fullUrl" => $element->getUrl(),
-            "uri" => $element->uri,
-        ];
-        $pageEntry->save();
-    }
-
-    public function getMarkdown(string $uri, int $siteId): ?Page
-    {
-        $result = $this->_createPageQuery()
-            ->where(['siteId' => $siteId, 'uri' => $uri])
-            ->one();
-
-        return $result ? new Page($result) : null;
-    }
-
-    public function getRenderedMarkdown(string $uri, int $siteId, ?ElementInterface $element = null): ?string
-    {
-        $page = $this->getMarkdown($uri, $siteId);
-
-        if (!$page) {
-            return null;
-        }
-
-        if (!$this->isGroupServable($page->groupId, $siteId, $page->elementType)) {
-            return null;
-        }
-
-        $element = $element ?? Craft::$app->elements->getElementById($page->elementId, $page->elementType, $siteId);
-
-        return Llmify::getInstance()->frontMatter->prependFrontMatter($page->content, $page, $element);
-    }
-
-    public function resolveAutoServeMarkdown(): ?string
-    {
-        if ($this->entryId === null || $this->siteId === null) {
-            return null;
-        }
-
-        $element = Craft::$app->elements->getElementById($this->entryId, null, $this->siteId);
-
-        if (!$element) {
-            return null;
-        }
-
-        $groupId = HelperService::getGroupIdForElement($element);
-        $elementType = HelperService::getElementTypeForElement($element);
-
-        if ($groupId === null || !$this->isGroupServable($groupId, $this->siteId, $elementType)) {
-            return null;
-        }
-
-        $this->processContentBlocks();
-
-        return $this->getRenderedMarkdown($element->uri, $this->siteId, $element);
+        return !HelperService::isElementExcluded($element);
     }
 
     public function isGroupServable(int $groupId, int $siteId, ?string $elementType = null): bool
@@ -199,51 +162,100 @@ class MarkdownService extends Component
             && $settings->getContentSetting($groupId, $siteId, $elementType)->isEnabled();
     }
 
-    public function processContentBlocks(): void
+    /**
+     * @throws Exception
+     */
+    private function buildPageMarkdown(ElementInterface $element): string
     {
-        $html = $this->getCombinedHtml();
+        // The element itself was loaded before the cache info got collected.
+        Craft::$app->getElements()->collectCacheInfoForElement($element);
 
-        if (!empty($html)) {
-            $this->process($html);
-        }
-    }
+        $markdown = Llmify::getInstance()->getSettings()->headlessMode
+            ? $this->fetchMarkdown($element)
+            : $this->renderMarkdown($element);
 
-    public function getGroupedPagesForSite(int $siteId): array
-    {
-        $pageRecords = $this->_createPageQuery()
-            ->where(['siteId' => $siteId])
-            ->all();
-
-        $groupedPages = [];
-
-        foreach ($pageRecords as $page) {
-            $groupKey = ($page['elementType'] ?? Entry::class) . ':' . $page['groupId'];
-            $groupedPages[$groupKey][] = new Page($page);
+        if ($markdown === '') {
+            return '';
         }
 
-        return $groupedPages;
+        $metadata = new MetadataService($element);
+        $page = new Page([
+            'title' => $metadata->getLlmTitle(),
+            'description' => $metadata->getLlmDescription(),
+            'elementMeta' => [
+                'fullUrl' => $element->getUrl(),
+                'uri' => $element->uri,
+            ],
+        ]);
+
+        return Llmify::getInstance()->frontMatter->prependFrontMatter($markdown, $page, $element);
     }
 
     /**
-     * @throws \yii\db\Exception
+     * Returns the element's route as Craft would resolve it without auto-serve.
      */
-    public function getActivePagesForSite(int $siteId): array
+    public function getOriginalRoute(ElementInterface $element): mixed
     {
-        $groupedPages = $this->getGroupedPagesForSite($siteId);
+        $this->isResolvingRoute = true;
 
-        $activePages = [];
-        foreach ($groupedPages as $groupKey => $pages) {
-            [$elementType, $groupId] = explode(':', $groupKey, 2);
-            if (!$this->isGroupServable((int)$groupId, $siteId, $elementType)) {
-                continue;
-            }
+        try {
+            return $element->getRoute();
+        } finally {
+            $this->isResolvingRoute = false;
+        }
+    }
 
-            foreach ($pages as $page) {
-                $activePages[] = $page;
-            }
+    /**
+     * Renders the element's template in-process and converts the content of
+     * its `{% llmify %}` blocks to markdown.
+     *
+     * @throws Exception
+     */
+    private function renderMarkdown(ElementInterface $element): string
+    {
+        $route = $this->getOriginalRoute($element);
+        $template = is_array($route) && ($route[0] ?? null) === 'templates/render'
+            ? ($route[1]['template'] ?? null)
+            : null;
+
+        if (!is_string($template) || $template === '') {
+            Craft::warning("No template to render markdown for element {$element->id} in site {$element->siteId}.", 'llmify');
+            return '';
         }
 
-        return $activePages;
+        Craft::$app->getUrlManager()->setMatchedElement($element);
+        $this->clearBlocks();
+
+        try {
+            Craft::$app->getView()->renderPageTemplate($template, $route[1]['variables'] ?? [], View::TEMPLATE_MODE_SITE);
+            $html = $this->getCombinedHtml();
+        } finally {
+            $this->clearBlocks();
+        }
+
+        return $html === '' ? '' : $this->htmlToMarkdown($html);
+    }
+
+    /**
+     * Fetches the element's page from the headless front end and converts it
+     * to markdown.
+     *
+     * @throws Exception
+     */
+    private function fetchMarkdown(ElementInterface $element): string
+    {
+        $url = $element->getUrl();
+
+        if (!$url) {
+            return '';
+        }
+
+        try {
+            return Llmify::getInstance()->request->fetchAndConvert($url) ?? '';
+        } catch (\Throwable $e) {
+            Craft::warning("Markdown generation failed for {$url}. " . $e->getMessage(), 'llmify');
+            return '';
+        }
     }
 
     private function htmlToMarkdown(string $html): string
@@ -324,23 +336,5 @@ class MarkdownService extends Component
         return implode(',', array_map(function($n) {
             return ".{$n['classes']}";
         }, $excludedClasses));
-    }
-
-    private function _createPageQuery(): DbQuery
-    {
-        return (new DbQuery())
-            ->orderBy('groupId ASC')
-            ->select([
-                'siteId',
-                'groupId',
-                'elementId',
-                'elementType',
-                'metadataId',
-                'content',
-                'title',
-                'description',
-                'elementMeta',
-            ])
-            ->from([Constants::TABLE_PAGES]);
     }
 }

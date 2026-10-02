@@ -9,7 +9,6 @@ use craft\errors\SiteNotFoundException;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
-use samuelreichor\llmify\models\Page;
 use yii\db\Exception;
 
 class LlmsService extends Component
@@ -36,17 +35,21 @@ class LlmsService extends Component
         if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsTxt) {
             return '';
         }
-        $markdown = $this->constructIntro();
-        $markdown .= $this->constructAllUrls();
-        $markdown .= $this->constructSocialSection();
-        $markdown .= $this->constructFooter();
 
-        return $markdown;
+        return HelperService::cached(['llmify', 'llms-txt', $this->currentSiteId], function() {
+            $markdown = $this->constructIntro();
+            $markdown .= $this->constructAllUrls();
+            $markdown .= $this->constructSocialSection();
+            $markdown .= $this->constructFooter();
+
+            return $markdown;
+        });
     }
 
-
     /**
-     * @throws Exception
+     * Returns the `llms-full.txt` content stored by the last
+     * `llmify/llms-full/generate` run, or an empty string when it was never
+     * generated or the file is disabled.
      */
     public function getLlmsFullContent(): string
     {
@@ -54,12 +57,56 @@ class LlmsService extends Component
             return '';
         }
 
+        return self::getStoredLlmsFull($this->currentSiteId)['content'] ?? '';
+    }
+
+    /**
+     * Returns the stored `llms-full.txt` of a site with the time it was
+     * generated, or null when it was never generated.
+     *
+     * @return array{content: string, dateGenerated: int}|null
+     */
+    public static function getStoredLlmsFull(int $siteId): ?array
+    {
+        $stored = Craft::$app->getCache()->get(self::llmsFullCacheKey($siteId));
+
+        return is_array($stored) ? $stored : null;
+    }
+
+    /**
+     * Builds `llms-full.txt` from the markdown of every servable page and
+     * stores it until the next run. Rendering every page takes too long for a
+     * web request, so this runs from the console (e.g. a cron job).
+     *
+     * @return int|null The number of pages included, or null when the file is disabled for this site.
+     * @throws \yii\base\Exception
+     */
+    public function generateLlmsFullContent(): ?int
+    {
+        if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsFullTxt) {
+            return null;
+        }
+
+        $pages = $this->collectPageMarkdowns();
+
         $markdown = $this->constructIntro();
-        $markdown .= $this->constructAllPages();
+        foreach ($pages as $pageContent) {
+            $markdown .= "{$pageContent}\n\n---\n\n";
+        }
         $markdown .= $this->constructSocialSection();
         $markdown .= $this->constructFooter();
 
-        return $markdown;
+        Craft::$app->getCache()->set(self::llmsFullCacheKey($this->currentSiteId), [
+            'content' => $markdown,
+            'dateGenerated' => time(),
+        ], 0);
+
+        return count($pages);
+    }
+
+    private static function llmsFullCacheKey(int $siteId): array
+    {
+        return ['llmify', 'llms-full', $siteId];
     }
 
     public function constructIntro(): string
@@ -80,60 +127,6 @@ class LlmsService extends Component
     }
 
     /**
-     * Returns the stored markdown for a URI, or an empty string when none is
-     * available. When `$allowOnDemand` is false, a cache miss returns an empty
-     * string instead of triggering a blocking on-the-fly render — used by
-     * unauthenticated callers that must not be able to drive server-side work.
-     *
-     * @throws SiteNotFoundException
-     */
-    public function getMarkdownForUri(string $uri, bool $allowOnDemand = true): string
-    {
-        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
-        $markdownService = Llmify::getInstance()->markdown;
-
-        // Look up the element to check if it's excluded
-        $element = Entry::find()->uri($uri)->siteId($siteId)->one();
-        if (!$element && HelperService::isCommerceInstalled()) {
-            $element = \craft\commerce\elements\Product::find()->uri($uri)->siteId($siteId)->one();
-        }
-
-        if ($element && HelperService::isElementExcluded($element)) {
-            return '';
-        }
-
-        $markdown = $markdownService->getRenderedMarkdown($uri, $siteId);
-
-        if ($markdown !== null) {
-            return $markdown;
-        }
-
-        if (!$allowOnDemand) {
-            return '';
-        }
-
-        // Headless mode never generates on-the-fly via a Twig render; it relies
-        // on pre-generation (or the convert endpoint).
-        if (Llmify::getInstance()->getSettings()->headlessMode) {
-            return '';
-        }
-
-        if ($element && $element->getUrl()) {
-            try {
-                Llmify::getInstance()->request->generateUrl($element->getUrl(), $element->siteId);
-            } catch (\Throwable $e) {
-                Craft::warning("On-the-fly markdown generation failed for URI: {$uri}. " . $e->getMessage(), 'llmify');
-                return '';
-            }
-
-            return $markdownService->getRenderedMarkdown($uri, $siteId) ?? '';
-        }
-
-        return '';
-    }
-
-
-    /**
      * @throws \yii\base\Exception
      */
     private function constructAllUrls(): string
@@ -143,15 +136,6 @@ class LlmsService extends Component
         $settingsService = Llmify::getInstance()->settings;
         $markdownService = Llmify::getInstance()->markdown;
         $allSettings = $settingsService->getContentSettingsBySiteId($this->currentSiteId);
-
-        // Index existing pages by elementId for fast lookup
-        $groupedPages = $markdownService->getGroupedPagesForSite($this->currentSiteId);
-        $pagesByElementId = [];
-        foreach ($groupedPages as $pages) {
-            foreach ($pages as $page) {
-                $pagesByElementId[$page->elementId] = $page;
-            }
-        }
 
         foreach ($allSettings as $contentSetting) {
             if (!$markdownService->isGroupServable($contentSetting->groupId, $this->currentSiteId, $contentSetting->elementType)) {
@@ -175,16 +159,9 @@ class LlmsService extends Component
                     continue;
                 }
 
-                // Use stored page data if available, otherwise resolve live
-                $page = $pagesByElementId[$element->id] ?? null;
-                if ($page) {
-                    $title = $page->title;
-                    $description = $page->description;
-                } else {
-                    $metadata = new MetadataService($element);
-                    $title = $metadata->getLlmTitle();
-                    $description = $metadata->getLlmDescription();
-                }
+                $metadata = new MetadataService($element);
+                $title = $metadata->getLlmTitle();
+                $description = $metadata->getLlmDescription();
 
                 $url = $shouldUseRealUrls ? $element->getUrl() : HelperService::getMarkdownUrl($element->uri);
                 if ($url === null) {
@@ -324,34 +301,35 @@ class LlmsService extends Component
     }
 
     /**
-     * @throws Exception
+     * Returns the markdown of every servable page of the site, in the order of
+     * the content settings. In headless mode the pages are fetched from the
+     * front end. Otherwise their `.md` URLs are requested, since site templates
+     * can only be rendered reliably in a web request.
+     *
+     * @return string[]
+     * @throws \yii\base\Exception
      */
-    private function constructAllPages(): string
+    private function collectPageMarkdowns(): array
     {
-        $content = '';
-        $settings = Llmify::getInstance()->getSettings();
-        $frontMatterService = Llmify::getInstance()->frontMatter;
-        $pages = Llmify::getInstance()->markdown->getActivePagesForSite($this->currentSiteId);
+        $markdownService = Llmify::getInstance()->markdown;
+        $isHeadless = Llmify::getInstance()->getSettings()->headlessMode;
+        $elements = [];
 
-        foreach ($pages as $page) {
-            /**
-             * @var Page $page
-             */
-            $element = Craft::$app->elements->getElementById($page->elementId, $page->elementType, $this->currentSiteId);
-
-            if ($element && HelperService::isElementExcluded($element)) {
-                continue;
+        foreach (Llmify::getInstance()->settings->getContentSettingsBySiteId($this->currentSiteId) as $contentSetting) {
+            foreach ($this->findElementsForContentSetting($contentSetting) as $element) {
+                if ($markdownService->isServable($element)) {
+                    $elements[] = $element;
+                }
             }
-
-            $pageContent = $page->content;
-
-            if ($settings->frontMatterInFullTxt && $element) {
-                $pageContent = $frontMatterService->prependFrontMatter($pageContent, $page, $element);
-            }
-
-            $content .= "{$pageContent}\n\n---\n\n";
         }
 
-        return $content;
+        if ($isHeadless) {
+            $pages = array_map(fn($element) => $markdownService->getPageMarkdown($element), $elements);
+        } else {
+            $urls = array_map(fn($element) => HelperService::getMarkdownUrl($element->uri, $element->siteId), $elements);
+            $pages = array_values(Llmify::getInstance()->request->fetchAll($urls, $this->currentSiteId));
+        }
+
+        return array_values(array_filter($pages, fn($page) => $page !== null && $page !== ''));
     }
 }

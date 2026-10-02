@@ -58,16 +58,17 @@ class HelperService extends Component
     }
 
     /**
-     * Checks if the current request renders a preview or carries a token.
-     * Markdown rendered for such a request must never be cached, since it may
-     * show unpublished content.
+     * Checks if the current request renders a preview or carries a token or
+     * site token. Markdown rendered for such a request must never be cached,
+     * since it may show unpublished content and Craft appends the tokens to
+     * every URL.
      */
     public static function isPreviewRequest(): bool
     {
         $request = Craft::$app->getRequest();
 
         return !$request->getIsConsoleRequest()
-            && ($request->getIsPreview() || $request->getToken() !== null);
+            && ($request->getIsPreview() || $request->getToken() !== null || $request->getSiteToken() !== null);
     }
 
     /**

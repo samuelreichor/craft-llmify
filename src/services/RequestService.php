@@ -91,9 +91,10 @@ class RequestService extends Component
 
     /**
      * Builds the request used to fetch a page. It carries what the site needs
-     * to let the request through: a Craft site token so offline
-     * (`isSystemLive: false`) staging sites still respond, and HTTP Basic Auth
-     * credentials when the site is protected that way.
+     * to let the request through: a Craft site token while the system is
+     * offline (`isSystemLive: false`), and HTTP Basic Auth credentials when
+     * the site is protected that way. The site token is only sent when needed,
+     * since Craft appends it to every URL in the response.
      */
     protected function createRequest(string $url, ?int $siteId = null): Request
     {

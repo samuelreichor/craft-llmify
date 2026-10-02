@@ -1,88 +1,62 @@
-<div class="data">
-  <div class="heading">Status</div>
-  <div class="value">
-    {% if cached %}
-      <a href="{{ markdownUrl }}" target="_blank" rel="noopener">Cached</a>
-    {% else %}
-      Not cached
-    {% endif %}
+<div class="llmify-status">
+  <div class="llmify-status-line">
+    <span>
+      {% if not cached %}
+        Not cached
+      {% elseif cached.value is empty %}
+        Cached · empty
+      {% else %}
+        Cached · ~{{ tokens|number }} tokens
+      {% endif %}
+    </span>
+    <a href="{{ markdownUrl }}" target="_blank" rel="noopener" title="View markdown" aria-label="View markdown">↗</a>
   </div>
-</div>
-{% if cached %}
-  <div class="data">
-    <div class="heading">Cached At</div>
-    <div class="value">{{ cached.dateCached|datetime('short') }}</div>
-  </div>
-  {% if cached.value is empty %}
-    <div class="data">
-      <div class="heading"></div>
-      <div class="value">
-        <p class="warning with-icon" style="margin: 0;">
-          Markdown empty. Check your <a href="https://samuelreichor.at/libraries/craft-llmify/usage/content-control" target="_blank" rel="noopener">template setup</a> for more information.
-        </p>
-      </div>
-    </div>
-  {% else %}
-    <div class="data">
-      <div class="heading">Size</div>
-      <div class="value">~{{ tokens|number }} tokens</div>
+  {% if cached %}
+    <div class="light smalltext">{{ cached.dateCached|datetime('short') }}</div>
+  {% endif %}
+  {% if cached and cached.value is empty %}
+    <div class="warning smalltext">
+      Check your <a href="https://samuelreichor.at/libraries/craft-llmify/usage/content-control" target="_blank" rel="noopener">template setup</a>.
     </div>
   {% endif %}
-{% else %}
-  <div class="data">
-    <div class="heading">Markdown</div>
-    <div class="value">
-      <a href="{{ markdownUrl }}" target="_blank" rel="noopener">View</a>
+  {% if canGenerate or (canClear and cached) %}
+    <div class="llmify-actions smalltext">
+      {% if canGenerate %}
+        <a role="button" href="#" data-llmify-action="{{ generateActionUrl }}">Refresh</a>
+      {% endif %}
+      {% if canGenerate and canClear and cached %}
+        <span class="light">·</span>
+      {% endif %}
+      {% if canClear and cached %}
+        <a role="button" href="#" data-llmify-action="{{ clearActionUrl }}">Clear</a>
+      {% endif %}
     </div>
-  </div>
-{% endif %}
-{% if canGenerate or canClear %}
-  <div class="llmify-btn-group">
-    {% if canGenerate %}
-      {{ tag('button', {
-        text: 'Refresh',
-        class: 'btn primary',
-        type: 'button',
-        data: {
-          'llmify-action': generateActionUrl,
-        },
-      }) }}
-    {% endif %}
-    {% if canClear and cached %}
-      {{ tag('button', {
-        text: 'Clear',
-        class: 'btn secondary',
-        type: 'button',
-        data: {
-          'llmify-action': clearActionUrl,
-        },
-      }) }}
-    {% endif %}
-  </div>
-{% endif %}
+  {% endif %}
+</div>
 
 {% css %}
-  .llmify-sidebar .meta .data {
-  min-height: 0;
-  }
-
-  .llmify-sidebar .meta .data:first-of-type {
-  padding-top: 8px;
-  }
-
-  .llmify-sidebar .meta .data:last-of-type {
-  padding-bottom: 8px;
-  }
-
-  .llmify-sidebar .llmify-btn-group {
-    padding-block: var(--s);
-    padding-inline: var(--m);
+  .llmify-sidebar .llmify-status {
     display: flex;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 2px;
+    padding-block: var(--s);
+  }
 
-    button {
-      min-width: 100px;
-    }
+  .llmify-sidebar .llmify-status-line {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s);
+  }
+
+  .llmify-sidebar .llmify-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .llmify-sidebar .llmify-actions a.disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
 {% endcss %}
 
@@ -92,23 +66,23 @@
 
     // Delegated, since the sidebar is replaced after every action.
     document.addEventListener('click', (e) => {
-      const button = e.target.closest('.llmify-sidebar [data-llmify-action]');
-      if (!button) {
+      const link = e.target.closest('.llmify-sidebar [data-llmify-action]');
+      if (!link) {
         return;
       }
 
       e.preventDefault();
-      button.classList.add('loading');
+      link.classList.add('disabled');
 
-      Craft.sendActionRequest('POST', button.dataset.llmifyAction)
+      Craft.sendActionRequest('POST', link.dataset.llmifyAction)
         .then((response) => {
           Craft.cp.displaySuccess(response.data.message);
-          const sidebar = button.closest('.llmify-sidebar');
+          const sidebar = link.closest('.llmify-sidebar');
           sidebar.insertAdjacentHTML('beforebegin', response.data.html);
           sidebar.remove();
         })
         .catch(({response}) => {
-          button.classList.remove('loading');
+          link.classList.remove('disabled');
           Craft.cp.displayError(response?.data?.message);
         });
     });

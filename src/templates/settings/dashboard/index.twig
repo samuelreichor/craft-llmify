@@ -172,6 +172,18 @@
                             </div>
                         </div>
                     </div>
+
+                    {% if markdownStats.cacheStats.failures is not empty %}
+                        <div class="llmify-failures">
+                            <div class="llmify-stat-label">Failed Pages ({{ markdownStats.cacheStats.failures|length }})</div>
+                            {% for failure in markdownStats.cacheStats.failures %}
+                                <div class="llmify-failure">
+                                    <a href="{{ failure.element.cpEditUrl }}">{{ failure.element.title }}</a>
+                                    <div class="llmify-failure-reason light" title="{{ failure.reason }}">{{ failure.reason }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -557,6 +569,23 @@
 
     .llmify-stats-grid .llmify-stat-block {
         margin-bottom: 0;
+    }
+
+    .llmify-failures {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--hairline-color);
+    }
+
+    .llmify-failure {
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    .llmify-failure-reason {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* Progress bar */

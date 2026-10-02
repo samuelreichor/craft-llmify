@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\elements\Entry;
+use craft\web\Request;
 use craft\web\View;
 use Exception;
 use League\HTMLToMarkdown\HtmlConverter;
@@ -384,6 +385,13 @@ class MarkdownService extends Component
         // not leak into the markdown response.
         $headers = Craft::$app->getResponse()->getHeaders();
         $originalHeaders = $headers->toArray();
+        // The cached markdown is shared by every visitor and every route that
+        // serves it, so the template must see the public page: its own path
+        // instead of the .md, WebMCP or API path, and no logged-in user.
+        $user = Craft::$app->getUser();
+        $identity = $user->getIdentity();
+        $restoreRequestPath = $this->setRequestPath($element);
+        $user->setIdentity(null);
 
         try {
             Craft::$app->getView()->renderPageTemplate($template, $route[1]['variables'] ?? [], View::TEMPLATE_MODE_SITE);
@@ -392,6 +400,8 @@ class MarkdownService extends Component
             $this->clearBlocks();
             $headers->removeAll();
             $headers->fromArray($originalHeaders);
+            $user->setIdentity($identity);
+            $restoreRequestPath();
         }
 
         if ($html === '') {
@@ -400,6 +410,59 @@ class MarkdownService extends Component
         }
 
         return $this->htmlToMarkdown($html);
+    }
+
+    /**
+     * Craft keeps the request path in private properties without setters.
+     *
+     * @return callable Restores the original path.
+     */
+    private function setRequestPath(ElementInterface $element): callable
+    {
+        $properties = ['_fullPath', '_path', '_fullUri', '_segments'];
+        $url = $element->getUrl();
+
+        foreach ($properties as $property) {
+            if (!property_exists(Request::class, $property)) {
+                Craft::warning("Could not set the request path for element {$element->id}: Request::\${$property} does not exist.", 'llmify');
+                return fn() => null;
+            }
+        }
+
+        if ($url === null) {
+            return fn() => null;
+        }
+
+        $fullPath = trim((string)parse_url($url, PHP_URL_PATH), '/');
+        $basePath = trim((string)parse_url((string)$element->getSite()->getBaseUrl(), PHP_URL_PATH), '/');
+        $path = $basePath !== '' && str_starts_with($fullPath . '/', $basePath . '/')
+            ? ltrim(substr($fullPath, strlen($basePath)), '/')
+            : $fullPath;
+
+        $request = Craft::$app->getRequest();
+        $originalPathInfo = $request->getPathInfo(true);
+        $originalUrl = $request->getUrl();
+
+        // Typed properties must not be unset, or Yii's magic setter takes over.
+        $swap = \Closure::bind(function(string $fullPath, string $path): array {
+            $previous = [$this->_fullPath, $this->_path];
+            $baseUrl = trim($this->getBaseUrl(), '/');
+            $this->_fullPath = $fullPath;
+            $this->_path = $path;
+            $this->_fullUri = $baseUrl . ($baseUrl !== '' && $fullPath !== '' ? '/' : '') . $fullPath;
+            $this->_segments = array_values(array_filter(explode('/', $path), fn($segment) => $segment !== ''));
+            return $previous;
+        }, $request, Request::class);
+
+        [$originalFullPath, $originalPath] = $swap($fullPath, $path);
+        $request->setPathInfo($fullPath);
+        $request->setUrl('/' . $fullPath);
+
+        return function() use ($swap, $originalFullPath, $originalPath, $request, $originalPathInfo, $originalUrl) {
+            $swap($originalFullPath, $originalPath);
+            $request->setPathInfo($originalPathInfo);
+            $request->setUrl($originalUrl);
+        };
     }
 
     /**

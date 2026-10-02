@@ -56,9 +56,6 @@ class RequestService extends Component
     }
 
     /**
-     * Fetches the URLs concurrently and returns their bodies, keyed by URL.
-     * A URL that fails or does not respond with a 200 maps to null.
-     *
      * @param string[] $urls
      * @return array<string, string|null>
      */

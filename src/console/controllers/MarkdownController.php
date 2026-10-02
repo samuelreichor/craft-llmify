@@ -8,18 +8,11 @@ use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\services\HelperService;
 use yii\console\ExitCode;
 
-/**
- * Manages the markdown caches.
- */
 class MarkdownController extends Controller
 {
     public $defaultAction = 'generate';
 
     /**
-     * llmify/markdown/generate — caches the markdown of every page that is
-     * not cached yet. Run it on a schedule (e.g. nightly) to keep the caches
-     * warm on sites under heavy load.
-     *
      * @throws \yii\base\Exception
      */
     public function actionGenerate(): int
@@ -41,9 +34,6 @@ class MarkdownController extends Controller
         return ExitCode::OK;
     }
 
-    /**
-     * llmify/markdown/clear — clears all markdown caches.
-     */
     public function actionClear(): int
     {
         HelperService::invalidateCaches();

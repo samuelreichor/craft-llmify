@@ -128,10 +128,7 @@ class WebMcpController extends Controller
     {
         $uri = (string)$this->request->getRequiredParam('uri');
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
-
-        $markdownService = Llmify::getInstance()->markdown;
-        $element = $markdownService->findElementByUri($uri, $siteId);
-        $markdown = $element ? $markdownService->getPageMarkdown($element) : '';
+        $markdown = Llmify::getInstance()->markdown->getMarkdownByUri($uri, $siteId);
 
         if ($markdown === '') {
             throw new NotFoundHttpException('No content found for URI: ' . $uri);

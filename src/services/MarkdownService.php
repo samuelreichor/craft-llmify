@@ -14,6 +14,7 @@ use PHPHtmlParser\Exceptions\ChildNotFoundException;
 use PHPHtmlParser\Exceptions\CircularException;
 use PHPHtmlParser\Exceptions\NotLoadedException;
 use PHPHtmlParser\Exceptions\StrictException;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\Page;
@@ -93,10 +94,6 @@ class MarkdownService extends Component
         $this->siteId = null;
     }
 
-    /**
-     * Finds the live entry or product with the given URI. In a preview request
-     * this returns the previewed draft.
-     */
     public function findElementByUri(string $uri, int $siteId): ?ElementInterface
     {
         $element = Entry::find()->uri($uri)->siteId($siteId)->one();
@@ -109,10 +106,16 @@ class MarkdownService extends Component
     }
 
     /**
-     * Returns the markdown of an element as its `.md` page is served, front
-     * matter included. Empty when the element is not servable or has no
-     * markdown content.
-     *
+     * @throws Exception
+     */
+    public function getMarkdownByUri(string $uri, int $siteId): string
+    {
+        $element = $this->findElementByUri($uri, $siteId);
+
+        return $element ? $this->getPageMarkdown($element) : '';
+    }
+
+    /**
      * @throws Exception
      */
     public function getPageMarkdown(ElementInterface $element): string
@@ -129,13 +132,10 @@ class MarkdownService extends Component
 
     public function getPageCacheKey(ElementInterface $element): array
     {
-        return ['llmify', 'page', $element->id, $element->siteId];
+        return [Constants::CACHE_TAG, 'page', $element->id, $element->siteId];
     }
 
     /**
-     * Returns the servable pages of a site, in the order of its content
-     * settings.
-     *
      * @return ElementInterface[]
      * @throws Exception
      */
@@ -159,8 +159,6 @@ class MarkdownService extends Component
     }
 
     /**
-     * Find the elements of a content setting's group in a site.
-     *
      * @return ElementInterface[]
      */
     public function findElementsForContentSetting(ContentSettings $contentSetting, int $siteId): array
@@ -183,9 +181,8 @@ class MarkdownService extends Component
     }
 
     /**
-     * Caches the markdown of the given pages that are not cached yet. Site
-     * templates can only be rendered reliably in a web request, so the `.md`
-     * URLs are requested. In headless mode the front end is fetched directly.
+     * Site templates can only be rendered reliably in a web request, so the
+     * `.md` URLs are requested instead of rendering in-process.
      *
      * @param ElementInterface[] $elements Pages of a single site.
      * @param callable|null $onProgress Called with the number of handled pages and the total.
@@ -223,9 +220,6 @@ class MarkdownService extends Component
     }
 
     /**
-     * Returns how many of the servable pages of a site are cached, their
-     * average size in tokens, and when the oldest of them was cached.
-     *
      * @return array{total: int, cached: int, avgTokens: int, oldestCached: int|null}
      * @throws Exception
      */
@@ -256,26 +250,17 @@ class MarkdownService extends Component
         ];
     }
 
-    /**
-     * A rough estimate of the tokens in a markdown text, at ~4 characters per
-     * token.
-     */
     public static function estimateTokens(string $markdown): int
     {
         return (int)ceil(mb_strlen($markdown) / 4);
     }
 
     /**
-     * Whether the element can be served as markdown: an entry or product with
-     * a URI, in an enabled group and site, and not excluded.
-     *
      * @throws Exception
      */
     public function isServable(ElementInterface $element): bool
     {
-        $isProduct = HelperService::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product;
-
-        if (!($element instanceof Entry) && !$isProduct) {
+        if (!HelperService::isEntryOrProduct($element)) {
             return false;
         }
 
@@ -330,9 +315,6 @@ class MarkdownService extends Component
         return Llmify::getInstance()->frontMatter->prependFrontMatter($markdown, $page, $element);
     }
 
-    /**
-     * Returns the element's route as Craft would resolve it without auto-serve.
-     */
     public function getOriginalRoute(ElementInterface $element): mixed
     {
         $this->isResolvingRoute = true;
@@ -345,10 +327,6 @@ class MarkdownService extends Component
     }
 
     /**
-     * Renders the element's template in-process and converts the content of
-     * its `{% llmify %}` blocks to markdown. Null when the template has no
-     * such blocks, so there is no page to serve.
-     *
      * @throws Exception
      */
     private function renderMarkdown(ElementInterface $element): ?string
@@ -377,9 +355,6 @@ class MarkdownService extends Component
     }
 
     /**
-     * Fetches the element's page from the headless front end and converts it
-     * to markdown. Null when the page could not be fetched.
-     *
      * @throws Exception
      */
     private function fetchMarkdown(ElementInterface $element): ?string

@@ -9,17 +9,11 @@ use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
 use yii\console\ExitCode;
 
-/**
- * Generates llms-full.txt.
- */
 class LlmsFullController extends Controller
 {
     public $defaultAction = 'generate';
 
     /**
-     * llmify/llms-full/generate — builds llms-full.txt for every site that has
-     * it enabled. Run it on a schedule (e.g. a cron job) to keep it up to date.
-     *
      * @throws \yii\base\Exception
      */
     public function actionGenerate(): int

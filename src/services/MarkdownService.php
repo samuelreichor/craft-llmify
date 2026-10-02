@@ -343,12 +343,18 @@ class MarkdownService extends Component
 
         Craft::$app->getUrlManager()->setMatchedElement($element);
         $this->clearBlocks();
+        // Plugins like SEOmatic set headers while the page renders, which must
+        // not leak into the markdown response.
+        $headers = Craft::$app->getResponse()->getHeaders();
+        $originalHeaders = $headers->toArray();
 
         try {
             Craft::$app->getView()->renderPageTemplate($template, $route[1]['variables'] ?? [], View::TEMPLATE_MODE_SITE);
             $html = $this->getCombinedHtml();
         } finally {
             $this->clearBlocks();
+            $headers->removeAll();
+            $headers->fromArray($originalHeaders);
         }
 
         return $html === '' ? null : $this->htmlToMarkdown($html);

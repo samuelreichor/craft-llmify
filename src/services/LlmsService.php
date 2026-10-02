@@ -68,8 +68,36 @@ class LlmsService extends Component
 
     /**
      * Rendering every page takes too long for a web request, so this runs from
-     * the console (e.g. a cron job).
+     * the console (e.g. a cron job) or a queue job.
      *
+     * @return array<string, int|null> The pages included per site name, null where the file is disabled.
+     * @throws \yii\base\Exception
+     */
+    public static function generateLlmsFullForAllSites(): array
+    {
+        $sites = Craft::$app->getSites();
+        $currentSite = $sites->getCurrentSite();
+        $results = [];
+
+        try {
+            foreach (Llmify::getInstance()->settings->getAllActiveGlobalSettingsIds() as $siteId) {
+                $site = $sites->getSiteById($siteId);
+
+                if (!$site) {
+                    continue;
+                }
+
+                $sites->setCurrentSite($site);
+                $results[$site->name] = (new self())->generateLlmsFullContent();
+            }
+        } finally {
+            $sites->setCurrentSite($currentSite);
+        }
+
+        return $results;
+    }
+
+    /**
      * @return int|null The number of pages included, or null when the file is disabled for this site.
      * @throws \yii\base\Exception
      */

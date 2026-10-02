@@ -50,6 +50,16 @@
     <p>Cache all pages that are not cached yet.</p>
     <button type="submit" class="btn submit">Warm Cache</button>
   </form>
+
+  {% if siteTable|filter(site => site.llmsFullEnabled) is not empty %}
+  <form class="utility" method="post" accept-charset="UTF-8">
+    {{ actionInput('llmify/markdown/generate-llms-full') }}
+    {{ redirectInput('utilities/llmify') }}
+    {{ csrfInput() }}
+    <p>Build llms-full.txt for all sites that have it enabled.</p>
+    <button type="submit" class="btn submit">Generate llms-full.txt</button>
+  </form>
+  {% endif %}
   {% endif %}
 
   {% if canClear %}

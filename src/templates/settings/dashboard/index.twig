@@ -108,72 +108,51 @@
             </div>
         </div>
 
-        {# Generation Stats #}
+        {# Markdown #}
         <div class="llmify-panel">
             <div class="llmify-panel-header">
                 <div>
-                    <h2>Generation
-                        {% if currentUser.can('llmify:generate') or currentUser.can('llmify:clear') %}
+                    <h2>Markdown
+                        {% if currentUser.can('llmify:clear') %}
                             <a href="{{ cpUrl('utilities/llmify') }}" class="btn small">Utilities</a>
                         {% endif %}
                     </h2>
-                    <p class="light">Markdown coverage & health</p>
+                    <p class="light">Rendered on demand and cached</p>
                 </div>
-                {% include "llmify/settings/dashboard/_circle" with { percent: generationStats.coveragePercent } %}
             </div>
             <div class="llmify-card">
                 <div class="llmify-card-body">
-                    <div class="llmify-stat-block">
-                        <div class="llmify-stat-label">Markdown Coverage</div>
-                        <div class="llmify-progress-bar">
-                            {% if generationStats.coveragePercent >= 80 %}
-                                {% set barClass = 'green' %}
-                            {% elseif generationStats.coveragePercent >= 50 %}
-                                {% set barClass = 'orange' %}
-                            {% else %}
-                                {% set barClass = 'red' %}
-                            {% endif %}
-                            <div class="llmify-progress-fill {{ barClass }}" style="width: {{ generationStats.coveragePercent }}%"></div>
-                        </div>
-                        <div class="llmify-stat-detail">
-                            <strong>{{ generationStats.totalPages }}/{{ generationStats.totalElements }}</strong> Entries
-                        </div>
-                    </div>
-
                     <div class="llmify-stats-grid">
                         <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Last Refresh</div>
+                            <div class="llmify-stat-label">Pages</div>
                             <div class="llmify-stat-value">
-                                {% if generationStats.lastRefresh %}
-                                    {{ generationStats.lastRefresh|date('M j, Y H:i') }}
+                                {{ markdownStats.totalElements|number }}
+                            </div>
+                        </div>
+
+                        <div class="llmify-stat-block">
+                            <div class="llmify-stat-label">Cache Duration</div>
+                            <div class="llmify-stat-value">
+                                {% if markdownStats.cacheDuration > 0 %}
+                                    {{ markdownStats.cacheDuration|duration }}
                                 {% else %}
-                                    <span class="light">Never</span>
+                                    <span class="light">Until content changes</span>
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Oldest Page</div>
+                            <div class="llmify-stat-label">llms-full.txt</div>
                             <div class="llmify-stat-value">
-                                {% if generationStats.oldestPage %}
-                                    {{ generationStats.oldestPage|date('M j, Y') }}
-                                    {% set daysSinceOldest = ((now.timestamp - generationStats.oldestPage|date('U')) / 86400)|round %}
-                                    {% if daysSinceOldest > 90 %}
-                                        <span class="llmify-warning">{{ daysSinceOldest }}d old</span>
-                                    {% endif %}
+                                {% if not markdownStats.llmsFullEnabled %}
+                                    <span class="light">Disabled</span>
+                                {% elseif markdownStats.llmsFullGenerated %}
+                                    {{ markdownStats.llmsFullGenerated|date('M j, Y H:i') }}
                                 {% else %}
-                                    <span class="light">N/A</span>
+                                    <span class="llmify-warning">Never generated</span>
                                 {% endif %}
                             </div>
                         </div>
-
-                        <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Avg. Tokens per Page</div>
-                            <div class="llmify-stat-value">
-                                ~{{ generationStats.avgTokens|number_format(0) }}
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -543,43 +522,16 @@
         font-size: 14px;
     }
 
-    .llmify-stat-detail {
-        font-size: 13px;
-        margin-top: 4px;
-    }
-
-    /* Stats 2-col grid within generation card */
+    /* Stats 2-col grid within markdown card */
     .llmify-stats-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 12px;
-        margin-top: 14px;
-        padding-top: 14px;
-        border-top: 1px solid var(--hairline-color);
     }
 
     .llmify-stats-grid .llmify-stat-block {
         margin-bottom: 0;
     }
-
-    /* Progress bar */
-    .llmify-progress-bar {
-        height: 8px;
-        background: var(--gray-100);
-        border-radius: 4px;
-        overflow: hidden;
-        margin: 6px 0;
-    }
-
-    .llmify-progress-fill {
-        height: 100%;
-        border-radius: 4px;
-        transition: width 0.3s ease;
-    }
-
-    .llmify-progress-fill.green { background: #22C55E; }
-    .llmify-progress-fill.orange { background: #F59E0B; }
-    .llmify-progress-fill.red { background: #EF4444; }
 
     /* Warning badge */
     .llmify-warning {

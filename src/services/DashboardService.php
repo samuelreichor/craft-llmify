@@ -4,10 +4,8 @@ namespace samuelreichor\llmify\services;
 
 use Craft;
 use craft\base\Component;
-use craft\db\Query as DbQuery;
 use craft\elements\Entry;
 use craft\helpers\UrlHelper;
-use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use yii\base\InvalidConfigException;
 use yii\db\Exception;
@@ -166,19 +164,16 @@ class DashboardService extends Component
     }
 
     /**
-     * Get generation statistics for a single site.
+     * Get markdown statistics for a single site.
      *
      * @return array{
      *     totalElements: int,
-     *     totalPages: int,
-     *     coveragePercent: float,
-     *     lastRefresh: string|null,
-     *     oldestPage: string|null,
-     *     avgContentLength: int,
-     *     avgTokens: int,
+     *     llmsFullEnabled: bool,
+     *     llmsFullGenerated: int|null,
+     *     cacheDuration: int,
      * }
      */
-    public function getGenerationStats(int $siteId): array
+    public function getMarkdownStats(int $siteId): array
     {
         $contentSettings = Llmify::getInstance()->settings->getContentSettingsBySiteId($siteId);
 
@@ -207,30 +202,11 @@ class DashboardService extends Component
             }
         }
 
-        $pageStats = (new DbQuery())
-            ->select([
-                'COUNT(*) as totalPages',
-                'MAX([[dateUpdated]]) as lastRefresh',
-                'MIN([[dateUpdated]]) as oldestPage',
-                'AVG(LENGTH([[content]])) as avgContentLength',
-            ])
-            ->from([Constants::TABLE_PAGES])
-            ->where(['siteId' => $siteId])
-            ->one();
-
-        $totalPages = (int)($pageStats['totalPages'] ?? 0);
-        $coveragePercent = $totalElements > 0
-            ? round(($totalPages / $totalElements) * 100, 1)
-            : 0;
-
         return [
             'totalElements' => $totalElements,
-            'totalPages' => $totalPages,
-            'coveragePercent' => min($coveragePercent, 100),
-            'lastRefresh' => $pageStats['lastRefresh'] ?? null,
-            'oldestPage' => $pageStats['oldestPage'] ?? null,
-            'avgContentLength' => (int)($pageStats['avgContentLength'] ?? 0),
-            'avgTokens' => (int)(($pageStats['avgContentLength'] ?? 0) / 4),
+            'llmsFullEnabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
+            'llmsFullGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
+            'cacheDuration' => Llmify::getInstance()->getSettings()->cacheDuration,
         ];
     }
 

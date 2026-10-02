@@ -174,7 +174,7 @@ class MarkdownService extends Component
             ? $this->fetchMarkdown($element)
             : $this->renderMarkdown($element);
 
-        if ($markdown === '') {
+        if ($markdown === null) {
             return '';
         }
 
@@ -207,11 +207,12 @@ class MarkdownService extends Component
 
     /**
      * Renders the element's template in-process and converts the content of
-     * its `{% llmify %}` blocks to markdown.
+     * its `{% llmify %}` blocks to markdown. Null when the template has no
+     * such blocks, so there is no page to serve.
      *
      * @throws Exception
      */
-    private function renderMarkdown(ElementInterface $element): string
+    private function renderMarkdown(ElementInterface $element): ?string
     {
         $route = $this->getOriginalRoute($element);
         $template = is_array($route) && ($route[0] ?? null) === 'templates/render'
@@ -220,7 +221,7 @@ class MarkdownService extends Component
 
         if (!is_string($template) || $template === '') {
             Craft::warning("No template to render markdown for element {$element->id} in site {$element->siteId}.", 'llmify');
-            return '';
+            return null;
         }
 
         Craft::$app->getUrlManager()->setMatchedElement($element);
@@ -233,28 +234,28 @@ class MarkdownService extends Component
             $this->clearBlocks();
         }
 
-        return $html === '' ? '' : $this->htmlToMarkdown($html);
+        return $html === '' ? null : $this->htmlToMarkdown($html);
     }
 
     /**
      * Fetches the element's page from the headless front end and converts it
-     * to markdown.
+     * to markdown. Null when the page could not be fetched.
      *
      * @throws Exception
      */
-    private function fetchMarkdown(ElementInterface $element): string
+    private function fetchMarkdown(ElementInterface $element): ?string
     {
         $url = $element->getUrl();
 
         if (!$url) {
-            return '';
+            return null;
         }
 
         try {
-            return Llmify::getInstance()->request->fetchAndConvert($url) ?? '';
+            return Llmify::getInstance()->request->fetchAndConvert($url);
         } catch (\Throwable $e) {
             Craft::warning("Markdown generation failed for {$url}. " . $e->getMessage(), 'llmify');
-            return '';
+            return null;
         }
     }
 

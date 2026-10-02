@@ -126,7 +126,7 @@
                     <div class="llmify-stat-block">
                         <div class="llmify-stat-label">Cache</div>
                         <div class="llmify-progress-bar">
-                            <div class="llmify-progress-fill neutral" style="width: {{ markdownStats.cachedPercent }}%"></div>
+                            <div class="llmify-progress-fill green" style="width: {{ markdownStats.cachedPercent }}%"></div>
                         </div>
                         <div class="llmify-stat-detail">
                             <strong>{{ markdownStats.cacheStats.cached }}/{{ markdownStats.cacheStats.total }}</strong> pages cached. Uncached pages are rendered on their first request.
@@ -586,7 +586,6 @@
     .llmify-progress-fill.green { background: #22C55E; }
     .llmify-progress-fill.orange { background: #F59E0B; }
     .llmify-progress-fill.red { background: #EF4444; }
-    .llmify-progress-fill.neutral { background: var(--link-color); }
 
     /* Warning badge */
     .llmify-warning {

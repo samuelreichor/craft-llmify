@@ -4,6 +4,7 @@ namespace samuelreichor\llmify\controllers;
 
 use Craft;
 use craft\base\Element;
+use craft\base\ElementInterface;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
@@ -91,7 +92,7 @@ class FileController extends Controller
      * @throws NotFoundHttpException
      * @throws Exception
      */
-    public function actionNegotiatedMd(): Response
+    public function actionNegotiatedMd(): mixed
     {
         $element = Craft::$app->getUrlManager()->getMatchedElement();
 
@@ -100,21 +101,28 @@ class FileController extends Controller
         }
 
         $markdownService = Llmify::getInstance()->markdown;
+
+        if ($markdownService->getPageFailure($element) !== null) {
+            return $this->runOriginalRoute($element);
+        }
+
         $fileContent = $markdownService->getPageMarkdown($element);
         $headers = Craft::$app->response->headers;
 
         if (!$fileContent) {
-            $headers->remove('X-Robots-Tag');
-            $headers->remove('Vary');
-            $route = $markdownService->getOriginalRoute($element);
+            // Rendering the markdown already ran the page template, so plugins
+            // like Formie consider their assets registered and would leave them
+            // out of the page. Once the failure is remembered, a fresh request
+            // serves the page without rendering the markdown first.
+            if ($markdownService->getPageFailure($element) !== null) {
+                $headers->remove('X-Robots-Tag');
+                $headers->set('Vary', 'Accept, User-Agent');
+                $this->response->setNoCacheHeaders();
 
-            if ($route === null) {
-                throw new NotFoundHttpException();
+                return $this->redirect($this->request->getAbsoluteUrl(), 302);
             }
 
-            return is_array($route)
-                ? Craft::$app->runAction($route[0], $route[1] ?? [])
-                : Craft::$app->runAction($route);
+            return $this->runOriginalRoute($element);
         }
 
         $headers->set('Content-Type', 'text/markdown; charset=UTF-8');
@@ -130,6 +138,25 @@ class FileController extends Controller
         );
 
         return $this->asRaw($fileContent);
+    }
+
+    /**
+     * @throws NotFoundHttpException
+     */
+    private function runOriginalRoute(ElementInterface $element): mixed
+    {
+        $headers = Craft::$app->response->headers;
+        $headers->remove('X-Robots-Tag');
+        $headers->remove('Vary');
+        $route = Llmify::getInstance()->markdown->getOriginalRoute($element);
+
+        if ($route === null) {
+            throw new NotFoundHttpException();
+        }
+
+        return is_array($route)
+            ? Craft::$app->runAction($route[0], $route[1] ?? [])
+            : Craft::$app->runAction($route);
     }
 
     /**

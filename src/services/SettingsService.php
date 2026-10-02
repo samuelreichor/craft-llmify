@@ -293,6 +293,15 @@ class SettingsService extends Component
         return true;
     }
 
+    private function applyGlobalSettingsOverrides(GlobalSettings $settings): void
+    {
+        $testData = Llmify::getTestOverrides();
+        $gsOverrides = $testData['globalSettings'][(string)$settings->siteId] ?? null;
+        if ($gsOverrides !== null) {
+            $settings->setAttributes($gsOverrides, false);
+        }
+    }
+
     /**
      * @throws Exception
      */
@@ -318,13 +327,7 @@ class SettingsService extends Component
             $this->saveGlobalSettings($settings);
         }
 
-        // Apply test overrides if present
-        $testData = Llmify::getTestOverrides();
-        $gsOverrides = $testData['globalSettings'][(string)$siteId] ?? null;
-        if ($gsOverrides !== null) {
-            $settings->setAttributes($gsOverrides, false);
-        }
-
+        $this->applyGlobalSettingsOverrides($settings);
         $this->globalSettings[$siteId] = $settings;
         return $settings;
     }
@@ -342,6 +345,7 @@ class SettingsService extends Component
         foreach ($results as $result) {
             $result = $this->decodeGlobalSettingsJson($result);
             $settings = new GlobalSettings($result);
+            $this->applyGlobalSettingsOverrides($settings);
             $this->globalSettings[$settings->siteId] = $settings;
             $this->allEnabledSiteIds[] = $settings->siteId;
         }

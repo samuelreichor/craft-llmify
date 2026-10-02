@@ -5,11 +5,7 @@
   <div class="heading">Status</div>
   <div class="value statusMsg" style="justify-content: space-between">
     <p>
-      {% if markdownExists %}
-        <a href="{{ markdownUrl }}" target="_blank" rel="noopener">Cached</a>
-      {% else %}
-        Not cached
-      {% endif %}
+      <a href="{{ markdownUrl }}" target="_blank" rel="noopener">{{ markdownExists ? 'Cached' : 'Not cached' }}</a>
     </p>
   </div>
   {% if markdownExists %}
@@ -72,14 +68,14 @@
   const sidebarWidget = document.querySelector('.llmify-sidebar')
   const generateBtn = sidebarWidget.querySelector('.generate')
   const clearBtn = sidebarWidget.querySelector('.clear')
-  const status = sidebarWidget.querySelector('.statusMsg p')
+  const status = sidebarWidget.querySelector('.statusMsg a')
   const statusUpdateEls = sidebarWidget.querySelectorAll('.status-update')
 
   function sendActionRequest(actionUrl, statusUpdateMsg) {
     Craft.sendActionRequest('POST', actionUrl)
         .then((response) => {
           Craft.cp.displaySuccess(response.data.message);
-          status.innerHTML = statusUpdateMsg
+          status.textContent = statusUpdateMsg
           statusUpdateEls.forEach(el => {
             el.style.display = 'none'
           })
@@ -105,7 +101,7 @@
     clearBtn.addEventListener('click', (e) => {
       e.preventDefault()
       const actionUrl = clearBtn.dataset.action;
-      sendActionRequest(actionUrl, 'Cleared')
+      sendActionRequest(actionUrl, 'Not cached')
     })
   }
 </script>

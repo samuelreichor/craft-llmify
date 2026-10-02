@@ -122,11 +122,21 @@ class SidebarService extends Component
      * @throws RuntimeError
      * @throws \yii\base\Exception
      * @throws LoaderError
+     * @throws Throwable
      */
     private static function sidebarHtml(ElementInterface $element): string
     {
+        $cached = HelperService::getCached(Llmify::getInstance()->markdown->getPageCacheKey($element));
+
         return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
+            'cached' => $cached,
+            // A rough estimate of ~4 characters per token.
+            'tokens' => $cached ? (int)ceil(mb_strlen($cached['value']) / 4) : null,
+            'canGenerate' => PermissionService::canGenerate(),
+            'canClear' => PermissionService::canClear(),
             'markdownUrl' => HelperService::getMarkdownUrl($element->uri, $element->siteId),
+            'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page', ['elementId' => $element->id, 'siteId' => $element->siteId]),
+            'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page', ['elementId' => $element->id, 'siteId' => $element->siteId]),
         ]);
     }
 

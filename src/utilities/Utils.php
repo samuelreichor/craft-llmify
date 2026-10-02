@@ -50,19 +50,20 @@ class Utils extends Utility
     public static function contentHtml(): string
     {
         $activeSiteIds = Llmify::getInstance()->settings->getAllActiveGlobalSettingsIds();
-        $llmsFullTable = [];
+        $siteTable = [];
         foreach ($activeSiteIds as $siteId) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $llmsFullTable[] = [
+                $siteTable[] = [
                     'name' => $site->name,
-                    'enabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
-                    'dateGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
+                    'cacheStats' => Llmify::getInstance()->markdown->getCacheStats($siteId),
+                    'llmsFullEnabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
+                    'llmsFullGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
                 ];
             }
         }
         return Craft::$app->getView()->renderTemplate('llmify/utilities/actions.twig', [
-            'llmsFullTable' => $llmsFullTable,
+            'siteTable' => $siteTable,
             'isEnabled' => HelperService::isMarkdownCreationEnabled(),
             'canClear' => PermissionService::canClear(),
         ]);

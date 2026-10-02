@@ -142,7 +142,7 @@ class LlmsService extends Component
                 continue;
             }
 
-            $elements = $this->findElementsForContentSetting($contentSetting);
+            $elements = $markdownService->findElementsForContentSetting($contentSetting, $this->currentSiteId);
 
             if (empty($elements)) {
                 continue;
@@ -173,30 +173,6 @@ class LlmsService extends Component
         }
 
         return $content;
-    }
-
-    /**
-     * Find elements for a given content setting.
-     *
-     * @return array
-     */
-    private function findElementsForContentSetting(ContentSettings $contentSetting): array
-    {
-        if ($contentSetting->elementType === Entry::class) {
-            return Entry::find()
-                ->sectionId($contentSetting->groupId)
-                ->siteId($this->currentSiteId)
-                ->all();
-        }
-
-        if (HelperService::isCommerceInstalled() && $contentSetting->elementType === \craft\commerce\elements\Product::class) {
-            return \craft\commerce\elements\Product::find()
-                ->typeId($contentSetting->groupId)
-                ->siteId($this->currentSiteId)
-                ->all();
-        }
-
-        return [];
     }
 
     private function constructSectionHeader(ContentSettings $metaData): string
@@ -313,15 +289,7 @@ class LlmsService extends Component
     {
         $markdownService = Llmify::getInstance()->markdown;
         $isHeadless = Llmify::getInstance()->getSettings()->headlessMode;
-        $elements = [];
-
-        foreach (Llmify::getInstance()->settings->getContentSettingsBySiteId($this->currentSiteId) as $contentSetting) {
-            foreach ($this->findElementsForContentSetting($contentSetting) as $element) {
-                if ($markdownService->isServable($element)) {
-                    $elements[] = $element;
-                }
-            }
-        }
+        $elements = $markdownService->getServableElements($this->currentSiteId);
 
         if ($isHeadless) {
             $pages = array_map(fn($element) => $markdownService->getPageMarkdown($element), $elements);

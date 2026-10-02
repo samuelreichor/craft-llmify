@@ -84,11 +84,10 @@ class HelperService extends Component
             return $callback();
         }
 
-        $cache = Craft::$app->getCache();
-        $result = $cache->get($key);
+        $cached = self::getCached($key);
 
-        if ($result !== false) {
-            return $result;
+        if ($cached !== null) {
+            return $cached['value'];
         }
 
         $elements = Craft::$app->getElements();
@@ -104,9 +103,25 @@ class HelperService extends Component
             $duration = $maxDuration;
         }
 
-        $cache->set($key, $result, $duration, $dependency);
+        Craft::$app->getCache()->set($key, [
+            'value' => $result,
+            'dateCached' => time(),
+        ], $duration, $dependency);
 
         return $result;
+    }
+
+    /**
+     * Returns a still valid entry stored by `cached()` with the time it was
+     * cached, or null when there is none.
+     *
+     * @return array{value: string, dateCached: int}|null
+     */
+    public static function getCached(array $key): ?array
+    {
+        $cached = Craft::$app->getCache()->get($key);
+
+        return is_array($cached) && isset($cached['value'], $cached['dateCached']) ? $cached : null;
     }
 
     /**

@@ -124,9 +124,9 @@
                 <div class="llmify-card-body">
                     <div class="llmify-stats-grid">
                         <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Pages</div>
+                            <div class="llmify-stat-label">Cached Pages</div>
                             <div class="llmify-stat-value">
-                                {{ markdownStats.totalElements|number }}
+                                {{ markdownStats.cacheStats.cached|number }} / {{ markdownStats.cacheStats.total|number }}
                             </div>
                         </div>
 

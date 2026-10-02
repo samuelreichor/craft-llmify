@@ -167,7 +167,7 @@ class DashboardService extends Component
      * Get markdown statistics for a single site.
      *
      * @return array{
-     *     totalElements: int,
+     *     cacheStats: array{total: int, cached: int, oldestCached: int|null},
      *     llmsFullEnabled: bool,
      *     llmsFullGenerated: int|null,
      *     cacheDuration: int,
@@ -175,35 +175,8 @@ class DashboardService extends Component
      */
     public function getMarkdownStats(int $siteId): array
     {
-        $contentSettings = Llmify::getInstance()->settings->getContentSettingsBySiteId($siteId);
-
-        $totalElements = 0;
-        foreach ($contentSettings as $setting) {
-            if (!$setting->enabled) {
-                continue;
-            }
-
-            if (!HelperService::groupHasUrlsInSite($setting->groupId, $siteId, $setting->elementType)) {
-                continue;
-            }
-
-            if ($setting->elementType === Entry::class) {
-                $totalElements += (int)Entry::find()
-                    ->sectionId($setting->groupId)
-                    ->siteId($siteId)
-                    ->status('enabled')
-                    ->count();
-            } elseif (HelperService::isCommerceInstalled() && $setting->elementType === \craft\commerce\elements\Product::class) {
-                $totalElements += (int)\craft\commerce\elements\Product::find()
-                    ->typeId($setting->groupId)
-                    ->siteId($siteId)
-                    ->status('enabled')
-                    ->count();
-            }
-        }
-
         return [
-            'totalElements' => $totalElements,
+            'cacheStats' => Llmify::getInstance()->markdown->getCacheStats($siteId),
             'llmsFullEnabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
             'llmsFullGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
             'cacheDuration' => Llmify::getInstance()->getSettings()->cacheDuration,

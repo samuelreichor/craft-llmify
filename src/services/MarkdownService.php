@@ -15,6 +15,7 @@ use PHPHtmlParser\Exceptions\CircularException;
 use PHPHtmlParser\Exceptions\NotLoadedException;
 use PHPHtmlParser\Exceptions\StrictException;
 use samuelreichor\llmify\Llmify;
+use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\Page;
 
 class MarkdownService extends Component
@@ -121,9 +122,95 @@ class MarkdownService extends Component
         }
 
         return HelperService::cached(
-            ['llmify', 'page', $element->id, $element->siteId],
+            $this->getPageCacheKey($element),
             fn() => $this->buildPageMarkdown($element),
         );
+    }
+
+    public function getPageCacheKey(ElementInterface $element): array
+    {
+        return ['llmify', 'page', $element->id, $element->siteId];
+    }
+
+    /**
+     * Returns the servable pages of a site, in the order of its content
+     * settings.
+     *
+     * @return ElementInterface[]
+     * @throws Exception
+     */
+    public function getServableElements(int $siteId): array
+    {
+        $elements = [];
+
+        foreach (Llmify::getInstance()->settings->getContentSettingsBySiteId($siteId) as $contentSetting) {
+            if (!$this->isGroupServable($contentSetting->groupId, $siteId, $contentSetting->elementType)) {
+                continue;
+            }
+
+            foreach ($this->findElementsForContentSetting($contentSetting, $siteId) as $element) {
+                if ($this->isServable($element)) {
+                    $elements[] = $element;
+                }
+            }
+        }
+
+        return $elements;
+    }
+
+    /**
+     * Find the elements of a content setting's group in a site.
+     *
+     * @return ElementInterface[]
+     */
+    public function findElementsForContentSetting(ContentSettings $contentSetting, int $siteId): array
+    {
+        if ($contentSetting->elementType === Entry::class) {
+            return Entry::find()
+                ->sectionId($contentSetting->groupId)
+                ->siteId($siteId)
+                ->all();
+        }
+
+        if (HelperService::isCommerceInstalled() && $contentSetting->elementType === \craft\commerce\elements\Product::class) {
+            return \craft\commerce\elements\Product::find()
+                ->typeId($contentSetting->groupId)
+                ->siteId($siteId)
+                ->all();
+        }
+
+        return [];
+    }
+
+    /**
+     * Returns how many of the servable pages of a site are cached, and when
+     * the oldest of them was cached.
+     *
+     * @return array{total: int, cached: int, oldestCached: int|null}
+     * @throws Exception
+     */
+    public function getCacheStats(int $siteId): array
+    {
+        $elements = $this->getServableElements($siteId);
+        $cached = 0;
+        $oldestCached = null;
+
+        foreach ($elements as $element) {
+            $entry = HelperService::getCached($this->getPageCacheKey($element));
+
+            if ($entry === null) {
+                continue;
+            }
+
+            $cached++;
+            $oldestCached = min($oldestCached ?? $entry['dateCached'], $entry['dateCached']);
+        }
+
+        return [
+            'total' => count($elements),
+            'cached' => $cached,
+            'oldestCached' => $oldestCached,
+        ];
     }
 
     /**

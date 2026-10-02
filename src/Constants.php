@@ -10,6 +10,7 @@ class Constants
     public const TABLE_GLOBALS = '{{%llmify_globals}}';
 
     // Permissions
+    public const PERMISSION_GENERATE = 'llmify:generate';
     public const PERMISSION_CLEAR = 'llmify:clear';
     public const PERMISSION_VIEW_SIDEBAR_PANEL = 'llmify:view-sidebar-panel';
     public const PERMISSION_EDIT_CONTENT = 'llmify:edit-content';

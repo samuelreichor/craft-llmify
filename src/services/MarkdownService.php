@@ -183,6 +183,46 @@ class MarkdownService extends Component
     }
 
     /**
+     * Caches the markdown of the given pages that are not cached yet. Site
+     * templates can only be rendered reliably in a web request, so the `.md`
+     * URLs are requested. In headless mode the front end is fetched directly.
+     *
+     * @param ElementInterface[] $elements Pages of a single site.
+     * @param callable|null $onProgress Called with the number of handled pages and the total.
+     * @return int The number of pages that are cached afterwards.
+     * @throws Exception
+     */
+    public function generate(array $elements, ?callable $onProgress = null): int
+    {
+        $total = count($elements);
+        $generated = 0;
+        $handled = 0;
+
+        if (Llmify::getInstance()->getSettings()->headlessMode) {
+            foreach ($elements as $element) {
+                if ($this->getPageMarkdown($element) !== '') {
+                    $generated++;
+                }
+                $onProgress && $onProgress(++$handled, $total);
+            }
+
+            return $generated;
+        }
+
+        $request = Llmify::getInstance()->request;
+
+        foreach (array_chunk($elements, 10) as $chunk) {
+            $urls = array_map(fn($element) => HelperService::getMarkdownUrl($element->uri, $element->siteId), $chunk);
+            $bodies = $request->fetchAll($urls, $chunk[0]->siteId);
+            $generated += count(array_filter($bodies, fn($body) => $body !== null));
+            $handled += count($chunk);
+            $onProgress && $onProgress($handled, $total);
+        }
+
+        return $generated;
+    }
+
+    /**
      * Returns how many of the servable pages of a site are cached, and when
      * the oldest of them was cached.
      *

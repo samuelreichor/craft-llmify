@@ -65,6 +65,7 @@ class Utils extends Utility
         return Craft::$app->getView()->renderTemplate('llmify/utilities/actions.twig', [
             'siteTable' => $siteTable,
             'isEnabled' => HelperService::isMarkdownCreationEnabled(),
+            'canGenerate' => PermissionService::canGenerate(),
             'canClear' => PermissionService::canClear(),
         ]);
     }

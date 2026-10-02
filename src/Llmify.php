@@ -648,8 +648,11 @@ class Llmify extends Plugin
                         Constants::PERMISSION_EDIT_SITE => [
                             'label' => 'Edit Site Settings',
                         ],
+                        Constants::PERMISSION_GENERATE => [
+                            'label' => 'Generate Markdown',
+                        ],
                         Constants::PERMISSION_CLEAR => [
-                            'label' => 'Clear Markdown Caches',
+                            'label' => 'Clear Markdown',
                         ],
                         Constants::PERMISSION_VIEW_SIDEBAR_PANEL => [
                             'label' => 'View sidebar panel on element edit pages',

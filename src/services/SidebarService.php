@@ -124,10 +124,12 @@ class SidebarService extends Component
      */
     private static function sidebarHtml(ElementInterface $element): string
     {
-        $cached = HelperService::getCached(Llmify::getInstance()->markdown->getPageCacheKey($element));
+        $markdownService = Llmify::getInstance()->markdown;
+        $cached = HelperService::getCached($markdownService->getPageCacheKey($element));
 
         return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
             'cached' => $cached,
+            'failure' => $cached ? null : $markdownService->getPageFailure($element),
             'tokens' => $cached ? MarkdownService::estimateTokens($cached['value']) : null,
             'canGenerate' => PermissionService::canGenerate(),
             'canClear' => PermissionService::canClear(),

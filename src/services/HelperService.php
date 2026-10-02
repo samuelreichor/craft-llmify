@@ -58,12 +58,10 @@ class HelperService extends Component
     }
 
     /**
-     * Checks if the current request renders a preview or carries a token or
-     * site token. Markdown rendered for such a request must never be cached,
-     * since it may show unpublished content and Craft appends the tokens to
-     * every URL.
+     * Previews may show unpublished content, and Craft appends tokens and site
+     * tokens to every URL, so such markdown must never be cached.
      */
-    public static function isPreviewRequest(): bool
+    private static function isUncacheableRequest(): bool
     {
         $request = Craft::$app->getRequest();
 
@@ -81,7 +79,7 @@ class HelperService extends Component
      */
     public static function cached(array $key, callable $callback): string
     {
-        if (self::isPreviewRequest()) {
+        if (self::isUncacheableRequest()) {
             return $callback();
         }
 
@@ -115,9 +113,6 @@ class HelperService extends Component
     }
 
     /**
-     * Returns a still valid entry stored by `cached()` with the time it was
-     * cached, or null when there is none.
-     *
      * @return array{value: string, dateCached: int}|null
      */
     public static function getCached(array $key): ?array
@@ -127,9 +122,6 @@ class HelperService extends Component
         return is_array($cached) && isset($cached['value'], $cached['dateCached']) ? $cached : null;
     }
 
-    /**
-     * Invalidates all markdown caches of the plugin.
-     */
     public static function invalidateCaches(): void
     {
         TagDependency::invalidate(Craft::$app->getCache(), Constants::CACHE_TAG);
@@ -218,6 +210,12 @@ class HelperService extends Component
         }
 
         return $links;
+    }
+
+    public static function isEntryOrProduct(ElementInterface $element): bool
+    {
+        return $element instanceof Entry
+            || (self::isCommerceInstalled() && $element instanceof \craft\commerce\elements\Product);
     }
 
     /**

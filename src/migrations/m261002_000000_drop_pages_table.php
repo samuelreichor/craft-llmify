@@ -7,9 +7,6 @@ use samuelreichor\llmify\Constants;
 
 /**
  * m261002_000000_drop_pages_table migration.
- *
- * Markdown is rendered on demand and kept in Craft's data cache, so the
- * table that stored the generated pages is no longer needed.
  */
 class m261002_000000_drop_pages_table extends Migration
 {

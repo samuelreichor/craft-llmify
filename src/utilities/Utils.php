@@ -6,7 +6,6 @@ use Craft;
 use craft\base\Utility;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\services\HelperService;
-use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\PermissionService;
 use Throwable;
 use Twig\Error\LoaderError;
@@ -54,12 +53,7 @@ class Utils extends Utility
         foreach ($activeSiteIds as $siteId) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $siteTable[] = [
-                    'name' => $site->name,
-                    'cacheStats' => Llmify::getInstance()->markdown->getCacheStats($siteId),
-                    'llmsFullEnabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
-                    'llmsFullGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
-                ];
+                $siteTable[] = ['name' => $site->name] + Llmify::getInstance()->dashboard->getMarkdownStats($siteId);
             }
         }
         return Craft::$app->getView()->renderTemplate('llmify/utilities/actions.twig', [

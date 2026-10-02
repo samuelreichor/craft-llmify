@@ -31,13 +31,11 @@ class SidebarService extends Component
             return '';
         }
 
-        // Main plugin switch — hide sidebar completely
         if (!HelperService::isMarkdownCreationEnabled()) {
             return '';
         }
 
-        // Structural checks — element must be entry/product, not draft, not owned, have URI
-        if (!($element instanceof Entry) && !$this->isCommerceProduct($element)) {
+        if (!HelperService::isEntryOrProduct($element)) {
             return '';
         }
 
@@ -137,11 +135,5 @@ class SidebarService extends Component
             'generateActionUrl' => UrlHelper::actionUrl('llmify/markdown/generate-page', ['elementId' => $element->id, 'siteId' => $element->siteId]),
             'clearActionUrl' => UrlHelper::actionUrl('llmify/markdown/clear-page', ['elementId' => $element->id, 'siteId' => $element->siteId]),
         ]);
-    }
-
-    private function isCommerceProduct(ElementInterface $element): bool
-    {
-        return HelperService::isCommerceInstalled()
-            && $element instanceof \craft\commerce\elements\Product;
     }
 }

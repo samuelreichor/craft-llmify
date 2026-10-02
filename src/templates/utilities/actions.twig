@@ -24,7 +24,7 @@
   {% set rows = rows|merge([{
     heading: site.name,
     cached: site.cacheStats.cached|number ~ ' / ' ~ site.cacheStats.total|number,
-    oldest: site.cacheStats.oldestCached ? site.cacheStats.oldestCached|datetime('short') : '–',
+    oldest: site.cacheStats.oldestCached ? site.cacheStats.oldestCached|datetime('short') : '-',
     llmsFull: not site.llmsFullEnabled ? 'Disabled' : (site.llmsFullGenerated ? site.llmsFullGenerated|datetime('short') : 'Never generated'),
   }]) %}
 {% endfor %}

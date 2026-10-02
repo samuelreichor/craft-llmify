@@ -52,8 +52,6 @@ class MarkdownController extends Controller
     }
 
     /**
-     * Rebuilds the cached markdown of a single page.
-     *
      * @throws MethodNotAllowedHttpException
      * @throws ForbiddenHttpException
      * @throws NotFoundHttpException
@@ -76,8 +74,6 @@ class MarkdownController extends Controller
     }
 
     /**
-     * Clears the cached markdown of a single page.
-     *
      * @throws MethodNotAllowedHttpException
      * @throws ForbiddenHttpException
      * @throws NotFoundHttpException

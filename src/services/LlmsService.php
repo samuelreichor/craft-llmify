@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Component;
 use craft\elements\Entry;
 use craft\errors\SiteNotFoundException;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\GlobalSettings;
@@ -36,7 +37,7 @@ class LlmsService extends Component
             return '';
         }
 
-        return HelperService::cached(['llmify', 'llms-txt', $this->currentSiteId], function() {
+        return HelperService::cached([Constants::CACHE_TAG, 'llms-txt', $this->currentSiteId], function() {
             $markdown = $this->constructIntro();
             $markdown .= $this->constructAllUrls();
             $markdown .= $this->constructSocialSection();
@@ -46,11 +47,6 @@ class LlmsService extends Component
         });
     }
 
-    /**
-     * Returns the `llms-full.txt` content stored by the last
-     * `llmify/llms-full/generate` run, or an empty string when it was never
-     * generated or the file is disabled.
-     */
     public function getLlmsFullContent(): string
     {
         if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsFullTxt) {
@@ -61,9 +57,6 @@ class LlmsService extends Component
     }
 
     /**
-     * Returns the stored `llms-full.txt` of a site with the time it was
-     * generated, or null when it was never generated.
-     *
      * @return array{content: string, dateGenerated: int}|null
      */
     public static function getStoredLlmsFull(int $siteId): ?array
@@ -74,9 +67,8 @@ class LlmsService extends Component
     }
 
     /**
-     * Builds `llms-full.txt` from the markdown of every servable page and
-     * stores it until the next run. Rendering every page takes too long for a
-     * web request, so this runs from the console (e.g. a cron job).
+     * Rendering every page takes too long for a web request, so this runs from
+     * the console (e.g. a cron job).
      *
      * @return int|null The number of pages included, or null when the file is disabled for this site.
      * @throws \yii\base\Exception
@@ -106,7 +98,7 @@ class LlmsService extends Component
 
     private static function llmsFullCacheKey(int $siteId): array
     {
-        return ['llmify', 'llms-full', $siteId];
+        return [Constants::CACHE_TAG, 'llms-full', $siteId];
     }
 
     public function constructIntro(): string

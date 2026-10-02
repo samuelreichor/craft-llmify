@@ -6,9 +6,6 @@ use Craft;
 use craft\queue\BaseJob;
 use samuelreichor\llmify\Llmify;
 
-/**
- * Caches the markdown of every servable page that is not cached yet.
- */
 class GenerateMarkdownJob extends BaseJob
 {
     public function execute($queue): void

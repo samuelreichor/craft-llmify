@@ -26,51 +26,59 @@
 
 ## Why LLMify?
 
-AI models like ChatGPT struggle to read websites built for people. They see a wall of code, menus, ads, and sidebars. This "noise" makes it hard for them to find the real story - your valuable story.
-LLMify solves this by converting your Twig templates into clean, structured Markdown.
+AI models like ChatGPT struggle to read websites built for people. They see a wall of code, menus, ads and sidebars, and that noise hides the content that matters.
+LLMify turns your Twig templates into clean, structured Markdown and serves it to AI crawlers, agents and anyone asking for it.
 
-LLMify is built for production-scale AI content delivery.
-Instead of converting HTML to Markdown on every request, LLMify does the work upfront. Your Markdown is stored and ready before any bot shows up.
-Combined with Craft Commerce compatibility, granular control over your Markdowns and user permissions, LLMify gives you everything you need to make your entire site AI-ready.
+Markdown is rendered on demand and cached with Craft's element cache tags, so it is always up to date and blazingly fast.⚡️
 
 ## Features
 
-### Content Generation
-- **Pre-Generated Markdown**: Async batch processing with [amphp](https://amphp.org/) stores Markdown in a dedicated database table for instant delivery at any scale.
-- **On-Demand Fallback**: Automatically generates Markdown on first request if not yet pre-generated.
-- **Template-Level Control**: Use `{% llmify %}` and `{% excludeLlmify %}` Twig tags for precise control over what content is included in your Markdown output.
-- **CSS Class Exclusion**: Define classes to exclude entire sections from the HTML-to-Markdown conversion.
-- **YAML Front Matter**: Configurable metadata with hierarchical inheritance (Site > Section > Entry).
-- **Console Commands**: `llmify/markdown/generate` and `llmify/markdown/clear` for CI/CD and deployment workflows.
+### Content
+- **Template-Level Control**: Mark what belongs in the Markdown with the `{% llmify %}` and `{% excludeLlmify %}` Twig tags.
+- **CSS Class Exclusion**: Define classes to leave whole parts of the page out of the Markdown.
+- **YAML Front Matter**: Configurable metadata with inheritance from site to section to entry.
+- **Twig Functions**: `mdUrl()`, `chatGptUrl()` and `claudeUrl()` return an element's Markdown URL and links that open it in ChatGPT or Claude.
 
 ### AI Content Delivery
-- **Auto-Serve Markdown**: Content negotiation via `Accept: text/markdown` header.
-- **AI Crawler Detection**: Automatically serve Markdown to known AI bots (GPTBot, ClaudeBot, ChatGPT-User, and more).
-- **LLM-Ready Text Files**: Generates `llms.txt` and `/.well-known/llms.txt`.
-- **Discovery Tag**: Injects `<link rel="alternate" type="text/markdown">` and `<link rel="describedby" href="/llms.txt">` into your HTML head, as recommended by the [llms.txt spec](https://llmstxt.org/).
-- **Industry Standard Response Headers**: Sets `Vary: Accept` (+ `User-Agent` for auto-serve), `X-Robots-Tag: noindex, nofollow`, and a `Link` header with `rel="canonical"` and `rel="describedby"` (pointing to `llms.txt`) on all Markdown responses.
+- **Markdown URLs**: Every page is available as Markdown at its URL with `.md` appended, the homepage at `/index.md`.
+- **Content Negotiation**: Requests with an `Accept: text/markdown` header get the Markdown of the page.
+- **AI Crawler Detection**: Known AI crawlers (GPTBot, ClaudeBot, ChatGPT-User and more) get the Markdown automatically. You can add your own user agents.
+- **llms.txt**: Generates `llms.txt` and `/.well-known/llms.txt` as an index of your content.
+- **Discovery Tags**: Injects `<link rel="alternate" type="text/markdown">` and `<link rel="describedby" href="/llms.txt">` into your HTML head, as recommended by the [llms.txt spec](https://llmstxt.org/).
+- **Response Headers**: Markdown responses send `Vary`, `X-Robots-Tag: noindex, nofollow` and a `Link` header with `rel="canonical"` and `rel="describedby"`.
+- **WebMCP**: Optionally exposes your content to in-browser AI agents through the experimental [WebMCP](https://github.com/webmachinelearning/webmcp) standard.
+
+### Caching
+- **Always Up to Date**: The cache uses Craft's element cache tags, so related entries, assets and globals invalidate it too.
+- **Cache Duration**: The `cacheDuration` setting limits how long a page stays cached.
+- **Cache Warming**: `php craft llmify/markdown/generate` caches every page that is not cached yet, e.g. nightly on sites under heavy load. The utility can do the same in a queue job.
+- **Clearing**: Clear the cache in the LLMify utility, under Utilities > Clear Caches or with `php craft clear-caches/llmify`.
+- **Failure Reporting**: Pages whose Markdown could not be rendered are listed on the dashboard, and the element sidebar shows the reason.
 
 ### Content Management
-- **Hierarchical Settings**: Site-wide, section, and entry-level configuration with inheritance.
-- **Per-Entry Control**: Include or exclude individual entries via the LLMify Settings Field.
-- **Permission System**: Granular user permissions for everything.
-- **Preview Targets**: Preview Markdown output directly from the entry editor.
-- **Dashboard**: Site setup scores and section-level content statistics at a glance.
+- **Hierarchical Settings**: Site, section and entry level configuration with inheritance.
+- **Per-Entry Control**: Include or exclude individual entries with the LLMify Settings field.
+- **Element Sidebar**: Shows whether a page is cached, since when and its size in tokens.
+- **Dashboard**: Site setup scores, section statistics and cache status at a glance.
+- **Permissions**: Granular user permissions for every part of the plugin.
+- **Preview Targets**: Preview the Markdown right from the entry editor.
 
 ### Integrations
-- **SEOmatic Integration**: Automatically populate front matter from SEOmatic fields.
-- **Craft Commerce Support**: Full support for Commerce Products alongside Entries.
+- **SEOmatic**: Populate front matter from SEOmatic fields.
+- **Craft Commerce**: Commerce products are supported alongside entries.
+- **Blitz**: Requests for Markdown bypass the Blitz cache. This needs Blitz to serve its cache through PHP; when the web server serves the cached files directly, content negotiation and crawler detection can not reach Craft.
 
 ### Headless
-- **Headless Mode**: For sites where Craft does not render the front end (e.g. a separate Nuxt/Next/Astro app). Instead of relying on Twig rendering, LLMify fetches your front-end URLs (the site's Base URL) and converts the returned HTML to Markdown. Sections excluded from output are controlled via the configured exclude classes.
-- **Content API**: Pull the generated files cross-domain so your front end can re-serve them under its own domain:
+- **Headless Mode**: For sites where Craft does not render the front end (e.g. a separate Nuxt, Next or Astro app). LLMify fetches your front end URLs (the site's base URL), converts the HTML to Markdown and caches it for `cacheDuration`. Use the exclude classes to leave parts of the page out.
+- **Content API**: Pull the Markdown cross-domain so your front end can serve it under its own domain:
   - `GET /actions/llmify/api/llms-txt?site=<handle|id>`
-  - `GET /actions/llmify/api/page?uri=<uri>&site=<handle|id>` — a single page's stored Markdown, including front matter.
-- **On-Demand Convert**: `POST /actions/llmify/api/convert` with `{ "url": "<front-end URL>" }` returns the Markdown for a single page, converted live. The URL must resolve to one of your configured site Base URL hosts.
+  - `GET /actions/llmify/api/page?uri=<uri>&site=<handle|id>` returns the Markdown of a single page, including front matter.
+- **On-Demand Convert**: `POST /actions/llmify/api/convert` with `{ "url": "<front-end URL>" }` converts a single page live. The URL must belong to one of your sites' base URL hosts.
+- **API Token**: Protect the API with a token sent in the `X-Llmify-Token` header.
 
 ## Requirements
 
-This plugin requires Craft CMS 5.0.0 or later, and PHP 8.2 or later.
+This plugin requires Craft CMS 5.0.0 or later and PHP 8.2 or later.
 
 ## Documentation
 

@@ -21,7 +21,7 @@ class DashboardController extends Controller
             'pluginChecks' => $dashboard->getPluginSettingsChecks(),
             'siteSetup' => $dashboard->getSiteSetupData($currentSiteId),
             'contentSetup' => $dashboard->getContentSetupData($currentSiteId),
-            'generationStats' => $dashboard->getGenerationStats($currentSiteId),
+            'markdownStats' => $dashboard->getMarkdownStats($currentSiteId),
         ]);
     }
 }

@@ -1,65 +1,58 @@
 {% import '_includes/forms' as forms %}
 
+{% set markdownExists = cached != null %}
+{% set markdownEmpty = markdownExists and (cached.value is empty) %}
 <div class="data">
   <div class="heading">Status</div>
-  <div class="value">
-    {% if cached %}
-      <a href="{{ markdownUrl }}" target="_blank" rel="noopener">Cached</a>
-    {% else %}
-      Not cached
-    {% endif %}
+  <div class="value statusMsg" style="justify-content: space-between">
+    <p>
+      {% if markdownExists %}
+        <a href="{{ markdownUrl }}" target="_blank" rel="noopener">Cached</a>
+      {% else %}
+        Not cached
+      {% endif %}
+    </p>
   </div>
-</div>
-{% if cached %}
-  <div class="data">
-    <div class="heading">Cached At</div>
-    <div class="value">{{ cached.dateCached|datetime('short') }}</div>
-  </div>
-  {% if cached.value is empty %}
-    <div class="data">
-      <div class="heading"></div>
-      <div class="value">
-        <p class="warning with-icon" style="margin: 0;">
-          Markdown empty. Check your <a href="https://samuelreichor.at/libraries/craft-llmify/usage/content-control" target="_blank" rel="noopener">template setup</a> for more information.
-        </p>
-      </div>
-    </div>
-  {% else %}
-    <div class="data">
-      <div class="heading">Size</div>
-      <div class="value">~{{ tokens|number }} tokens</div>
+  {% if markdownEmpty %}
+    <div class="heading"></div>
+    <div class="value">
+      <p class="warning with-icon" style="margin: 0;">
+        Markdown empty. Check your <a href="https://samuelreichor.at/libraries/craft-llmify/usage/content-control" target="_blank" rel="noopener">template setup</a> for more information.
+      </p>
     </div>
   {% endif %}
-{% else %}
-  <div class="data">
-    <div class="heading">Markdown</div>
-    <div class="value">
-      <a href="{{ markdownUrl }}" target="_blank" rel="noopener">View</a>
-    </div>
-  </div>
-{% endif %}
-{% if canGenerate or (canClear and cached) %}
-  <div class="llmify-btn-group flex fullwidth">
+  {% if markdownExists %}
+    <div class="heading status-update">Last Updated</div>
+    <div class="value status-update">{{ cached.dateCached|datetime('short') }}</div>
+    {% if not markdownEmpty %}
+      <div class="heading status-update">Size</div>
+      <div class="value status-update">~{{ tokens|number }} tokens</div>
+    {% endif %}
+  {% endif %}
+  {% if canGenerate or canClear %}
+  <div class="llmify-btn-group">
     {% if canGenerate %}
-      {{ forms.button({
-        label: 'Refresh',
-        spinner: true,
-        attributes: {
-          data: {'llmify-action': generateActionUrl},
-        },
-      }) }}
+    {{ tag('button', {
+      text: 'Update',
+      class: 'btn primary generate',
+      data: {
+        action: generateActionUrl,
+      },
+    }) }}
     {% endif %}
-    {% if canClear and cached %}
-      {{ forms.button({
-        label: 'Clear',
-        spinner: true,
-        attributes: {
-          data: {'llmify-action': clearActionUrl},
-        },
-      }) }}
+
+    {% if canClear %}
+    {{ tag('button', {
+      text: 'Clear',
+      class: 'btn secondary clear',
+      data: {
+        action: clearActionUrl,
+      },
+    }) }}
     {% endif %}
   </div>
-{% endif %}
+  {% endif %}
+</div>
 
 {% css %}
   .llmify-sidebar .meta .data {
@@ -76,34 +69,56 @@
 
   .llmify-sidebar .llmify-btn-group {
     padding-block: var(--s);
+    padding-inline: var(--m);
+    display: flex;
+    gap: 0.5rem;
+
+    button {
+      min-width: 100px;
+    }
   }
 {% endcss %}
 
-{% js %}
-  if (!window.llmifySidebarBound) {
-    window.llmifySidebarBound = true;
+<script>
+  const sidebarWidget = document.querySelector('.llmify-sidebar')
+  const generateBtn = sidebarWidget.querySelector('.generate')
+  const clearBtn = sidebarWidget.querySelector('.clear')
+  const status = sidebarWidget.querySelector('.statusMsg p')
+  const statusUpdateEls = sidebarWidget.querySelectorAll('.status-update')
 
-    // Delegated, since the sidebar is replaced after every action.
-    document.addEventListener('click', (e) => {
-      const button = e.target.closest('.llmify-sidebar [data-llmify-action]');
-      if (!button) {
-        return;
-      }
-
-      e.preventDefault();
-      button.classList.add('loading');
-
-      Craft.sendActionRequest('POST', button.dataset.llmifyAction)
+  function sendActionRequest(actionUrl, statusUpdateMsg) {
+    Craft.sendActionRequest('POST', actionUrl)
         .then((response) => {
           Craft.cp.displaySuccess(response.data.message);
-          const sidebar = button.closest('.llmify-sidebar');
-          sidebar.insertAdjacentHTML('beforebegin', response.data.html);
-          sidebar.remove();
+          status.innerHTML = statusUpdateMsg
+          statusUpdateEls.forEach(el => {
+            el.style.display = 'none'
+          })
         })
         .catch(({response}) => {
-          button.classList.remove('loading');
-          Craft.cp.displayError(response?.data?.message);
-        });
-    });
+          if (response.data.message) {
+            Craft.cp.displayError(response.data.message);
+          }
+          else {
+            Craft.cp.displayError();
+          }
+        })
   }
-{% endjs %}
+  if (generateBtn) {
+    generateBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      const actionUrl = generateBtn.dataset.action;
+      sendActionRequest(actionUrl, 'Cached')
+    })
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      const actionUrl = clearBtn.dataset.action;
+      sendActionRequest(actionUrl, 'Cleared')
+    })
+  }
+</script>
+
+

@@ -52,8 +52,7 @@ class MarkdownController extends Controller
     }
 
     /**
-     * Rebuilds the cached markdown of a single page and returns the updated
-     * sidebar.
+     * Rebuilds the cached markdown of a single page.
      *
      * @throws MethodNotAllowedHttpException
      * @throws ForbiddenHttpException
@@ -73,14 +72,11 @@ class MarkdownController extends Controller
             return $this->asFailure('The markdown could not be generated. Check the LLMify log for details.');
         }
 
-        return $this->asSuccess('Markdown generated.', [
-            'html' => Llmify::getInstance()->sidebar->getSidebarHtml($element),
-        ]);
+        return $this->asSuccess('Markdown generated.');
     }
 
     /**
-     * Clears the cached markdown of a single page and returns the updated
-     * sidebar.
+     * Clears the cached markdown of a single page.
      *
      * @throws MethodNotAllowedHttpException
      * @throws ForbiddenHttpException
@@ -95,9 +91,7 @@ class MarkdownController extends Controller
         $element = $this->getElement($elementId, $siteId);
         Craft::$app->getCache()->delete(Llmify::getInstance()->markdown->getPageCacheKey($element));
 
-        return $this->asSuccess('Markdown cache cleared.', [
-            'html' => Llmify::getInstance()->sidebar->getSidebarHtml($element),
-        ]);
+        return $this->asSuccess('Markdown cache cleared.');
     }
 
     /**

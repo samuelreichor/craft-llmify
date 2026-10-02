@@ -223,18 +223,16 @@ class MarkdownService extends Component
     }
 
     /**
-     * Returns how many of the servable pages of a site are cached, how many of
-     * them are empty, their average size in tokens, and when the oldest of them
-     * was cached.
+     * Returns how many of the servable pages of a site are cached, their
+     * average size in tokens, and when the oldest of them was cached.
      *
-     * @return array{total: int, cached: int, empty: int, avgTokens: int, oldestCached: int|null}
+     * @return array{total: int, cached: int, avgTokens: int, oldestCached: int|null}
      * @throws Exception
      */
     public function getCacheStats(int $siteId): array
     {
         $elements = $this->getServableElements($siteId);
         $cached = 0;
-        $empty = 0;
         $tokens = 0;
         $oldestCached = null;
 
@@ -247,21 +245,13 @@ class MarkdownService extends Component
 
             $cached++;
             $oldestCached = min($oldestCached ?? $entry['dateCached'], $entry['dateCached']);
-
-            if ($entry['value'] === '') {
-                $empty++;
-            } else {
-                $tokens += self::estimateTokens($entry['value']);
-            }
+            $tokens += self::estimateTokens($entry['value']);
         }
-
-        $withContent = $cached - $empty;
 
         return [
             'total' => count($elements),
             'cached' => $cached,
-            'empty' => $empty,
-            'avgTokens' => $withContent > 0 ? (int)round($tokens / $withContent) : 0,
+            'avgTokens' => $cached > 0 ? (int)round($tokens / $cached) : 0,
             'oldestCached' => $oldestCached,
         ];
     }

@@ -76,7 +76,8 @@ class HelperService extends Component
      * result. Craft collects the cache tags of every element queried inside the
      * callback, so the entry is invalidated as soon as one of them changes. It
      * also expires after the `cacheDuration` setting, or earlier when a queried
-     * element gets published or expires. Previews are never cached.
+     * element gets published or expires. Previews and empty results are never
+     * cached.
      */
     public static function cached(array $key, callable $callback): string
     {
@@ -103,10 +104,12 @@ class HelperService extends Component
             $duration = $maxDuration;
         }
 
-        Craft::$app->getCache()->set($key, [
-            'value' => $result,
-            'dateCached' => time(),
-        ], $duration, $dependency);
+        if ($result !== '') {
+            Craft::$app->getCache()->set($key, [
+                'value' => $result,
+                'dateCached' => time(),
+            ], $duration, $dependency);
+        }
 
         return $result;
     }

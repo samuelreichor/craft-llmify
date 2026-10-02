@@ -1,7 +1,6 @@
 {% import '_includes/forms' as forms %}
 
 {% set markdownExists = cached != null %}
-{% set markdownEmpty = markdownExists and (cached.value is empty) %}
 <div class="data">
   <div class="heading">Status</div>
   <div class="value statusMsg" style="justify-content: space-between">
@@ -13,21 +12,11 @@
       {% endif %}
     </p>
   </div>
-  {% if markdownEmpty %}
-    <div class="heading"></div>
-    <div class="value">
-      <p class="warning with-icon" style="margin: 0;">
-        Markdown empty. Check your <a href="https://samuelreichor.at/libraries/craft-llmify/usage/content-control" target="_blank" rel="noopener">template setup</a> for more information.
-      </p>
-    </div>
-  {% endif %}
   {% if markdownExists %}
     <div class="heading status-update">Last Updated</div>
     <div class="value status-update">{{ cached.dateCached|datetime('short') }}</div>
-    {% if not markdownEmpty %}
-      <div class="heading status-update">Size</div>
-      <div class="value status-update">~{{ tokens|number }} tokens</div>
-    {% endif %}
+    <div class="heading status-update">Size</div>
+    <div class="value status-update">~{{ tokens|number }} tokens</div>
   {% endif %}
   {% if canGenerate or canClear %}
   <div class="llmify-btn-group">

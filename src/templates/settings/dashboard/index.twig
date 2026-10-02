@@ -149,17 +149,6 @@
                         </div>
 
                         <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Empty Pages</div>
-                            <div class="llmify-stat-value">
-                                {% if markdownStats.cacheStats.empty > 0 %}
-                                    <span class="llmify-warning">{{ markdownStats.cacheStats.empty }}</span>
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="llmify-stat-block">
                             <div class="llmify-stat-label">Oldest Cache</div>
                             <div class="llmify-stat-value">
                                 {% if markdownStats.cacheStats.oldestCached %}

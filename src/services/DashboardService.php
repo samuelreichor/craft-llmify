@@ -167,7 +167,7 @@ class DashboardService extends Component
      * Get markdown statistics for a single site.
      *
      * @return array{
-     *     cacheStats: array{total: int, cached: int, empty: int, avgTokens: int, oldestCached: int|null},
+     *     cacheStats: array{total: int, cached: int, avgTokens: int, oldestCached: int|null},
      *     coveragePercent: float,
      *     llmsFullEnabled: bool,
      *     llmsFullGenerated: int|null,

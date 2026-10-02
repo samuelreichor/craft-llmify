@@ -1,3 +1,5 @@
+{% import '_includes/forms' as forms %}
+
 <div class="data">
   <div class="heading">Status</div>
   <div class="value">
@@ -36,25 +38,23 @@
     </div>
   </div>
 {% endif %}
-{% if canGenerate or canClear %}
-  <div class="llmify-btn-group">
+{% if canGenerate or (canClear and cached) %}
+  <div class="llmify-btn-group flex fullwidth">
     {% if canGenerate %}
-      {{ tag('button', {
-        text: 'Refresh',
-        class: 'btn small',
-        type: 'button',
-        data: {
-          'llmify-action': generateActionUrl,
+      {{ forms.button({
+        label: 'Refresh',
+        spinner: true,
+        attributes: {
+          data: {'llmify-action': generateActionUrl},
         },
       }) }}
     {% endif %}
     {% if canClear and cached %}
-      {{ tag('button', {
-        text: 'Clear',
-        class: 'btn small hairline',
-        type: 'button',
-        data: {
-          'llmify-action': clearActionUrl,
+      {{ forms.button({
+        label: 'Clear',
+        spinner: true,
+        attributes: {
+          data: {'llmify-action': clearActionUrl},
         },
       }) }}
     {% endif %}
@@ -75,13 +75,7 @@
   }
 
   .llmify-sidebar .llmify-btn-group {
-    display: flex;
-    gap: var(--s);
     padding-block: var(--s);
-
-    button {
-      flex: 1;
-    }
   }
 {% endcss %}
 

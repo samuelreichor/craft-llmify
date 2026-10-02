@@ -32,6 +32,6 @@ class GenerateMarkdownJob extends BaseJob
 
     protected function defaultDescription(): ?string
     {
-        return Craft::t('llmify', 'Generating LLMify markdown');
+        return Craft::t('llmify', 'Warming the LLMify markdown cache');
     }
 }

@@ -2,7 +2,7 @@
 
 {% set markdownExists = cached != null %}
 <div class="data">
-  <div class="heading">Status</div>
+  <div class="heading">Cache</div>
   <div class="value statusMsg" style="justify-content: space-between">
     <p>
       <a href="{{ markdownUrl }}" target="_blank" rel="noopener">{{ markdownExists ? 'Cached' : 'Not cached' }}</a>
@@ -25,7 +25,7 @@
   <div class="llmify-btn-group">
     {% if canGenerate %}
     {{ tag('button', {
-      text: 'Update',
+      text: 'Refresh',
       class: 'btn primary generate',
       data: {
         action: generateActionUrl,

@@ -113,7 +113,7 @@
             <div class="llmify-panel-header">
                 <div>
                     <h2>Markdown
-                        {% if currentUser.can('llmify:clear') %}
+                        {% if currentUser.can('llmify:generate') or currentUser.can('llmify:clear') %}
                             <a href="{{ cpUrl('utilities/llmify') }}" class="btn small">Utilities</a>
                         {% endif %}
                     </h2>

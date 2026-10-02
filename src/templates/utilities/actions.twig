@@ -41,14 +41,27 @@
 
 {% if not isEnabled %}
   <p>Markdown Creation is disabled. If you want to see the actions you need to enable it in the plugin settings.</p>
-{% elseif canClear %}
+{% elseif canGenerate or canClear %}
   <h2>Actions</h2>
+  <p>Markdown pages and llms.txt are cached and invalidated automatically when content changes. Clear the caches after changing templates.</p>
 
+  {% if canGenerate %}
   <form class="utility" method="post" accept-charset="UTF-8">
-    {{ actionInput('llmify/markdown/clear-caches') }}
+    {{ actionInput('llmify/markdown/generate') }}
     {{ redirectInput('utilities/llmify') }}
     {{ csrfInput() }}
-    <p>Markdown pages and llms.txt are cached and invalidated automatically when content changes. Clear the caches after changing templates.</p>
-    <button type="submit" class="btn submit">Clear Markdown Caches</button>
+    <p>Cache the markdown of all pages that are not cached yet. To keep the caches warm, run <code>php craft llmify/markdown/generate</code> on a schedule.</p>
+    <button type="submit" class="btn submit">Generate</button>
   </form>
+  {% endif %}
+
+  {% if canClear %}
+  <form class="utility" method="post" accept-charset="UTF-8">
+    {{ actionInput('llmify/markdown/clear') }}
+    {{ redirectInput('utilities/llmify') }}
+    {{ csrfInput() }}
+    <p>Clear the markdown caches of all pages and llms.txt.</p>
+    <button type="submit" class="btn submit">Clear Markdown</button>
+  </form>
+  {% endif %}
 {% endif %}

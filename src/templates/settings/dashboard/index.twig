@@ -117,26 +117,55 @@
                             <a href="{{ cpUrl('utilities/llmify') }}" class="btn small">Utilities</a>
                         {% endif %}
                     </h2>
-                    <p class="light">Rendered on demand and cached</p>
+                    <p class="light">Markdown coverage & health</p>
                 </div>
+                {% include "llmify/settings/dashboard/_circle" with { percent: markdownStats.coveragePercent } %}
             </div>
             <div class="llmify-card">
                 <div class="llmify-card-body">
+                    <div class="llmify-stat-block">
+                        <div class="llmify-stat-label">Markdown Coverage</div>
+                        <div class="llmify-progress-bar">
+                            {% if markdownStats.coveragePercent >= 80 %}
+                                {% set barClass = 'green' %}
+                            {% elseif markdownStats.coveragePercent >= 50 %}
+                                {% set barClass = 'orange' %}
+                            {% else %}
+                                {% set barClass = 'red' %}
+                            {% endif %}
+                            <div class="llmify-progress-fill {{ barClass }}" style="width: {{ markdownStats.coveragePercent }}%"></div>
+                        </div>
+                        <div class="llmify-stat-detail">
+                            <strong>{{ markdownStats.cacheStats.cached }}/{{ markdownStats.cacheStats.total }}</strong> Pages cached
+                        </div>
+                    </div>
+
                     <div class="llmify-stats-grid">
                         <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Cached Pages</div>
+                            <div class="llmify-stat-label">Avg. Tokens per Page</div>
                             <div class="llmify-stat-value">
-                                {{ markdownStats.cacheStats.cached|number }} / {{ markdownStats.cacheStats.total|number }}
+                                ~{{ markdownStats.cacheStats.avgTokens|number_format(0) }}
                             </div>
                         </div>
 
                         <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">Cache Duration</div>
+                            <div class="llmify-stat-label">Empty Pages</div>
                             <div class="llmify-stat-value">
-                                {% if markdownStats.cacheDuration > 0 %}
-                                    {{ markdownStats.cacheDuration|duration }}
+                                {% if markdownStats.cacheStats.empty > 0 %}
+                                    <span class="llmify-warning">{{ markdownStats.cacheStats.empty }}</span>
                                 {% else %}
-                                    <span class="light">Until content changes</span>
+                                    0
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="llmify-stat-block">
+                            <div class="llmify-stat-label">Oldest Cache</div>
+                            <div class="llmify-stat-value">
+                                {% if markdownStats.cacheStats.oldestCached %}
+                                    {{ markdownStats.cacheStats.oldestCached|date('M j, Y H:i') }}
+                                {% else %}
+                                    <span class="light">N/A</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -522,16 +551,43 @@
         font-size: 14px;
     }
 
+    .llmify-stat-detail {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
     /* Stats 2-col grid within markdown card */
     .llmify-stats-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 12px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--hairline-color);
     }
 
     .llmify-stats-grid .llmify-stat-block {
         margin-bottom: 0;
     }
+
+    /* Progress bar */
+    .llmify-progress-bar {
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 6px 0;
+    }
+
+    .llmify-progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .llmify-progress-fill.green { background: #22C55E; }
+    .llmify-progress-fill.orange { background: #F59E0B; }
+    .llmify-progress-fill.red { background: #EF4444; }
 
     /* Warning badge */
     .llmify-warning {

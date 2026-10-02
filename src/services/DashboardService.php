@@ -167,19 +167,21 @@ class DashboardService extends Component
      * Get markdown statistics for a single site.
      *
      * @return array{
-     *     cacheStats: array{total: int, cached: int, oldestCached: int|null},
+     *     cacheStats: array{total: int, cached: int, empty: int, avgTokens: int, oldestCached: int|null},
+     *     coveragePercent: float,
      *     llmsFullEnabled: bool,
      *     llmsFullGenerated: int|null,
-     *     cacheDuration: int,
      * }
      */
     public function getMarkdownStats(int $siteId): array
     {
+        $cacheStats = Llmify::getInstance()->markdown->getCacheStats($siteId);
+
         return [
-            'cacheStats' => Llmify::getInstance()->markdown->getCacheStats($siteId),
+            'cacheStats' => $cacheStats,
+            'coveragePercent' => $cacheStats['total'] > 0 ? round($cacheStats['cached'] / $cacheStats['total'] * 100, 1) : 0,
             'llmsFullEnabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
             'llmsFullGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
-            'cacheDuration' => Llmify::getInstance()->getSettings()->cacheDuration,
         ];
     }
 

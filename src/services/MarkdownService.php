@@ -223,16 +223,19 @@ class MarkdownService extends Component
     }
 
     /**
-     * Returns how many of the servable pages of a site are cached, and when
-     * the oldest of them was cached.
+     * Returns how many of the servable pages of a site are cached, how many of
+     * them are empty, their average size in tokens, and when the oldest of them
+     * was cached.
      *
-     * @return array{total: int, cached: int, oldestCached: int|null}
+     * @return array{total: int, cached: int, empty: int, avgTokens: int, oldestCached: int|null}
      * @throws Exception
      */
     public function getCacheStats(int $siteId): array
     {
         $elements = $this->getServableElements($siteId);
         $cached = 0;
+        $empty = 0;
+        $tokens = 0;
         $oldestCached = null;
 
         foreach ($elements as $element) {
@@ -244,13 +247,32 @@ class MarkdownService extends Component
 
             $cached++;
             $oldestCached = min($oldestCached ?? $entry['dateCached'], $entry['dateCached']);
+
+            if ($entry['value'] === '') {
+                $empty++;
+            } else {
+                $tokens += self::estimateTokens($entry['value']);
+            }
         }
+
+        $withContent = $cached - $empty;
 
         return [
             'total' => count($elements),
             'cached' => $cached,
+            'empty' => $empty,
+            'avgTokens' => $withContent > 0 ? (int)round($tokens / $withContent) : 0,
             'oldestCached' => $oldestCached,
         ];
+    }
+
+    /**
+     * A rough estimate of the tokens in a markdown text, at ~4 characters per
+     * token.
+     */
+    public static function estimateTokens(string $markdown): int
+    {
+        return (int)ceil(mb_strlen($markdown) / 4);
     }
 
     /**

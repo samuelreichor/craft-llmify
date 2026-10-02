@@ -130,8 +130,7 @@ class SidebarService extends Component
 
         return Craft::$app->getView()->renderTemplate('llmify/widgets/sidebar', [
             'cached' => $cached,
-            // A rough estimate of ~4 characters per token.
-            'tokens' => $cached ? (int)ceil(mb_strlen($cached['value']) / 4) : null,
+            'tokens' => $cached ? MarkdownService::estimateTokens($cached['value']) : null,
             'canGenerate' => PermissionService::canGenerate(),
             'canClear' => PermissionService::canClear(),
             'markdownUrl' => HelperService::getMarkdownUrl($element->uri, $element->siteId),

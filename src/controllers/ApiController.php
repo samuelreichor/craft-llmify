@@ -115,10 +115,10 @@ class ApiController extends Controller
     }
 
     /**
-     * Returns the stored markdown for a single page, identified by its `uri`
-     * within the requested site. Includes front matter and only serves pages
-     * whose section is enabled — letting a headless front end serve the
-     * pre-generated `.md` files without re-converting on every request.
+     * Returns the markdown for a single page, identified by its `uri` within
+     * the requested site. Includes front matter and only serves pages whose
+     * section is enabled. The markdown is cached, so the front end is only
+     * fetched again once the cache expires or gets cleared.
      *
      * @throws SiteNotFoundException
      * @throws BadRequestHttpException
@@ -131,15 +131,16 @@ class ApiController extends Controller
 
         $uri = (string)$this->request->getRequiredParam('uri');
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
-        $markdown = Llmify::getInstance()->markdown->getRenderedMarkdown($uri, $siteId);
+        $markdownService = Llmify::getInstance()->markdown;
+        $element = $markdownService->findElementByUri($uri, $siteId);
+        $markdown = $element ? $markdownService->getPageMarkdown($element) : '';
 
-        return $this->respondWithMarkdown($markdown ?? '', "Markdown for {$uri}");
+        return $this->respondWithMarkdown($markdown, "Markdown for {$uri}");
     }
 
     /**
      * Fetches a front-end URL and returns its converted markdown without
-     * persisting it. Lets a headless front end render individual `.md` pages
-     * on demand.
+     * caching it.
      *
      * The target URL must belong to one of the configured site Base URL hosts
      * (SSRF guard), so this cannot be used to fetch arbitrary internal hosts.

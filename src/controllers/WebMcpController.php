@@ -117,11 +117,8 @@ class WebMcpController extends Controller
     }
 
     /**
-     * Backend for the `get_page` tool. Delegates to `LlmsService` so the same
-     * exclusion gating as the public `.md` routes applies. On-demand generation
-     * is disabled here and the lookup is cached, so this unauthenticated
-     * endpoint can only ever serve already-generated markdown and can't be used
-     * to trigger blocking server-side renders.
+     * Backend for the `get_page` tool. Serves the same cached markdown as the
+     * public `.md` routes, with the same gating.
      *
      * @throws BadRequestHttpException
      * @throws NotFoundHttpException
@@ -132,10 +129,9 @@ class WebMcpController extends Controller
         $uri = (string)$this->request->getRequiredParam('uri');
         $siteId = Craft::$app->getSites()->getCurrentSite()->id;
 
-        $cacheKey = ['llmify-webmcp-page', $siteId, $uri];
-        $markdown = Craft::$app->getCache()->getOrSet($cacheKey, function() use ($uri) {
-            return Llmify::getInstance()->llms->getMarkdownForUri($uri, allowOnDemand: false);
-        }, 60);
+        $markdownService = Llmify::getInstance()->markdown;
+        $element = $markdownService->findElementByUri($uri, $siteId);
+        $markdown = $element ? $markdownService->getPageMarkdown($element) : '';
 
         if ($markdown === '') {
             throw new NotFoundHttpException('No content found for URI: ' . $uri);

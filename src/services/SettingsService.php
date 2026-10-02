@@ -27,7 +27,7 @@ class SettingsService extends Component
      * @throws Exception
      * @throws \yii\base\Exception
      */
-    public function saveContentSettings(ContentSettings $contentSettings, bool $runValidation = true, bool $triggerRefresh = true): bool
+    public function saveContentSettings(ContentSettings $contentSettings, bool $runValidation = true): bool
     {
         $isNewsSetting = !$contentSettings->id;
 
@@ -70,15 +70,7 @@ class SettingsService extends Component
         $contentRecord->sortOrder = $contentSettings->sortOrder;
 
         $contentRecord->save();
-
-        // on installation no refresh is needed
-        if ($triggerRefresh) {
-            Llmify::getInstance()->refresh->refreshPagesByGroups(
-                [$contentSettings->groupId],
-                [$contentSettings->siteId],
-                $contentSettings->elementType
-            );
-        }
+        HelperService::invalidateCaches();
 
         if ($isNewsSetting) {
             $contentSettings->id = $contentRecord->id;
@@ -89,7 +81,7 @@ class SettingsService extends Component
     /**
      * @throws Exception|\yii\base\Exception
      */
-    public function getContentSetting(int $groupId, int $siteId, string $elementType = Entry::class, bool $triggerRefresh = true): ContentSettings
+    public function getContentSetting(int $groupId, int $siteId, string $elementType = Entry::class): ContentSettings
     {
         $cacheKey = $this->createContentCacheKey($groupId, $siteId, $elementType);
 
@@ -112,7 +104,7 @@ class SettingsService extends Component
             $settings->groupId = $groupId;
             $settings->siteId = $siteId;
             $settings->elementType = $elementType;
-            $this->saveContentSettings($settings, true, $triggerRefresh);
+            $this->saveContentSettings($settings);
         }
 
         // Apply test overrides if present
@@ -183,9 +175,9 @@ class SettingsService extends Component
      * @throws Exception
      * @throws \yii\base\Exception
      */
-    public function setContentSetting(int $groupId, int $siteId, string $elementType = Entry::class, bool $triggerRefresh = true): void
+    public function setContentSetting(int $groupId, int $siteId, string $elementType = Entry::class): void
     {
-        $this->getContentSetting($groupId, $siteId, $elementType, $triggerRefresh);
+        $this->getContentSetting($groupId, $siteId, $elementType);
     }
 
     /**
@@ -220,6 +212,7 @@ class SettingsService extends Component
         // Drop cache so next read returns new order
         unset($this->contentSettingsBySiteId[$siteId]);
         $this->allEnabledContentSettings = [];
+        HelperService::invalidateCaches();
     }
 
     /**
@@ -254,7 +247,7 @@ class SettingsService extends Component
 
         foreach ($allSiteIds as $siteId) {
             foreach ($sectionIdsWithUrls as $sectionId) {
-                $this->setContentSetting($sectionId, $siteId, Entry::class, false);
+                $this->setContentSetting($sectionId, $siteId, Entry::class);
             }
         }
 
@@ -263,7 +256,7 @@ class SettingsService extends Component
             $productTypes = \craft\commerce\Plugin::getInstance()->getProductTypes()->getAllProductTypes();
             foreach ($allSiteIds as $siteId) {
                 foreach ($productTypes as $productType) {
-                    $this->setContentSetting($productType->id, $siteId, \craft\commerce\elements\Product::class, false);
+                    $this->setContentSetting($productType->id, $siteId, \craft\commerce\elements\Product::class);
                 }
             }
         }
@@ -296,6 +289,7 @@ class SettingsService extends Component
             : null;
 
         $globalRecord->save();
+        HelperService::invalidateCaches();
         return true;
     }
 

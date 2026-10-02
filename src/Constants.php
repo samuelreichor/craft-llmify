@@ -10,7 +10,6 @@ class Constants
     public const TABLE_GLOBALS = '{{%llmify_globals}}';
 
     // Permissions
-    public const PERMISSION_GENERATE = 'llmify:generate';
     public const PERMISSION_CLEAR = 'llmify:clear';
     public const PERMISSION_VIEW_SIDEBAR_PANEL = 'llmify:view-sidebar-panel';
     public const PERMISSION_EDIT_CONTENT = 'llmify:edit-content';
@@ -21,6 +20,5 @@ class Constants
     public const CACHE_TAG = 'llmify';
 
     // Random
-    public const HEADER_REFRESH = 'X-Llmify-Refresh-Request';
     public const HEADER_API_TOKEN = 'X-Llmify-Token';
 }

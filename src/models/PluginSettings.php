@@ -31,7 +31,6 @@ class PluginSettings extends Model
     public bool $enableWebMcp = false;
     public bool $enableBotDetection = false;
     public array $additionalBotUserAgents = [];
-    public bool $frontMatterInFullTxt = false;
 
     public function defineRules(): array
     {

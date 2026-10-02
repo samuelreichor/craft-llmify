@@ -60,7 +60,7 @@ class FileController extends Controller
 
         if (!$fileContent) {
             Craft::error(
-                'The `llms-full.txt` file could not be found. Please review the plugin settings to ensure that at least one site is enabled and that content is available to be displayed.',
+                'The `llms-full.txt` file could not be found. Make sure it is enabled for this site and generated with `php craft llmify/llms-full/generate`, e.g. by a cron job.',
                 'llmify'
             );
             throw new NotFoundHttpException('llms-full.txt file not found.');
@@ -74,9 +74,11 @@ class FileController extends Controller
     }
 
     /**
+     * Serves the markdown of the page at `{uri}.md`.
+     *
      * @throws SiteNotFoundException
-     * @throws \yii\db\Exception
      * @throws NotFoundHttpException
+     * @throws Exception
      */
     public function actionGeneratePageMd(string $slug): Response
     {
@@ -84,13 +86,16 @@ class FileController extends Controller
         if ($uri === 'index') {
             $uri = Element::HOMEPAGE_URI;
         }
-        $fileContent = Llmify::getInstance()->llms->getMarkdownForUri($uri);
+
+        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
+        $markdownService = Llmify::getInstance()->markdown;
+        $element = $markdownService->findElementByUri($uri, $siteId);
+        $fileContent = $element ? $markdownService->getPageMarkdown($element) : '';
 
         if (!$fileContent) {
             throw new NotFoundHttpException('Markdown not found for URI: ' . $uri);
         }
 
-        $siteId = Craft::$app->getSites()->getCurrentSite()->id;
         $canonicalUrl = UrlHelper::siteUrl($uri === Element::HOMEPAGE_URI ? '' : $uri);
         $linkHeader = ['<' . $canonicalUrl . '>; rel="canonical"'];
         $llmsTxtUrl = HelperService::getLlmsTxtUrl($siteId);
@@ -101,15 +106,65 @@ class FileController extends Controller
         Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
         Craft::$app->response->headers->set('Link', implode(', ', $linkHeader));
 
-        // Resolve the element so we can store its canonical front-end URL —
-        // otherwise `/index.md` and `/` would land in different rows
-        // for the same logical page.
-        $element = Craft::$app->getElements()->getElementByUri($uri, $siteId);
         Llmify::getInstance()->fireLlmRequest(
             LlmRequestType::Direct,
-            elementId: $element?->id,
-            elementType: $element ? get_class($element) : null,
-            url: $element?->getUrl(),
+            elementId: $element->id,
+            elementType: get_class($element),
+            url: $element->getUrl(),
+        );
+
+        return $this->asRaw($fileContent);
+    }
+
+    /**
+     * Serves the markdown of the requested page to AI bots and clients asking
+     * for `text/markdown` (auto-serve routes them here). Pages without
+     * markdown are rendered as usual.
+     *
+     * @throws NotFoundHttpException
+     * @throws Exception
+     */
+    public function actionNegotiatedMd(): Response
+    {
+        $element = Craft::$app->getUrlManager()->getMatchedElement();
+
+        if (!$element) {
+            throw new NotFoundHttpException();
+        }
+
+        $markdownService = Llmify::getInstance()->markdown;
+        $fileContent = $markdownService->getPageMarkdown($element);
+        $headers = Craft::$app->response->headers;
+
+        if (!$fileContent) {
+            $headers->remove('X-Robots-Tag');
+            $headers->remove('Vary');
+            $route = $markdownService->getOriginalRoute($element);
+
+            if ($route === null) {
+                throw new NotFoundHttpException();
+            }
+
+            return is_array($route)
+                ? Craft::$app->runAction($route[0], $route[1] ?? [])
+                : Craft::$app->runAction($route);
+        }
+
+        $linkHeader = ['<' . HelperService::getMarkdownUrl($element->uri, $element->siteId) . '>; rel="alternate"; type="text/markdown"'];
+        $llmsTxtUrl = HelperService::getLlmsTxtUrl($element->siteId);
+        if ($llmsTxtUrl) {
+            $linkHeader[] = '<' . $llmsTxtUrl . '>; rel="describedby"';
+        }
+
+        $headers->set('Content-Type', 'text/markdown; charset=UTF-8');
+        $headers->set('Vary', 'Accept, User-Agent');
+        $headers->set('Link', implode(', ', $linkHeader));
+
+        Llmify::getInstance()->fireLlmRequest(
+            LlmRequestType::Negotiated,
+            elementId: $element->id,
+            elementType: get_class($element),
+            uri: $element->uri,
         );
 
         return $this->asRaw($fileContent);

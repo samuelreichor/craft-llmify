@@ -55,30 +55,6 @@ class Install extends Migration
     {
         $tablesCreated = false;
 
-        $tablePages = Craft::$app->db->schema->getTableSchema(Constants::TABLE_PAGES);
-        if ($tablePages === null) {
-            $tablesCreated = true;
-            $this->createTable(
-                Constants::TABLE_PAGES,
-                [
-                    'id' => $this->primaryKey(),
-                    'elementId' => $this->integer()->notNull(),
-                    'elementType' => $this->string()->notNull()->defaultValue('craft\\elements\\Entry'),
-                    'uri' => $this->string(),
-                    'siteId' => $this->integer(),
-                    'groupId' => $this->integer(),
-                    'elementMeta' => $this->json(),
-                    'metadataId' => $this->integer(),
-                    'title' => $this->string(),
-                    'description' => $this->text(),
-                    'content' => $this->longText(),
-                    'dateCreated' => $this->dateTime()->notNull(),
-                    'dateUpdated' => $this->dateTime()->notNull(),
-                ]
-            );
-            $this->createIndex(null, Constants::TABLE_PAGES, ['siteId', 'uri']);
-        }
-
         $tableMeta = Craft::$app->db->schema->getTableSchema(Constants::TABLE_META);
         if ($tableMeta === null) {
             $tablesCreated = true;
@@ -115,7 +91,7 @@ class Install extends Migration
                     'siteId' => $this->integer()->notNull(),
                     'enabled' => $this->boolean()->notNull(),
                     'enableLlmsTxt' => $this->boolean()->notNull()->defaultValue(true),
-                    'enableLlmsFullTxt' => $this->boolean()->notNull()->defaultValue(true),
+                    'enableLlmsFullTxt' => $this->boolean()->notNull()->defaultValue(false),
                     'llmTitle' => $this->string(),
                     'llmDescription' => $this->text(),
                     'llmNote' => $this->text(),
@@ -134,33 +110,12 @@ class Install extends Migration
 
     protected function removeTables(): void
     {
-        $this->dropTableIfExists(Constants::TABLE_PAGES);
         $this->dropTableIfExists(Constants::TABLE_META);
         $this->dropTableIfExists(Constants::TABLE_GLOBALS);
     }
 
     protected function addForeignKeys(): void
     {
-        $this->addForeignKey(
-            $this->db->getForeignKeyName(),
-            Constants::TABLE_PAGES,
-            'elementId',
-            '{{%elements}}',
-            'id',
-            'CASCADE',
-            null
-        );
-
-        $this->addForeignKey(
-            $this->db->getForeignKeyName(),
-            Constants::TABLE_PAGES,
-            'metadataId',
-            Constants::TABLE_META,
-            'id',
-            'CASCADE',
-            null
-        );
-
         $this->addForeignKey(
             $this->db->getForeignKeyName(),
             Constants::TABLE_GLOBALS,

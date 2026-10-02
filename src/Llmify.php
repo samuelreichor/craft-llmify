@@ -9,28 +9,25 @@ use craft\elements\Entry;
 use craft\enums\CmsEdition;
 use craft\events\CancelableEvent;
 use craft\events\DefineHtmlEvent;
-use craft\events\ElementEvent;
-use craft\events\MoveElementEvent;
-use craft\events\MultiElementActionEvent;
+use craft\events\RegisterCacheOptionsEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterPreviewTargetsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\events\SectionEvent;
+use craft\events\SetElementRouteEvent;
 use craft\events\SiteEvent;
 use craft\events\TemplateEvent;
 use craft\helpers\UrlHelper;
-use craft\services\Elements;
 use craft\services\Entries;
 use craft\services\Fields;
 use craft\services\Sites;
-use craft\services\Structures;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
+use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
 use craft\web\View;
 use putyourlightson\blitz\services\CacheRequestService;
-use samuelreichor\llmify\behaviors\LlmifyChangedBehavior;
 use samuelreichor\llmify\enums\LlmRequestType;
 use samuelreichor\llmify\events\LlmRequestEvent;
 use samuelreichor\llmify\fields\LlmifySettingsField;
@@ -43,9 +40,9 @@ use samuelreichor\llmify\services\HelperService;
 use samuelreichor\llmify\services\LlmsService;
 use samuelreichor\llmify\services\MarkdownService;
 use samuelreichor\llmify\services\MetadataService;
-use samuelreichor\llmify\services\RefreshService;
 use samuelreichor\llmify\services\RequestService;
 use samuelreichor\llmify\services\SettingsService;
+use samuelreichor\llmify\services\SidebarService;
 use samuelreichor\llmify\services\WebMcpService;
 use samuelreichor\llmify\twig\LlmifyExtension;
 use samuelreichor\llmify\utilities\Utils;
@@ -67,8 +64,8 @@ use yii\log\FileTarget;
  * @property-read MetadataService $metadata
  * @property-read HelperService $helper
  * @property-read FieldDiscoveryService $fieldDiscovery
- * @property-read RefreshService $refresh
  * @property-read RequestService $request
+ * @property-read SidebarService $sidebar
  * @property-read FrontMatterService $frontMatter
  * @property-read BotDetectionService $botDetection
  * @property-read DashboardService $dashboard
@@ -84,7 +81,7 @@ class Llmify extends Plugin
      */
     public const EVENT_LLM_REQUEST = 'llmRequest';
 
-    public string $schemaVersion = '1.4.0';
+    public string $schemaVersion = '2.0.0';
     public bool $hasCpSettings = true;
     public bool $hasReadOnlyCpSettings = true;
     public bool $hasCpSection = true;
@@ -100,8 +97,8 @@ class Llmify extends Plugin
                 'metadata' => MetadataService::class,
                 'helper' => HelperService::class,
                 'fieldDiscovery' => FieldDiscoveryService::class,
-                'refresh' => RefreshService::class,
                 'request' => RequestService::class,
+                'sidebar' => SidebarService::class,
                 'frontMatter' => FrontMatterService::class,
                 'botDetection' => BotDetectionService::class,
                 'dashboard' => DashboardService::class,
@@ -117,33 +114,16 @@ class Llmify extends Plugin
         $this->_initLogger();
         $this->registerTwigExtension();
 
-        if (HelperService::isMarkdownCreationEnabled()) {
-            $isHeadless = $this->getSettings()->headlessMode;
+        if (HelperService::isMarkdownCreationEnabled() && Craft::$app->request->getIsSiteRequest()) {
+            $this->registerSiteEvents();
 
-            // The Twig render save side-effect, auto-serve and the discovery tag
-            // all depend on Craft rendering the front end. In headless mode it
-            // does not, so markdown is generated from fetched bodies instead.
-            if (!$isHeadless) {
-                $this->registerGeneralEvents();
+            // Auto-serve and the discovery tag depend on Craft rendering the
+            // front end. In headless mode it does not.
+            if (!$this->getSettings()->headlessMode) {
+                $this->registerAutoServe();
+                $this->registerDiscoveryLinkTag();
+                $this->registerWebMcpScriptTag();
             }
-
-            if (Craft::$app->request->getIsSiteRequest()) {
-                $this->registerSiteEvents();
-
-                if (!$isHeadless) {
-                    $this->registerAutoServeEvent();
-                    $this->registerDiscoveryLinkTag();
-                    $this->registerWebMcpScriptTag();
-                }
-            }
-
-            if (Craft::$app->request->getIsCpRequest()) {
-                $this->registerElementChangeEvents();
-            }
-
-            Craft::$app->onAfterRequest(function() {
-                $this->refresh->refresh();
-            });
         }
 
         if (Craft::$app->request->getIsCpRequest()) {
@@ -248,6 +228,16 @@ class Llmify extends Plugin
     public function getReadOnlySettingsResponse(): mixed
     {
         return $this->getSettingsResponse();
+    }
+
+    /**
+     * Cached markdown depends on the plugin settings (e.g. excluded classes or
+     * headless mode), so it is invalidated whenever they change.
+     */
+    public function afterSaveSettings(): void
+    {
+        parent::afterSaveSettings();
+        HelperService::invalidateCaches();
     }
 
     /**
@@ -417,11 +407,18 @@ class Llmify extends Plugin
             $event->types[] = Utils::class;
         });
 
+        Event::on(ClearCaches::class, ClearCaches::EVENT_REGISTER_TAG_OPTIONS, function(RegisterCacheOptionsEvent $event) {
+            $event->options[] = [
+                'tag' => Constants::CACHE_TAG,
+                'label' => Craft::t('llmify', 'LLMify markdown'),
+            ];
+        });
+
         Event::on(Entry::class, Entry::EVENT_DEFINE_SIDEBAR_HTML,
             function(DefineHtmlEvent $event) {
                 /** @var Entry $entry */
                 $entry = $event->sender;
-                $event->html .= $this->refresh->getSidebarHtml($entry);
+                $event->html .= $this->sidebar->getSidebarHtml($entry);
             },
         );
 
@@ -430,7 +427,7 @@ class Llmify extends Plugin
             Event::on(\craft\commerce\elements\Product::class, \craft\commerce\elements\Product::EVENT_DEFINE_SIDEBAR_HTML,
                 function(DefineHtmlEvent $event) {
                     $product = $event->sender;
-                    $event->html .= $this->refresh->getSidebarHtml($product);
+                    $event->html .= $this->sidebar->getSidebarHtml($product);
                 },
             );
         }
@@ -470,83 +467,30 @@ class Llmify extends Plugin
         }
     }
 
-    private function registerGeneralEvents(): void
-    {
-        // Save Markdown for site requests triggered by the queue.
-        Event::on(
-            View::class,
-            View::EVENT_AFTER_RENDER_TEMPLATE,
-            function(TemplateEvent $event) {
-                if ($event->templateMode !== 'site') {
-                    return;
-                }
-
-                // Only web requests have headers
-                if (Craft::$app->request->getIsConsoleRequest()) {
-                    return;
-                }
-
-                $headers = Craft::$app->request->getHeaders();
-
-                // Check if the request is coming from the queue job
-                if ($headers->get(Constants::HEADER_REFRESH)) {
-                    $this->markdown->processContentBlocks();
-                } elseif ($this->isAutoServeAble()) {
-                    // Fallback: generate on-the-fly when no cached markdown exists
-                    // (early auto-serve in init() handles the cached case)
-                    $markdown = $this->markdown->resolveAutoServeMarkdown();
-
-                    if ($markdown !== null) {
-                        $event->output = $markdown;
-                        $response = Craft::$app->response;
-                        $response->format = $response::FORMAT_RAW;
-                        $response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
-                        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
-                        $response->headers->set('Vary', 'Accept, User-Agent');
-
-                        $element = Craft::$app->getUrlManager()->getMatchedElement();
-
-                        $linkHeader = [];
-                        if ($element && $element->uri) {
-                            $linkHeader[] = '<' . HelperService::getMarkdownUrl($element->uri, $element->siteId) . '>; rel="alternate"; type="text/markdown"';
-                        }
-                        $llmsTxtUrl = HelperService::getLlmsTxtUrl(Craft::$app->getSites()->getCurrentSite()->id);
-                        if ($llmsTxtUrl) {
-                            $linkHeader[] = '<' . $llmsTxtUrl . '>; rel="describedby"';
-                        }
-                        if ($linkHeader) {
-                            $response->headers->set('Link', implode(', ', $linkHeader));
-                        }
-
-                        $this->fireLlmRequest(
-                            LlmRequestType::Negotiated,
-                            elementId: $element ? $element->id : null,
-                            elementType: $element ? get_class($element) : null,
-                            uri: $element ? $element->uri : null,
-                        );
-                    }
-                }
-
-                // Always clear blocks to prevent memory leaks
-                $this->markdown->clearBlocks();
-            }
-        );
-    }
-
     /**
-     * Tell Blitz to skip caching for text/markdown or bot requests so our template event can handle them.
+     * Routes AI bots and requests accepting `text/markdown` to the markdown of
+     * the requested page, and tells Blitz (or other caching plugins) not to
+     * serve them from cache.
      */
-    private function registerAutoServeEvent(): void
+    private function registerAutoServe(): void
     {
-        if (Craft::$app->request->getIsConsoleRequest()) {
-            return;
-        }
-
         if (!$this->isAutoServeAble()) {
             return;
         }
 
-        // Tell Blitz (or other caching plugins) to not serve from cache
+        Event::on(Element::class, Element::EVENT_SET_ROUTE,
+            function(SetElementRouteEvent $event) {
+                /** @var Element $element */
+                $element = $event->sender;
+
+                if ($this->markdown->isResolvingRoute || !$this->markdown->isServable($element)) {
+                    return;
+                }
+
+                $event->route = 'llmify/file/negotiated-md';
+            }
+        );
+
         if (class_exists(CacheRequestService::class)) {
             Event::on(CacheRequestService::class, CacheRequestService::EVENT_IS_CACHEABLE_REQUEST,
                 function(CancelableEvent $event) {
@@ -577,52 +521,6 @@ class Llmify extends Plugin
         }
 
         return false;
-    }
-
-    private function registerElementChangeEvents(): void
-    {
-        // Set the previous status of an element so we can compare later
-        $events = [
-            Elements::EVENT_BEFORE_SAVE_ELEMENT,
-            Elements::EVENT_BEFORE_RESAVE_ELEMENT,
-            Elements::EVENT_BEFORE_UPDATE_SLUG_AND_URI,
-            Elements::EVENT_BEFORE_DELETE_ELEMENT,
-            Elements::EVENT_BEFORE_RESTORE_ELEMENT,
-        ];
-
-        foreach ($events as $event) {
-            Event::on(Elements::class, $event,
-                function(ElementEvent|MultiElementActionEvent $event) {
-                    /** @var Element $element */
-                    $element = $event->element;
-                    if ($this->refresh->isRefreshableElement($element)) {
-                        $element->attachBehavior(LlmifyChangedBehavior::BEHAVIOR_NAME, LlmifyChangedBehavior::class);
-                    }
-                }
-            );
-        }
-
-        $events = [
-            Elements::EVENT_AFTER_SAVE_ELEMENT,
-            Elements::EVENT_AFTER_RESAVE_ELEMENT,
-            Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI,
-            Elements::EVENT_AFTER_DELETE_ELEMENT,
-            Elements::EVENT_AFTER_RESTORE_ELEMENT,
-        ];
-
-        foreach ($events as $event) {
-            Event::on(Elements::class, $event,
-                function(ElementEvent|MultiElementActionEvent $event) {
-                    $this->refresh->addElement($event->element);
-                }
-            );
-        }
-
-        Event::on(Structures::class, Structures::EVENT_AFTER_MOVE_ELEMENT,
-            function(MoveElementEvent $event) {
-                $this->refresh->addElement($event->element);
-            }
-        );
     }
 
     private function registerSiteEvents(): void
@@ -713,7 +611,7 @@ class Llmify extends Plugin
                     return;
                 }
 
-                if ($this->refresh->canRefreshElement($element)) {
+                if ($this->markdown->isServable($element)) {
                     $markdownUrl = HelperService::getMarkdownUrl($element->uri, $element->siteId);
                     Craft::$app->view->registerLinkTag([
                         'rel' => 'alternate',
@@ -748,11 +646,8 @@ class Llmify extends Plugin
                         Constants::PERMISSION_EDIT_SITE => [
                             'label' => 'Edit Site Settings',
                         ],
-                        Constants::PERMISSION_GENERATE => [
-                            'label' => 'Generate Markdown',
-                        ],
                         Constants::PERMISSION_CLEAR => [
-                            'label' => 'Clear Markdown',
+                            'label' => 'Clear Markdown Caches',
                         ],
                         Constants::PERMISSION_VIEW_SIDEBAR_PANEL => [
                             'label' => 'View sidebar panel on element edit pages',

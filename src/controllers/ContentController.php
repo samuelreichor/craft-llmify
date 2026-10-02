@@ -94,7 +94,7 @@ class ContentController extends Controller
 
         $copyFromSiteId = (int)$this->request->getQueryParam('copyFrom');
         if ($copyFromSiteId && in_array($copyFromSiteId, Craft::$app->getSites()->getEditableSiteIds(), true)) {
-            $sectionSettings = $contentSettings->getContentSetting($sectionId, $copyFromSiteId, $elementType, false);
+            $sectionSettings = $contentSettings->getContentSetting($sectionId, $copyFromSiteId, $elementType);
             Craft::$app->getSession()->setNotice(Craft::t('app', 'Settings copied. Review and save to apply.'));
         }
 

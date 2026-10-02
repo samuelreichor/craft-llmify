@@ -18,6 +18,7 @@ use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\Page;
+use yii\caching\TagDependency;
 
 class MarkdownService extends Component
 {
@@ -133,6 +134,21 @@ class MarkdownService extends Component
     public function getPageCacheKey(ElementInterface $element): array
     {
         return [Constants::CACHE_TAG, 'page', $element->id, $element->siteId];
+    }
+
+    public function getFailureCacheKey(ElementInterface $element): array
+    {
+        return [Constants::CACHE_TAG, 'page-failure', $element->id, $element->siteId];
+    }
+
+    /**
+     * @return array{reason: string, date: int}|null
+     */
+    public function getPageFailure(ElementInterface $element): ?array
+    {
+        $failure = Craft::$app->getCache()->get($this->getFailureCacheKey($element));
+
+        return is_array($failure) ? $failure : null;
     }
 
     /**
@@ -294,13 +310,20 @@ class MarkdownService extends Component
         // The element itself was loaded before the cache info got collected.
         Craft::$app->getElements()->collectCacheInfoForElement($element);
 
-        $markdown = Llmify::getInstance()->getSettings()->headlessMode
-            ? $this->fetchMarkdown($element)
-            : $this->renderMarkdown($element);
+        try {
+            $markdown = Llmify::getInstance()->getSettings()->headlessMode
+                ? $this->fetchMarkdown($element)
+                : $this->renderMarkdown($element);
+        } catch (\Throwable $e) {
+            $this->rememberFailure($element, $e->getMessage());
+            throw $e;
+        }
 
         if ($markdown === null) {
             return '';
         }
+
+        Craft::$app->getCache()->delete($this->getFailureCacheKey($element));
 
         $metadata = new MetadataService($element);
         $page = new Page([
@@ -338,6 +361,7 @@ class MarkdownService extends Component
 
         if (!is_string($template) || $template === '') {
             Craft::warning("No template to render markdown for element {$element->id} in site {$element->siteId}.", 'llmify');
+            $this->rememberFailure($element, 'The page is not rendered by a template.');
             return null;
         }
 
@@ -357,7 +381,12 @@ class MarkdownService extends Component
             $headers->fromArray($originalHeaders);
         }
 
-        return $html === '' ? null : $this->htmlToMarkdown($html);
+        if ($html === '') {
+            $this->rememberFailure($element, 'The template has no {% llmify %} blocks, or they are empty.');
+            return null;
+        }
+
+        return $this->htmlToMarkdown($html);
     }
 
     /**
@@ -372,11 +401,37 @@ class MarkdownService extends Component
         }
 
         try {
-            return Llmify::getInstance()->request->fetchAndConvert($url);
+            $markdown = Llmify::getInstance()->request->fetchAndConvert($url);
         } catch (\Throwable $e) {
             Craft::warning("Markdown generation failed for {$url}. " . $e->getMessage(), 'llmify');
+            $this->rememberFailure($element, $e->getMessage());
             return null;
         }
+
+        if ($markdown === null) {
+            $this->rememberFailure($element, 'The front end did not respond with a 200. See the LLMify log.');
+        }
+
+        return $markdown;
+    }
+
+    private function rememberFailure(ElementInterface $element, string $reason): void
+    {
+        if (HelperService::isUncacheableRequest()) {
+            return;
+        }
+
+        $elements = Craft::$app->getElements();
+        $elements->startCollectingCacheInfo();
+        $elements->collectCacheInfoForElement($element);
+        [$dependency] = $elements->stopCollectingCacheInfo();
+        $dependency ??= new TagDependency();
+        $dependency->tags[] = Constants::CACHE_TAG;
+
+        Craft::$app->getCache()->set($this->getFailureCacheKey($element), [
+            'reason' => $reason,
+            'date' => time(),
+        ], Llmify::getInstance()->getSettings()->cacheDuration, $dependency);
     }
 
     private function htmlToMarkdown(string $html): string

@@ -67,7 +67,8 @@ class MarkdownController extends Controller
         Craft::$app->getCache()->delete($markdownService->getPageCacheKey($element));
 
         if ($markdownService->generate([$element]) === 0) {
-            return $this->asFailure('No markdown generated. Check your template setup and the LLMify log.');
+            $reason = $markdownService->getPageFailure($element)['reason'] ?? 'Check your template setup and the LLMify log.';
+            return $this->asFailure("No markdown generated. {$reason}");
         }
 
         return $this->asSuccess('Markdown generated.');
@@ -85,7 +86,9 @@ class MarkdownController extends Controller
         $this->requirePermission(Constants::PERMISSION_CLEAR);
 
         $element = $this->getElement($elementId, $siteId);
-        Craft::$app->getCache()->delete(Llmify::getInstance()->markdown->getPageCacheKey($element));
+        $markdownService = Llmify::getInstance()->markdown;
+        Craft::$app->getCache()->delete($markdownService->getPageCacheKey($element));
+        Craft::$app->getCache()->delete($markdownService->getFailureCacheKey($element));
 
         return $this->asSuccess('Markdown cache cleared.');
     }

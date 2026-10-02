@@ -13,6 +13,13 @@
     <div class="value status-update">{{ cached.dateCached|datetime('short') }}</div>
     <div class="heading status-update">Size</div>
     <div class="value status-update">~{{ tokens|number }} tokens</div>
+  {% elseif failure %}
+    <div class="heading status-update">Last Attempt</div>
+    <div class="value status-update">{{ failure.date|datetime('short') }}</div>
+    <div class="heading status-update"></div>
+    <div class="value status-update">
+      <p class="warning" style="margin: 0; overflow-wrap: anywhere;">{{ failure.reason }}</p>
+    </div>
   {% endif %}
   {% if canGenerate or canClear %}
   <div class="llmify-btn-group">

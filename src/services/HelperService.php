@@ -61,7 +61,7 @@ class HelperService extends Component
      * Previews may show unpublished content, and Craft appends tokens and site
      * tokens to every URL, so such markdown must never be cached.
      */
-    private static function isUncacheableRequest(): bool
+    public static function isUncacheableRequest(): bool
     {
         $request = Craft::$app->getRequest();
 

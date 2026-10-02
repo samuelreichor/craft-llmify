@@ -70,6 +70,14 @@
                 <span class="llmify-check {{ pluginChecks.discoveryTag ? 'on' : 'off' }}"></span>
                 Discovery Tag
             </span>
+            <span class="llmify-quickbar-sep"></span>
+            <span class="llmify-quickbar-item">
+                <span class="llmify-check {{ markdownStats.llmsFullEnabled ? 'on' : 'off' }}"></span>
+                llms-full.txt
+                {% if markdownStats.llmsFullEnabled and not markdownStats.llmsFullGenerated %}
+                    <span class="llmify-warning">(never generated)</span>
+                {% endif %}
+            </span>
             {% if currentUser.admin and craft.app.config.general.allowAdminChanges %}
                 <a href="{{ cpUrl('llmify/settings') }}" class="llmify-quickbar-link">Configure</a>
             {% endif %}
@@ -148,19 +156,6 @@
                                     {{ markdownStats.cacheStats.oldestCached|date('M j, Y H:i') }}
                                 {% else %}
                                     <span class="light">N/A</span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="llmify-stat-block">
-                            <div class="llmify-stat-label">llms-full.txt</div>
-                            <div class="llmify-stat-value">
-                                {% if not markdownStats.llmsFullEnabled %}
-                                    <span class="light">Disabled</span>
-                                {% elseif markdownStats.llmsFullGenerated %}
-                                    {{ markdownStats.llmsFullGenerated|date('M j, Y H:i') }}
-                                {% else %}
-                                    <span class="llmify-warning">Never generated</span>
                                 {% endif %}
                             </div>
                         </div>

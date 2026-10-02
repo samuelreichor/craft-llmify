@@ -69,7 +69,7 @@ class MarkdownController extends Controller
         Craft::$app->getCache()->delete($markdownService->getPageCacheKey($element));
 
         if ($markdownService->generate([$element]) === 0) {
-            return $this->asFailure('The markdown could not be generated. Check the LLMify log for details.');
+            return $this->asFailure('No markdown generated. Check your template setup and the LLMify log.');
         }
 
         return $this->asSuccess('Markdown generated.');

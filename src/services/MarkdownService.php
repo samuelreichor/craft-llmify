@@ -236,7 +236,7 @@ class MarkdownService extends Component
     }
 
     /**
-     * @return array{total: int, cached: int, avgTokens: int, oldestCached: int|null}
+     * @return array{total: int, cached: int, avgTokens: int, oldestCached: int|null, failures: array<int, array{element: ElementInterface, reason: string, date: int}>}
      * @throws Exception
      */
     public function getCacheStats(int $siteId): array
@@ -245,11 +245,16 @@ class MarkdownService extends Component
         $cached = 0;
         $tokens = 0;
         $oldestCached = null;
+        $failures = [];
 
         foreach ($elements as $element) {
             $entry = HelperService::getCached($this->getPageCacheKey($element));
 
             if ($entry === null) {
+                $failure = $this->getPageFailure($element);
+                if ($failure !== null) {
+                    $failures[] = ['element' => $element] + $failure;
+                }
                 continue;
             }
 
@@ -263,6 +268,7 @@ class MarkdownService extends Component
             'cached' => $cached,
             'avgTokens' => $cached > 0 ? (int)round($tokens / $cached) : 0,
             'oldestCached' => $oldestCached,
+            'failures' => $failures,
         ];
     }
 

@@ -126,6 +126,15 @@ class Llmify extends Plugin
             }
         }
 
+        // Lets the markdown caches be cleared under Utilities > Caches and
+        // with `php craft invalidate-tags/llmify`.
+        Event::on(ClearCaches::class, ClearCaches::EVENT_REGISTER_TAG_OPTIONS, function(RegisterCacheOptionsEvent $event) {
+            $event->options[] = [
+                'tag' => Constants::CACHE_TAG,
+                'label' => Craft::t('llmify', 'LLMify markdown'),
+            ];
+        });
+
         if (Craft::$app->request->getIsCpRequest()) {
             $this->registerSettingEvents();
             $this->registerGeneralCpEvents();
@@ -405,13 +414,6 @@ class Llmify extends Plugin
 
         Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function(RegisterComponentTypesEvent $event) {
             $event->types[] = Utils::class;
-        });
-
-        Event::on(ClearCaches::class, ClearCaches::EVENT_REGISTER_TAG_OPTIONS, function(RegisterCacheOptionsEvent $event) {
-            $event->options[] = [
-                'tag' => Constants::CACHE_TAG,
-                'label' => Craft::t('llmify', 'LLMify markdown'),
-            ];
         });
 
         Event::on(Entry::class, Entry::EVENT_DEFINE_SIDEBAR_HTML,

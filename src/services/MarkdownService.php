@@ -144,6 +144,7 @@ class MarkdownService extends Component
 
     /**
      * @return array{reason: string, date: int}|null
+     * @phpstan-impure
      */
     public function getPageFailure(ElementInterface $element): ?array
     {

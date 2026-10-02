@@ -17,6 +17,9 @@ class Constants
     public const PERMISSION_EDIT_SITE = 'llmify:edit-site';
     public const PERMISSION_VIEW_DASHBOARD = 'llmify:view-dashboard';
 
+    // Caches
+    public const CACHE_TAG = 'llmify';
+
     // Random
     public const HEADER_REFRESH = 'X-Llmify-Refresh-Request';
     public const HEADER_API_TOKEN = 'X-Llmify-Token';

@@ -12,6 +12,7 @@ class PluginSettings extends Model
     public bool $isRealUrlLlm = false;
     public bool $autoServeMarkdown = true;
     public string $markdownUrlPrefix = '';
+    public int $cacheDuration = 86400;
     public int $concurrentRequests = 3;
     public int $requestTimeout = 100;
     public ?string $basicAuthUsername = null;
@@ -37,10 +38,12 @@ class PluginSettings extends Model
         return [
             [
                 [
+                    'cacheDuration',
                     'concurrentRequests',
                     'requestTimeout',
                 ], 'required',
             ],
+            [['cacheDuration'], 'integer', 'min' => 0],
             [['concurrentRequests'], 'integer', 'min' => 1, 'max' => 100],
             [['requestTimeout'], 'integer', 'min' => 1],
 

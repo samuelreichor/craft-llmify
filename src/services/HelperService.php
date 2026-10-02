@@ -11,9 +11,11 @@ use craft\elements\Entry;
 use craft\errors\InvalidFieldException;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\UrlHelper;
+use samuelreichor\llmify\Constants;
 use samuelreichor\llmify\fields\LlmifySettingsField;
 use samuelreichor\llmify\Llmify;
 use yii\base\Exception;
+use yii\caching\TagDependency;
 
 class HelperService extends Component
 {
@@ -52,6 +54,65 @@ class HelperService extends Component
         }
 
         return false;
+    }
+
+    /**
+     * Checks if the current request renders a preview or carries a token.
+     * Markdown rendered for such a request must never be cached, since it may
+     * show unpublished content.
+     */
+    public static function isPreviewRequest(): bool
+    {
+        $request = Craft::$app->getRequest();
+
+        return !$request->getIsConsoleRequest()
+            && ($request->getIsPreview() || $request->getToken() !== null);
+    }
+
+    /**
+     * Returns the cached result for `$key`, or runs `$callback` and caches its
+     * result. Craft collects the cache tags of every element queried inside the
+     * callback, so the entry is invalidated as soon as one of them changes. It
+     * also expires after the `cacheDuration` setting, or earlier when a queried
+     * element gets published or expires. Previews are never cached.
+     */
+    public static function cached(array $key, callable $callback): string
+    {
+        if (self::isPreviewRequest()) {
+            return $callback();
+        }
+
+        $cache = Craft::$app->getCache();
+        $result = $cache->get($key);
+
+        if ($result !== false) {
+            return $result;
+        }
+
+        $elements = Craft::$app->getElements();
+        $elements->startCollectingCacheInfo();
+        $result = $callback();
+        [$dependency, $duration] = $elements->stopCollectingCacheInfo();
+
+        $dependency ??= new TagDependency();
+        $dependency->tags[] = Constants::CACHE_TAG;
+
+        $maxDuration = Llmify::getInstance()->getSettings()->cacheDuration;
+        if ($duration === null || ($maxDuration > 0 && $maxDuration < $duration)) {
+            $duration = $maxDuration;
+        }
+
+        $cache->set($key, $result, $duration, $dependency);
+
+        return $result;
+    }
+
+    /**
+     * Invalidates all markdown caches of the plugin.
+     */
+    public static function invalidateCaches(): void
+    {
+        TagDependency::invalidate(Craft::$app->getCache(), Constants::CACHE_TAG);
     }
 
     /**

@@ -75,7 +75,7 @@ class Llmify extends Plugin
 {
     /**
      * Fired when the plugin serves any LLM-targeted response: a `.md` page,
-     * `llms.txt`, `llms-full.txt`, or a content-negotiated markdown response.
+     * `llms.txt`, or a content-negotiated markdown response.
      *
      * @event LlmRequestEvent
      */
@@ -533,7 +533,6 @@ class Llmify extends Plugin
             function(RegisterUrlRulesEvent $event) {
                 $event->rules['llms.txt'] = 'llmify/file/generate-llms-txt';
                 $event->rules['.well-known/llms.txt'] = 'llmify/file/generate-llms-txt';
-                $event->rules['llms-full.txt'] = 'llmify/file/generate-llms-full-txt';
 
                 $mdPrefix = $this->getSettings()->markdownUrlPrefix;
                 $mdRoute = $mdPrefix !== '' ? $mdPrefix . '/<slug:.*\.md>' : '<slug:.*\.md>';

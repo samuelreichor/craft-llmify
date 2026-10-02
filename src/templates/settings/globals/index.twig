@@ -79,15 +79,6 @@
             on: settings.enableLlmsTxt,
             fieldClass: 'width-50',
         }) }}
-
-        {{ forms.lightswitchField({
-            label: 'Enable llms-full.txt',
-            instructions: "Serves the `llms-full.txt` file for this site. If disabled, requests to `llms-full.txt` return a 404 while markdown pages stay available.",
-            id: 'enableLlmsFullTxt',
-            name: 'enableLlmsFullTxt',
-            on: settings.enableLlmsFullTxt,
-            fieldClass: 'width-50',
-        }) }}
     </div>
 
     {{ forms.textField({
@@ -108,7 +99,7 @@
 
     {{ forms.lightswitchField({
         label: 'Include Social Links',
-        instructions: "Adds a `## Social` section to `llms.txt` and `llms-full.txt` with the links below.",
+        instructions: "Adds a `## Social` section to `llms.txt` with the links below.",
         id: 'includeSocialLinks',
         name: 'includeSocialLinks',
         on: settings.includeSocialLinks,

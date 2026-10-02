@@ -22,7 +22,7 @@
 {# Enable/Disable Section #}
 {{ forms.lightswitchField({
   label: 'Include in LLMify',
-  instructions: 'When disabled, this entry will be excluded from markdown generation, llms.txt, and llms-full.txt.',
+  instructions: 'When disabled, this entry will be excluded from markdown generation and llms.txt.',
   id: enabledSwitchId,
   name: name ~ '[enabled]',
   on: value.enabled ?? true,

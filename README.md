@@ -46,7 +46,7 @@ Combined with Craft Commerce compatibility, granular control over your Markdowns
 ### AI Content Delivery
 - **Auto-Serve Markdown**: Content negotiation via `Accept: text/markdown` header.
 - **AI Crawler Detection**: Automatically serve Markdown to known AI bots (GPTBot, ClaudeBot, ChatGPT-User, and more).
-- **LLM-Ready Text Files**: Generates `llms.txt`, `llms-full.txt`, and `/.well-known/llms.txt`.
+- **LLM-Ready Text Files**: Generates `llms.txt` and `/.well-known/llms.txt`.
 - **Discovery Tag**: Injects `<link rel="alternate" type="text/markdown">` and `<link rel="describedby" href="/llms.txt">` into your HTML head, as recommended by the [llms.txt spec](https://llmstxt.org/).
 - **Industry Standard Response Headers**: Sets `Vary: Accept` (+ `User-Agent` for auto-serve), `X-Robots-Tag: noindex, nofollow`, and a `Link` header with `rel="canonical"` and `rel="describedby"` (pointing to `llms.txt`) on all Markdown responses.
 
@@ -65,7 +65,6 @@ Combined with Craft Commerce compatibility, granular control over your Markdowns
 - **Headless Mode**: For sites where Craft does not render the front end (e.g. a separate Nuxt/Next/Astro app). Instead of relying on Twig rendering, LLMify fetches your front-end URLs (the site's Base URL) and converts the returned HTML to Markdown. Sections excluded from output are controlled via the configured exclude classes.
 - **Content API**: Pull the generated files cross-domain so your front end can re-serve them under its own domain:
   - `GET /actions/llmify/api/llms-txt?site=<handle|id>`
-  - `GET /actions/llmify/api/llms-full-txt?site=<handle|id>`
   - `GET /actions/llmify/api/page?uri=<uri>&site=<handle|id>` — a single page's stored Markdown, including front matter.
 - **On-Demand Convert**: `POST /actions/llmify/api/convert` with `{ "url": "<front-end URL>" }` returns the Markdown for a single page, converted live. The URL must resolve to one of your configured site Base URL hosts.
 

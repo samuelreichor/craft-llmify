@@ -323,8 +323,6 @@ class MarkdownService extends Component
             return '';
         }
 
-        Craft::$app->getCache()->delete($this->getFailureCacheKey($element));
-
         $metadata = new MetadataService($element);
         $page = new Page([
             'title' => $metadata->getLlmTitle(),
@@ -335,7 +333,16 @@ class MarkdownService extends Component
             ],
         ]);
 
-        return Llmify::getInstance()->frontMatter->prependFrontMatter($markdown, $page, $element);
+        $markdown = Llmify::getInstance()->frontMatter->prependFrontMatter($markdown, $page, $element);
+
+        if (trim($markdown) === '') {
+            $this->rememberFailure($element, 'The markdown is empty. The {% llmify %} blocks contain nothing that converts to markdown.');
+            return '';
+        }
+
+        Craft::$app->getCache()->delete($this->getFailureCacheKey($element));
+
+        return $markdown;
     }
 
     public function getOriginalRoute(ElementInterface $element): mixed

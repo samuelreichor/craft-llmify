@@ -134,13 +134,15 @@ class RequestService extends Component
      * refresh marker it carries what the site needs to let the request through:
      * a Craft site token so offline (`isSystemLive: false`) staging sites still
      * render, and HTTP Basic Auth credentials when the site is protected that way.
+     * The site token is only sent while the system is offline, since Craft
+     * appends it to every URL in the response.
      */
     protected function createRequest(string $url, ?int $siteId = null): Request
     {
         $request = new Request($url);
         $request->setHeader(Constants::HEADER_REFRESH, '1');
 
-        if ($siteId !== null) {
+        if ($siteId !== null && !Craft::$app->getIsLive()) {
             $request->setHeader('X-Craft-Site-Token', Craft::$app->getSecurity()->hashData((string)$siteId));
         }
 

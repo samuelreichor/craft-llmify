@@ -1,5 +1,10 @@
 # Release Notes for LLMify
 
+## Unreleased
+
+### Fixed
+- Links in generated markdown no longer carry a `siteToken` parameter on live sites. The internal page requests now only send a Craft site token while the system is offline. Regenerate the markdown to remove the parameter from existing pages. ([#32](https://github.com/samuelreichor/craft-llmify/issues/32))
+
 ## 1.12.0 - 2026-09-23
 
 ### Added

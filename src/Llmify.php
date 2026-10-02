@@ -612,7 +612,7 @@ class Llmify extends Plugin
                     return;
                 }
 
-                if ($this->markdown->isServable($element)) {
+                if ($this->markdown->isServable($element) && $this->markdown->getPageFailure($element) === null) {
                     $markdownUrl = HelperService::getMarkdownUrl($element->uri, $element->siteId);
                     Craft::$app->view->registerLinkTag([
                         'rel' => 'alternate',

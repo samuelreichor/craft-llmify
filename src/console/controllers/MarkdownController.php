@@ -37,7 +37,7 @@ class MarkdownController extends Controller
     public function actionClear(): int
     {
         HelperService::invalidateCaches();
-        $this->stdout("Markdown caches cleared.\n");
+        $this->stdout("Markdown cache cleared.\n");
 
         return ExitCode::OK;
     }

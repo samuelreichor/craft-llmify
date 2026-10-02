@@ -30,7 +30,7 @@ class MarkdownController extends Controller
         $this->requirePermission(Constants::PERMISSION_GENERATE);
 
         Queue::push(new GenerateMarkdownJob());
-        $this->setSuccessFlash('Markdown generation started. A job has been added to the queue.');
+        $this->setSuccessFlash('Cache warming started. A job has been added to the queue.');
 
         return $this->redirectToPostedUrl();
     }
@@ -46,7 +46,7 @@ class MarkdownController extends Controller
         $this->requirePermission(Constants::PERMISSION_CLEAR);
 
         HelperService::invalidateCaches();
-        $this->setSuccessFlash('Markdown caches cleared.');
+        $this->setSuccessFlash('Markdown cache cleared.');
 
         return $this->redirectToPostedUrl();
     }
@@ -68,10 +68,10 @@ class MarkdownController extends Controller
 
         if ($markdownService->generate([$element]) === 0) {
             $reason = $markdownService->getPageFailure($element)['reason'] ?? 'Check your template setup and the LLMify log.';
-            return $this->asFailure("No markdown generated. {$reason}");
+            return $this->asFailure("Markdown could not be cached. {$reason}");
         }
 
-        return $this->asSuccess('Markdown generated.');
+        return $this->asSuccess('Markdown cached.');
     }
 
     /**

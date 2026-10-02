@@ -1,5 +1,5 @@
 {% import "_includes/forms" as forms %}
-<h2>Markdown Caches</h2>
+<h2>Markdown Cache</h2>
 {% set cols = {
   heading: {
     type: 'heading',
@@ -47,8 +47,8 @@
     {{ actionInput('llmify/markdown/generate') }}
     {{ redirectInput('utilities/llmify') }}
     {{ csrfInput() }}
-    <p>Generate Markdown for all uncached Pages</p>
-    <button type="submit" class="btn submit">Generate</button>
+    <p>Cache all pages that are not cached yet.</p>
+    <button type="submit" class="btn submit">Warm Cache</button>
   </form>
   {% endif %}
 
@@ -57,8 +57,8 @@
     {{ actionInput('llmify/markdown/clear') }}
     {{ redirectInput('utilities/llmify') }}
     {{ csrfInput() }}
-    <p>Clear Markdown for all Pages</p>
-    <button type="submit" class="btn submit">Clear Markdown</button>
+    <p>Clear the markdown cache of all pages.</p>
+    <button type="submit" class="btn submit">Clear Cache</button>
   </form>
   {% endif %}
 {% endif %}

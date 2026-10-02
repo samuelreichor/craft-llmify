@@ -52,28 +52,6 @@ class FileController extends Controller
     }
 
     /**
-     * @throws Exception
-     */
-    public function actionGenerateLlmsFullTxt(): Response
-    {
-        $fileContent = Llmify::getInstance()->llms->getLlmsFullContent();
-
-        if (!$fileContent) {
-            Craft::error(
-                'The `llms-full.txt` file could not be found. Make sure it is enabled for this site and generated with `php craft llmify/llms-full/generate`, e.g. by a cron job.',
-                'llmify'
-            );
-            throw new NotFoundHttpException('llms-full.txt file not found.');
-        }
-
-        Craft::$app->response->headers->set('Content-Type', 'text/markdown; charset=UTF-8');
-
-        Llmify::getInstance()->fireLlmRequest(LlmRequestType::Direct);
-
-        return $this->asRaw($fileContent);
-    }
-
-    /**
      * @throws SiteNotFoundException
      * @throws NotFoundHttpException
      * @throws Exception

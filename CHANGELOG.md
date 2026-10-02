@@ -1,5 +1,10 @@
 # Release Notes for LLMify
 
+## 2.0.0 - Unreleased
+
+### Removed
+- Remove `llms-full.txt`, the `Enable llms-full.txt` site setting and the `llms-full-txt` API endpoint. The file is not part of the [llms.txt spec](https://llmstxt.org/), large sites easily outgrow any context window with it, and AI crawlers barely request it. Agents find every page's markdown through `llms.txt` and the `.md` URLs instead.
+
 ## 1.12.1 - 2026-10-02
 
 ### Changed

@@ -170,8 +170,6 @@ class DashboardService extends Component
      *     cacheStats: array{total: int, cached: int, avgTokens: int, oldestCached: int|null, failures: array<int, array{element: \craft\base\ElementInterface, reason: string, date: int}>},
      *     cachedPercent: float,
      *     healthyPercent: float,
-     *     llmsFullEnabled: bool,
-     *     llmsFullGenerated: int|null,
      * }
      */
     public function getMarkdownStats(int $siteId): array
@@ -182,8 +180,6 @@ class DashboardService extends Component
             'cacheStats' => $cacheStats,
             'cachedPercent' => $cacheStats['total'] > 0 ? round($cacheStats['cached'] / $cacheStats['total'] * 100, 1) : 0,
             'healthyPercent' => $cacheStats['total'] > 0 ? round(($cacheStats['total'] - count($cacheStats['failures'])) / $cacheStats['total'] * 100, 1) : 0,
-            'llmsFullEnabled' => Llmify::getInstance()->settings->getGlobalSetting($siteId)->enableLlmsFullTxt,
-            'llmsFullGenerated' => LlmsService::getStoredLlmsFull($siteId)['dateGenerated'] ?? null,
         ];
     }
 

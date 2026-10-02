@@ -100,21 +100,6 @@ class ApiController extends Controller
     }
 
     /**
-     * Returns the `llms-full.txt` content for the requested site.
-     *
-     * @throws SiteNotFoundException
-     * @throws BadRequestHttpException
-     * @throws NotFoundHttpException
-     * @throws Exception
-     */
-    public function actionLlmsFullTxt(): Response
-    {
-        $this->resolveSite();
-
-        return $this->respondWithMarkdown((new LlmsService())->getLlmsFullContent(), 'llms-full.txt');
-    }
-
-    /**
      * Returns the markdown for a single page, identified by its `uri` within
      * the requested site. Includes front matter and only serves pages whose
      * section is enabled. The markdown is cached, so the front end is only

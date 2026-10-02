@@ -10,7 +10,6 @@ use samuelreichor\llmify\Constants;
  * @property int $siteId
  * @property bool $enabled
  * @property bool $enableLlmsTxt
- * @property bool $enableLlmsFullTxt
  * @property string $llmTitle
  * @property string $llmDescription
  * @property string $llmNote

@@ -47,88 +47,6 @@ class LlmsService extends Component
         });
     }
 
-    public function getLlmsFullContent(): string
-    {
-        if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsFullTxt) {
-            return '';
-        }
-
-        return self::getStoredLlmsFull($this->currentSiteId)['content'] ?? '';
-    }
-
-    /**
-     * @return array{content: string, dateGenerated: int}|null
-     */
-    public static function getStoredLlmsFull(int $siteId): ?array
-    {
-        $stored = Craft::$app->getCache()->get(self::llmsFullCacheKey($siteId));
-
-        return is_array($stored) ? $stored : null;
-    }
-
-    /**
-     * Rendering every page takes too long for a web request, so this runs from
-     * the console (e.g. a cron job) or a queue job.
-     *
-     * @return array<string, int|null> The pages included per site name, null where the file is disabled.
-     * @throws \yii\base\Exception
-     */
-    public static function generateLlmsFullForAllSites(): array
-    {
-        $sites = Craft::$app->getSites();
-        $currentSite = $sites->getCurrentSite();
-        $results = [];
-
-        try {
-            foreach (Llmify::getInstance()->settings->getAllActiveGlobalSettingsIds() as $siteId) {
-                $site = $sites->getSiteById($siteId);
-
-                if (!$site) {
-                    continue;
-                }
-
-                $sites->setCurrentSite($site);
-                $results[$site->name] = (new self())->generateLlmsFullContent();
-            }
-        } finally {
-            $sites->setCurrentSite($currentSite);
-        }
-
-        return $results;
-    }
-
-    /**
-     * @return int|null The number of pages included, or null when the file is disabled for this site.
-     * @throws \yii\base\Exception
-     */
-    public function generateLlmsFullContent(): ?int
-    {
-        if (!$this->globalSettings->isEnabled() || !$this->globalSettings->enableLlmsFullTxt) {
-            return null;
-        }
-
-        $pages = $this->collectPageMarkdowns();
-
-        $markdown = $this->constructIntro();
-        foreach ($pages as $pageContent) {
-            $markdown .= "{$pageContent}\n\n---\n\n";
-        }
-        $markdown .= $this->constructSocialSection();
-        $markdown .= $this->constructFooter();
-
-        Craft::$app->getCache()->set(self::llmsFullCacheKey($this->currentSiteId), [
-            'content' => $markdown,
-            'dateGenerated' => time(),
-        ], 0);
-
-        return count($pages);
-    }
-
-    private static function llmsFullCacheKey(int $siteId): array
-    {
-        return [Constants::CACHE_TAG, 'llms-full', $siteId];
-    }
-
     public function constructIntro(): string
     {
         $markdown = '';
@@ -294,30 +212,5 @@ class LlmsService extends Component
         }
 
         return $content;
-    }
-
-    /**
-     * Returns the markdown of every servable page of the site, in the order of
-     * the content settings. In headless mode the pages are fetched from the
-     * front end. Otherwise their `.md` URLs are requested, since site templates
-     * can only be rendered reliably in a web request.
-     *
-     * @return string[]
-     * @throws \yii\base\Exception
-     */
-    private function collectPageMarkdowns(): array
-    {
-        $markdownService = Llmify::getInstance()->markdown;
-        $isHeadless = Llmify::getInstance()->getSettings()->headlessMode;
-        $elements = $markdownService->getServableElements($this->currentSiteId);
-
-        if ($isHeadless) {
-            $pages = array_map(fn($element) => $markdownService->getPageMarkdown($element), $elements);
-        } else {
-            $urls = array_map(fn($element) => HelperService::getMarkdownUrl($element->uri, $element->siteId), $elements);
-            $pages = array_values(Llmify::getInstance()->request->fetchAll($urls, $this->currentSiteId));
-        }
-
-        return array_values(array_filter($pages, fn($page) => $page !== null && $page !== ''));
     }
 }

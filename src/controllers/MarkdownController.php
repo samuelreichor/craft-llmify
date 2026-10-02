@@ -7,7 +7,6 @@ use craft\base\ElementInterface;
 use craft\helpers\Queue;
 use craft\web\Controller;
 use samuelreichor\llmify\Constants;
-use samuelreichor\llmify\jobs\GenerateLlmsFullJob;
 use samuelreichor\llmify\jobs\GenerateMarkdownJob;
 use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\services\HelperService;
@@ -32,22 +31,6 @@ class MarkdownController extends Controller
 
         Queue::push(new GenerateMarkdownJob());
         $this->setSuccessFlash('Cache warming started. A job has been added to the queue.');
-
-        return $this->redirectToPostedUrl();
-    }
-
-    /**
-     * @throws MethodNotAllowedHttpException
-     * @throws BadRequestHttpException
-     * @throws ForbiddenHttpException
-     */
-    public function actionGenerateLlmsFull(): Response
-    {
-        $this->requirePostRequest();
-        $this->requirePermission(Constants::PERMISSION_GENERATE);
-
-        Queue::push(new GenerateLlmsFullJob());
-        $this->setSuccessFlash('llms-full.txt generation started. A job has been added to the queue.');
 
         return $this->redirectToPostedUrl();
     }

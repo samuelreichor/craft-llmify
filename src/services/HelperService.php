@@ -25,7 +25,8 @@ class HelperService extends Component
     public function getCurrentCpSiteId(): ?int
     {
         $site = null;
-        $siteHandle = Craft::$app->getRequest()->getQueryParam('site');
+        $request = Craft::$app->getRequest();
+        $siteHandle = $request->getIsConsoleRequest() ? null : $request->getQueryParam('site');
 
         $sites = Craft::$app->getSites();
         if ($siteHandle) {

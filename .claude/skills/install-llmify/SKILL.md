@@ -27,7 +27,7 @@ ddev craft plugin/install llmify
 
 1. In the Craft control panel, go to **LLMify → Content**.
 2. Enable each section that should produce markdown output using the **Enable for Section** toggle.
-3. Set an **LLM Title** and **LLM Description** for each enabled section — these populate the `llms.txt` file.
+3. Set an **LLM Title** and **LLM Description** for each enabled section. These populate the `llms.txt` file.
 
 ## Step 3: Add Template Tags
 
@@ -40,7 +40,7 @@ Wrap the content you want converted to markdown with the `{% llmify %}` tag in y
 {% endllmify %}
 ```
 
-Multiple `{% llmify %}` blocks per template are supported — their content is merged into a single markdown file.
+Multiple `{% llmify %}` blocks per template are supported. Their content is merged into a single markdown file.
 
 To exclude specific parts within an llmify block:
 
@@ -56,37 +56,33 @@ To exclude specific parts within an llmify block:
 
 You can also exclude content by adding the `exclude-llmify` CSS class to any HTML element. This class name is configurable via the config file.
 
-## Step 4: Generate Markdown
+## Step 4: Check the Dashboard
 
-Generate markdown for all enabled entries using one of these methods:
+Markdown is rendered on the first request of a page and cached, so nothing has to be generated upfront. Go to **LLMify → Dashboard** to see an overview of your setup:
 
-- **Control Panel**: Go to **Utilities → LLMify** and trigger generation.
-- **Entry Sidebar**: Generate markdown for a single entry from its edit page.
-- **Console Command**:
-  ```bash
-  php craft llmify/markdown/generate
-  ```
+- **Site setup score**: shows how complete your site-level configuration is (LLM title, description, note, front matter fields).
+- **Cache**: how many pages are cached, and the pages whose markdown could not be rendered, with the reason.
+- **Section statistics**: content-level stats per section.
 
-To clear all generated markdown and start fresh:
+To cache every page upfront, e.g. after a deployment:
 
 ```bash
-php craft llmify/markdown/clear
+php craft llmify/markdown/generate
 ```
 
-## Step 5: Check the Dashboard
+To clear the markdown cache:
 
-Go to **LLMify → Dashboard** to see an overview of your setup:
+```bash
+php craft clear-caches/llmify
+```
 
-- **Site setup score** — shows how complete your site-level configuration is (LLM title, description, note, front matter fields).
-- **Section statistics** — content-level stats per section showing how many entries have markdown generated.
+## Step 5: Verify the Output
 
-## Step 6: Verify the Output
+Verify these URLs are accessible:
 
-After generating markdown, verify these URLs are accessible:
-
-- `/llms.txt` — Summary file listing all enabled entries
-- `/.well-known/llms.txt` — RFC 8615 compliant discovery endpoint
-- `/{entry-uri}.md` — Individual markdown page, homepage at `/index.md` (prefixed with `markdownUrlPrefix` if set, e.g. `/raw/{entry-uri}.md`)
+- `/llms.txt`: Summary file listing all enabled entries
+- `/.well-known/llms.txt`: RFC 8615 compliant discovery endpoint
+- `/{entry-uri}.md`: Individual markdown page, homepage at `/index.md` (prefixed with `markdownUrlPrefix` if set, e.g. `/raw/{entry-uri}.md`)
 
 Test auto-serve markdown with:
 

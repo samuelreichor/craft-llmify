@@ -299,17 +299,27 @@ class FieldDiscoveryService extends Component
 
         /** @var \nystudio107\seomatic\Seomatic $seomatic */
         $seomatic = \nystudio107\seomatic\Seomatic::$plugin;
-        // Reset preview flag so SEOmatic reloads containers for each element
-        \nystudio107\seomatic\Seomatic::$previewingMetaContainers = false;
-        $seomatic->metaContainers->previewMetaContainers($uri, (int)$element->siteId, true, true, $element);
-        $seomatic->metaContainers->parseGlobalVars();
+        // SEOmatic only loads the meta of a page it renders when both are unset,
+        // so they must not stay changed for the rest of the request.
+        $previewing = \nystudio107\seomatic\Seomatic::$previewingMetaContainers;
+        $variable = \nystudio107\seomatic\Seomatic::$seomaticVariable;
 
-        $metaGlobalVars = \nystudio107\seomatic\Seomatic::$seomaticVariable?->meta;
-        if ($metaGlobalVars === null) {
-            return '';
+        try {
+            // Reset preview flag so SEOmatic reloads containers for each element
+            \nystudio107\seomatic\Seomatic::$previewingMetaContainers = false;
+            $seomatic->metaContainers->previewMetaContainers($uri, (int)$element->siteId, true, true, $element);
+            $seomatic->metaContainers->parseGlobalVars();
+
+            $metaGlobalVars = \nystudio107\seomatic\Seomatic::$seomaticVariable?->meta;
+            if ($metaGlobalVars === null) {
+                return '';
+            }
+
+            return strip_tags($metaGlobalVars->parsedValue($seoKey) ?? '');
+        } finally {
+            \nystudio107\seomatic\Seomatic::$previewingMetaContainers = $previewing;
+            \nystudio107\seomatic\Seomatic::$seomaticVariable = $variable;
         }
-
-        return strip_tags($metaGlobalVars->parsedValue($seoKey) ?? '');
     }
 
     private function isTextField(mixed $field): bool

@@ -20,6 +20,8 @@ use samuelreichor\llmify\Llmify;
 use samuelreichor\llmify\models\ContentSettings;
 use samuelreichor\llmify\models\Page;
 use yii\caching\TagDependency;
+use yii\web\CookieCollection;
+use yii\web\Request as YiiRequest;
 
 class MarkdownService extends Component
 {
@@ -382,16 +384,20 @@ class MarkdownService extends Component
 
         Craft::$app->getUrlManager()->setMatchedElement($element);
         $this->clearBlocks();
-        // Plugins like SEOmatic set headers while the page renders, which must
-        // not leak into the markdown response.
+        // Plugins like SEOmatic set headers and cookies while the page renders,
+        // which must not leak into the markdown response.
         $headers = Craft::$app->getResponse()->getHeaders();
         $originalHeaders = $headers->toArray();
+        $cookies = Craft::$app->getResponse()->getCookies();
+        $originalCookies = $cookies->toArray();
         // The cached markdown is shared by every visitor and every route that
         // serves it, so the template must see the public page: its own path
-        // instead of the .md, WebMCP or API path, and no logged-in user.
+        // instead of the .md, WebMCP or API path, no logged-in user, and none
+        // of the visitor's query, cookies or headers.
         $user = Craft::$app->getUser();
         $identity = $user->getIdentity();
         $restoreRequestPath = $this->setRequestPath($element);
+        $restoreRequest = $this->isolateRequest();
         $user->setIdentity(null);
 
         try {
@@ -401,7 +407,10 @@ class MarkdownService extends Component
             $this->clearBlocks();
             $headers->removeAll();
             $headers->fromArray($originalHeaders);
+            $cookies->removeAll();
+            $cookies->fromArray($originalCookies);
             $user->setIdentity($identity);
+            $restoreRequest();
             $restoreRequestPath();
         }
 
@@ -464,6 +473,75 @@ class MarkdownService extends Component
             $request->setPathInfo($originalPathInfo);
             $request->setUrl($originalUrl);
         };
+    }
+
+    /**
+     * Previews and tokens are read from the query lazily, so only requests
+     * whose markdown gets cached are isolated. The CSRF cookie is kept, or a
+     * csrfInput() in the template would replace the visitor's token.
+     *
+     * @return callable Restores the original request.
+     */
+    private function isolateRequest(): callable
+    {
+        if (HelperService::isUncacheableRequest()) {
+            return fn() => null;
+        }
+
+        $request = Craft::$app->getRequest();
+        $headers = $request->getHeaders();
+        $originalHeaders = $headers->toArray();
+        $originalQueryParams = $request->getQueryParams();
+        $originalQueryString = $_SERVER['QUERY_STRING'] ?? null;
+        $csrfCookie = $request->getCookies()->get($request->csrfParam);
+        // Initializes the typed property, which must not be read unset.
+        $request->getRawCookies();
+
+        $yiiState = $this->swapProperties($request, YiiRequest::class, [
+            '_cookies' => new CookieCollection($csrfCookie ? [$request->csrfParam => $csrfCookie] : [], ['readOnly' => true]),
+        ]);
+        $craftState = $this->swapProperties($request, Request::class, [
+            '_rawCookies' => new CookieCollection([], ['readOnly' => true]),
+            '_pageNum' => 1,
+            '_isMobileBrowser' => null,
+            '_isMobileOrTabletBrowser' => null,
+            '_craftCsrfToken' => null,
+        ]);
+        $request->setQueryParams([]);
+        $_SERVER['QUERY_STRING'] = '';
+        $headers->set('Accept', 'text/html');
+        $headers->set('User-Agent', 'Mozilla/5.0 (compatible; LLMify)');
+        $headers->remove('Accept-Language');
+
+        return function() use ($request, $headers, $originalHeaders, $originalQueryParams, $originalQueryString, $yiiState, $craftState) {
+            $this->swapProperties($request, YiiRequest::class, $yiiState);
+            $this->swapProperties($request, Request::class, $craftState);
+            $request->setQueryParams($originalQueryParams);
+            if ($originalQueryString === null) {
+                unset($_SERVER['QUERY_STRING']);
+            } else {
+                $_SERVER['QUERY_STRING'] = $originalQueryString;
+            }
+            $headers->removeAll();
+            $headers->fromArray($originalHeaders);
+        };
+    }
+
+    /**
+     * @return array The previous values, to swap them back.
+     */
+    private function swapProperties(object $object, string $class, array $values): array
+    {
+        return \Closure::bind(function(array $values) use ($class): array {
+            $previous = [];
+            foreach ($values as $name => $value) {
+                if (property_exists($class, $name)) {
+                    $previous[$name] = $this->$name;
+                    $this->$name = $value;
+                }
+            }
+            return $previous;
+        }, $object, $class)($values);
     }
 
     /**

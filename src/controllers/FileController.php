@@ -127,6 +127,8 @@ class FileController extends Controller
 
         $headers->set('Content-Type', 'text/markdown; charset=UTF-8');
         $headers->set('Vary', 'Accept, User-Agent');
+        // CDNs like Cloudflare ignore Vary and would serve the markdown to browsers.
+        $headers->set('Cache-Control', 'private, no-store');
         $markdownUrl = HelperService::getMarkdownUrl($element->uri, $element->siteId);
         $this->setLinkHeader('<' . $markdownUrl . '>; rel="alternate"; type="text/markdown"', $element->siteId);
 
